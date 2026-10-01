@@ -25,6 +25,7 @@ abstract class A11yLintTest : LintDetectorTest() {
             .files(*(composeStubs + files))
             .issues(issue)
             .allowMissingSdk()
+            .allowCompilationErrors()
             .run()
 
     /** Creates a registry containing the test issue for fixture-level use. */

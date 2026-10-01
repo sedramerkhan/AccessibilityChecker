@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.svu.sedra.a11ylint.TemporaryMarkerDetectorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-01T10:41:43.587Z" hostname="DESKTOP-QP172KH" time="4.97">
+  <properties/>
+  <testcase name="markerIsReported" classname="org.svu.sedra.a11ylint.TemporaryMarkerDetectorTest" time="4.968"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

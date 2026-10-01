@@ -17,4 +17,6 @@
 - Added the WCAG contrast utility and reference tests.
 - Added literal helpers for null, empty strings, resources, dp, and sp values.
 - Added Compose call resolution helpers for composable detection, FQNs, arguments, and trailing lambdas.
-- Remaining: modifier-chain inspection, UI-scope helpers, Compose stubs, and the shared lint test base.
+- Added modifier-chain inspection and semantics assignment helpers.
+- Added UI-scope detection that excludes state/effect and coroutine lambdas.
+- Remaining: Compose stubs, the shared lint test base, and focused utility tests.

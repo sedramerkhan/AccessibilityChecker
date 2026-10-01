@@ -21,4 +21,6 @@
 - Added UI-scope detection that excludes state/effect and coroutine lambdas.
 - Added minimal real-package Compose test stubs.
 - Added the shared `A11yLintTest` base with automatic stubs and SDK-free execution.
-- Contrast tests pass. UAST-focused tests for modifier chains, UI scope, and literals remain pending until the Compose stubs provide fully resolved test calls.
+- Contrast tests pass.
+- Runtime utility probes remain pending until a real registered detector is available; the current `LintDetectorTest` harness does not dispatch the test-only UAST probe.
+- UI-scope and literal-focused runtime tests remain pending.

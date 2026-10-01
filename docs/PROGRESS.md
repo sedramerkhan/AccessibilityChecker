@@ -19,4 +19,6 @@
 - Added Compose call resolution helpers for composable detection, FQNs, arguments, and trailing lambdas.
 - Added modifier-chain inspection and semantics assignment helpers.
 - Added UI-scope detection that excludes state/effect and coroutine lambdas.
-- Remaining: Compose stubs, the shared lint test base, and focused utility tests.
+- Added minimal real-package Compose test stubs.
+- Added the shared `A11yLintTest` base with automatic stubs and SDK-free execution.
+- Remaining: focused tests for modifier chains, UI scope, and literals.

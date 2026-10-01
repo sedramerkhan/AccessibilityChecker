@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Lint-Registry-v2: org.svu.sedra.a11ylint.ComposeA11yIssueRegistry
-

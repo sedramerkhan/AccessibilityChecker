@@ -15,4 +15,6 @@
 
 - Added the taxonomy enums and entry model.
 - Added the WCAG contrast utility and reference tests.
-- Remaining: Compose call resolution, modifier-chain inspection, UI-scope helpers, literal helpers, Compose stubs, and the shared lint test base.
+- Added literal helpers for null, empty strings, resources, dp, and sp values.
+- Added Compose call resolution helpers for composable detection, FQNs, arguments, and trailing lambdas.
+- Remaining: modifier-chain inspection, UI-scope helpers, Compose stubs, and the shared lint test base.

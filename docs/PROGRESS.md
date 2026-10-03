@@ -34,7 +34,7 @@ Open questions for Sedra:
 
 ## Milestone 2: Critical rules
 
-In progress.
+In progress: all 7 critical rules are done. The development app run (Jetnews and Jetchat) is next.
 
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|
@@ -44,7 +44,7 @@ In progress.
 | U-01 `ComposeMissingHeading` | Done | 5 (6 reports) | 5 | 4, all matched |
 | U-02 `ComposeMissingStateDescription` | Done | 4 | 4 (9 cases) | 3, all matched |
 | U-05 `ComposeTextFieldWithoutLabel` | Done | 4 (5 reports) | 4 | 3, all matched |
-| R-01 `ComposeClickableWithoutRole` | Next | | | |
+| R-01 `ComposeClickableWithoutRole` | Done | 4 (5 reports) | 4 | 4, all matched |
 
 Notes:
 - P-01 first matched nothing on the sample app although all unit tests passed. The compiled Compose libraries use mangled JVM names (`Icon-ww6aTOc`) and Lint resolves `Card(onClick = ...)` to the wrong overload. Both are handled in `ComposeCalls` (see DECISIONS, 2026-10-03). From now on the sample app check is required for every rule.
@@ -55,3 +55,4 @@ Notes:
 - U-01: Material3 top app bars do not mark their title as a heading. The rule ignores them as CLAUDE.md says. Question for Sedra: keep ignoring or report them? New shared helper: `util/TextStyles` (typography style, font size, bold).
 - U-02 matched the sample app on the first run. `outermostExpression` and `receivingElement` moved from O-01 into `ModifierChain` for reuse.
 - U-05 passed its tests and the sample app on the first run.
+- R-01 reported 10 role-less custom clickables in the earlier sample screens. They were given `role = Role.Button` so each screen shows only its own rule. New shared helper: `Clickables.isButtonLikeContainer` (the O-04 case of the overlap policy).

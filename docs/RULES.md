@@ -10,6 +10,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
+| R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
 
 ---
 
@@ -363,3 +364,56 @@ OutlinedTextField(
 
 - `U05TextFieldWithoutLabelDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
 - Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (3 `// EXPECT` lines) and `U05GoodScreen.kt` (no reports).
+
+---
+
+## R-01 · ComposeClickableWithoutRole
+
+- **Taxonomy:** Robust, Critical, STATIC_LLM (a candidate: the right role depends on what the element is for).
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R01ClickableWithoutRoleDetector.kt`
+- **Message:** `[R-01] Possible missing role: clickable Row has no role, so screen readers do not say what kind of control it is` (names the element that receives the modifier, or says "clickable element" when the modifier is stored in a variable).
+- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
+
+### What it flags
+
+`Modifier.clickable` or `Modifier.combinedClickable` without a `role` argument (or with `role = null`), when no `role` is set in the semantics of the same modifier chain, on a custom element.
+
+### What it ignores
+
+- Click modifiers with a role, or chains that set `role` in `semantics { }`.
+- Chains passed to a Material clickable component (`Button`, `IconButton`, FAB, `Card`/`Surface` with `onClick`, and the others in `Clickables`), which set their own role.
+- The O-04 case (overlap policy, CLAUDE.md 7.1): a clickable `Box`, `Row` or `Column` whose direct content is one `Text`, or one `Icon`/`Image` and one `Text` (with optional `Spacer`s). O-04 will report it as "use Button".
+- `toggleable` and `selectable`, which are not part of this rule.
+
+### Example
+
+Bad:
+
+```kotlin
+Row(Modifier.clickable { open(contact) }) {
+    Text(contact.name)
+    Text(contact.status)
+}
+```
+
+Good:
+
+```kotlin
+Row(Modifier.clickable(role = Role.Button) { open(contact) }) {
+    Text(contact.name)
+    Text(contact.status)
+}
+```
+
+### Known limitations
+
+- A role set on a parent or child element is not considered.
+- A `Card` or `Surface` without `onClick` that is made clickable with a modifier is reported, because it is then a custom clickable element without a role.
+- The O-04 exclusion only reads the direct children of the content lambda. Button-like content inside a nested layout is treated as rich content.
+
+### Tests and sample
+
+- `R01ClickableWithoutRoleDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
+- Sample: `sample-app/.../defects/r01/R01BadScreen.kt` (4 `// EXPECT` lines) and `R01GoodScreen.kt` (no reports).

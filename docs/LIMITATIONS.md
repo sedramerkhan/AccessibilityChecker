@@ -221,3 +221,25 @@ AppTextField(value = query, onValueChange = onQueryChange) // not reported
 ### Text above the field
 
 A `Text` shown above the field looks like a label but is not linked to it, so the field is still reported. The rule cannot tell whether the developer meant the Text as the label.
+
+## R-01 ComposeClickableWithoutRole
+
+### Role set elsewhere
+
+Only the click modifier and the semantics of the same chain are read.
+
+```kotlin
+Box(Modifier.semantics { role = Role.Button }) {
+    Row(Modifier.clickable { open() }) { Text("Open"); Text("now") } // reported
+}
+```
+
+### Button-like content inside a nested layout
+
+The O-04 exclusion reads only the direct children, so this is reported by R-01 although it is button-like:
+
+```kotlin
+Box(Modifier.clickable { share() }) {
+    Row { Icon(shareIcon, null); Text("Share") }
+}
+```

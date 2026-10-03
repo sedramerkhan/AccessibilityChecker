@@ -4,6 +4,7 @@ import com.android.tools.lint.detector.api.Issue
 import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
 import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
+import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U05TextFieldWithoutLabelDetector
@@ -84,6 +85,14 @@ object Taxonomy {
             pour = Pour.UNDERSTANDABLE,
             wcag = listOf("1.3.1", "3.3.2"),
             detection = DetectionType.STATIC,
+            priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = R01ClickableWithoutRoleDetector.TAXONOMY_ID,
+            issue = R01ClickableWithoutRoleDetector.ISSUE,
+            pour = Pour.ROBUST,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC_LLM,
             priority = Priority.CRITICAL,
         ),
     )

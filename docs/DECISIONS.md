@@ -113,3 +113,12 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Semantics labels are not accepted.** A `contentDescription` in semantics gives a name to screen readers but no visible label. CLAUDE.md asks for the `label` argument, and WCAG 3.3.2 needs a visible label, so such fields are still reported.
 - **Message.** The message names the component and mentions the placeholder when one is set, so the developer sees why the placeholder is not enough.
 - **Material 2.** `androidx.compose.material.TextField` and `OutlinedTextField` are included; they have the same `label` parameter.
+
+### R-01 ComposeClickableWithoutRole
+
+- **Scope.** Only `clickable` and `combinedClickable`, as in CLAUDE.md. `toggleable` and `selectable` also take a role, but they already expose state and are not part of this rule.
+- **Role found.** A `role` argument that is not the literal `null`, or `role` assigned in a semantics block anywhere in the same chain.
+- **Custom element.** Any element except a Material clickable component (and `Card`/`Surface` with `onClick`), because those set their own role. A Material `Card` or `Text` made clickable with a modifier is a custom element.
+- **O-04 over R-01.** "Button-like" is implemented once in `Clickables.isButtonLikeContainer`, so O-04 can reuse exactly the same test in Milestone 3: the element is a `Box`, `Row` or `Column`, and the direct children of its content lambda are one Text, or one Icon/Image and one Text, ignoring `Spacer`. A fully qualified call (`androidx.compose.material3.Text(...)`) also counts (found by Lint's `FULLY_QUALIFIED` test mode).
+- **Earlier sample screens.** R-01 correctly reported 10 custom clickables without a role in the P-01, O-01 and O-03 sample screens. They were given `role = Role.Button` so that each sample screen shows only its own rule, and every good screen stays clean for all rules.
+- **Report location.** The name of the click modifier call.

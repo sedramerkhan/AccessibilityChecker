@@ -6,6 +6,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 |---|---|---|---|---|---|
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
+| O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 
 ---
 
@@ -133,3 +134,65 @@ Box(Modifier.clickable { onClose() }.padding(12.dp).size(24.dp)) { ... } // 48dp
 
 - `O01SmallTouchTargetDetectorTest`: 5 positive tests and 5 negative tests (13 cases in the negative tests).
 - Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines) and `O01GoodScreen.kt` (no reports).
+
+---
+
+## O-03 · ComposeNestedClickable
+
+- **Taxonomy:** Operable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 2.4.3 Focus Order, 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O03NestedClickableDetector.kt`
+- **Message:** `[O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element`
+- **Reported at:** the name of the inner element call (for example `IconButton`).
+
+### What it flags
+
+A clickable element inside the content lambda of another clickable element in the same function. Layout calls in between (`Row`, `Column`, a `Box` without a click modifier) are passed through. Clickable elements are the same as in P-01: click and toggle modifiers (`clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`), Material buttons, icon buttons and FABs, and `Card`/`ElevatedCard`/`OutlinedCard`/`Surface` called with `onClick` or `onCheckedChange`.
+
+Each inner clickable is reported once, against its nearest clickable ancestor. With three levels, the middle and the inner element are both reported.
+
+### What it ignores
+
+- Sibling clickables.
+- Clickables inside non-clickable containers (`Card` or `Surface` without `onClick`, a list, a plain `Row`).
+- The content of a Material button (`Icon` and `Text` are not clickable).
+- Clickables inside a separate composable called from the content (not followed in Phase 2).
+- `Checkbox`, `Switch` and `RadioButton` are not counted as clickable elements (see DECISIONS).
+
+### Example
+
+Bad:
+
+```kotlin
+Card(onClick = onOpen) {
+    Text(article.title)
+    IconButton(onClick = onFavorite) {
+        Icon(Icons.Filled.Favorite, contentDescription = "Favorite")
+    }
+}
+```
+
+Good:
+
+```kotlin
+Card(
+    onClick = onOpen,
+    modifier = Modifier.semantics {
+        customActions = listOf(CustomAccessibilityAction("Favorite") { onFavorite(); true })
+    },
+) {
+    Text(article.title)
+    FavoriteIcon() // not clickable on its own
+}
+```
+
+### Known limitations
+
+- Clickables inside another composable called from the content are not seen.
+- Common card designs (a clickable card with a favourite or bookmark button) are reported. Whether they are true defects depends on how TalkBack groups them, so precision must be measured on the development apps.
+
+### Tests and sample
+
+- `O03NestedClickableDetectorTest`: 5 positive tests (8 reports) and 5 negative tests.
+- Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (4 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports).

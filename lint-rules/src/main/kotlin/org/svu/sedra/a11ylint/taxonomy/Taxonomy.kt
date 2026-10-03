@@ -2,6 +2,7 @@ package org.svu.sedra.a11ylint.taxonomy
 
 import com.android.tools.lint.detector.api.Issue
 import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
+import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
 
 enum class Pour {
@@ -47,6 +48,14 @@ object Taxonomy {
             issue = O01SmallTouchTargetDetector.ISSUE,
             pour = Pour.OPERABLE,
             wcag = listOf("2.5.8"),
+            detection = DetectionType.STATIC,
+            priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = O03NestedClickableDetector.TAXONOMY_ID,
+            issue = O03NestedClickableDetector.ISSUE,
+            pour = Pour.OPERABLE,
+            wcag = listOf("2.4.3", "4.1.2"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
         ),

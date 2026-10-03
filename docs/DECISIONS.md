@@ -77,3 +77,12 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Material components.** A chain passed directly as an argument to a Material button, icon button, FAB, or `Card`/`Surface` with `onClick` is ignored, because these components add `minimumInteractiveComponentSize()` themselves (checked in the Material3 1.4.0 sources: `IconButton`, `Button` and the clickable `Surface` all apply it).
 - **One report per chain.** Only the first click or toggle modifier in a chain is checked, so `Modifier.size(20.dp).clickable { }.toggleable(...)` gives one warning.
 - **Report location.** The size call that decided the first small axis, without its receiver (`getCallLocation(includeReceiver = false)`), so the underline is on `size(20.dp)` and not on the whole chain.
+
+### O-03 ComposeNestedClickable
+
+- **Direction of the search.** The detector visits every clickable element and looks upwards for the nearest clickable element whose content lambda contains it. Searching upwards gives one report per inner element and handles any depth of layout nesting.
+- **Reported element.** The inner element is reported, not the outer one: the inner element is the one that is hard to reach. A card with two icon buttons gives two warnings.
+- **Same definition of "clickable" as P-01** (`Clickables.isClickableElement`), so the rules stay consistent.
+- **Selection controls are not included.** CLAUDE.md lists `Modifier.clickable`, `Button`, `IconButton` and `Card(onClick)`. A `Checkbox` or `Switch` with a callback inside a clickable `Row` is a closely related defect (the usual fix is `Modifier.toggleable` on the row and `onCheckedChange = null` on the checkbox), but it is not in the spec and adding it could raise the false positive rate. Left out for now. Question for Sedra.
+- **Overlap with O-07.** O-07 (Minor, Milestone 4) will report a clickable container that has two or more clickable children and no `customActions`. That warning is on the container, while O-03 warns on each child, so they are different nodes. If this gives too many warnings for one card, the precedence will be decided with Sedra when O-07 is built.
+- **Element without a modifier argument.** A clickable modifier in a local `val` that is passed to a container (`Box(clickableModifier)`) is followed through `ModifierChain`, so the container is still recognised as clickable.

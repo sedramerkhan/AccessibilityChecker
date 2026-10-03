@@ -132,3 +132,29 @@ Any position in the chain suppresses the warning.
 ```kotlin
 Modifier.size(20.dp).clickable { open() }.minimumInteractiveComponentSize() // not reported
 ```
+
+## O-03 ComposeNestedClickable
+
+### Nested clickable in another composable
+
+The search stops at the enclosing function.
+
+```kotlin
+@Composable
+fun FavoriteButton(onClick: () -> Unit) = IconButton(onClick = onClick) { ... }
+
+Card(onClick = onOpen) {
+    FavoriteButton(onFavorite) // not reported
+}
+```
+
+### Clickable defined by a modifier parameter
+
+A container that becomes clickable through a modifier passed in by the caller is not known to be clickable.
+
+```kotlin
+@Composable
+fun Tile(modifier: Modifier) = Box(modifier) { Button(onClick = {}) { Text("Go") } }
+
+Tile(Modifier.clickable { open() }) // not reported
+```

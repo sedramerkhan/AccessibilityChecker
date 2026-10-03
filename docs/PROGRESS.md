@@ -40,11 +40,13 @@ In progress.
 |---|---|---|---|---|
 | P-01 `ComposeMissingContentDescription` | Done | 6 (7 reports) | 6 | 6, all matched |
 | O-01 `ComposeSmallTouchTarget` | Done | 5 | 5 (13 cases) | 5, all matched |
-| O-03 `ComposeNestedClickable` | Next | | | |
-| U-01, U-02, U-05, R-01 | To do | | | |
+| O-03 `ComposeNestedClickable` | Done | 5 (8 reports) | 5 | 4, all matched |
+| U-01 `ComposeMissingHeading` | Next | | | |
+| U-02, U-05, R-01 | To do | | | |
 
 Notes:
 - P-01 first matched nothing on the sample app although all unit tests passed. The compiled Compose libraries use mangled JVM names (`Icon-ww6aTOc`) and Lint resolves `Card(onClick = ...)` to the wrong overload. Both are handled in `ComposeCalls` (see DECISIONS, 2026-10-03). From now on the sample app check is required for every rule.
 - Shared helpers for later rules: `taxonomy/A11yIssues` (issue creation with the severity mapping) and `util/Clickables` (clickable elements, Text and Icon names, accessible name search).
 - `TaxonomyTest` checks taxonomy entries against their issues and the registry.
 - O-01 also first failed on the sample app: compiled `Dp` parameters lose their names (`p`). `ComposeCalls.argument` now matches them by position (see DECISIONS). New shared helper: `util/ModifierSizes` (literal sizes and paddings along a modifier chain).
+- O-03 matched the sample app on the first run. Open question for Sedra: should `Checkbox`/`Switch`/`RadioButton` with a callback inside a clickable row also count as nested clickables (see DECISIONS)?

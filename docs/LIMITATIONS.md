@@ -51,3 +51,52 @@ override fun onCreate(savedInstanceState: Bundle?) {
 ### Semi-transparent colors
 
 `Contrast` ignores the alpha channel, so it cannot judge text drawn in a transparent color on top of another color.
+
+### Positional `onClick` on Material containers
+
+On the compiled Material3 library, Lint resolves `Card(onClick = ...)` to the wrong overload. The rules then read the `onClick` argument from the source by its name. A positional `onClick` has no name, so the Card is not recognised as clickable.
+
+```kotlin
+Card(onAction) { Icon(icon, contentDescription = null) } // not recognised as clickable
+Card(onClick = onAction) { Icon(icon, contentDescription = null) } // recognised
+```
+
+## P-01 ComposeMissingContentDescription
+
+### Description held in a variable
+
+A variable may be null at run time, but its value is unknown statically, so it is not reported.
+
+```kotlin
+val label: String? = item.title
+IconButton(onClick = onOpen) {
+    Icon(Icons.Filled.Info, contentDescription = label) // not reported
+}
+```
+
+### Icon or clickable parent in another composable
+
+The search for the clickable parent stops at the enclosing function.
+
+```kotlin
+@Composable
+fun DeleteIcon() = Icon(Icons.Filled.Delete, contentDescription = null) // not reported
+
+@Composable
+fun DeleteButton(onDelete: () -> Unit) = IconButton(onClick = onDelete) { DeleteIcon() }
+```
+
+### Name provided by another composable
+
+When the clickable's Text is inside a separate composable, the rule cannot see it and reports the unlabelled icon. This is a possible false positive.
+
+```kotlin
+Row(Modifier.clickable { open() }) {
+    Icon(Icons.Filled.Info, contentDescription = null) // reported
+    ItemTitle(item) // contains a Text, not visible to the rule
+}
+```
+
+### Custom icon wrappers
+
+Only Material `Icon` and foundation `Image` are checked. A project's own wrapper, such as `AppIcon(resId, description)`, is not recognised.

@@ -308,6 +308,7 @@ private val resourceStubs = kotlin(
     @Composable fun stringResource(id: Int, vararg formatArgs: Any): String = TODO()
     @Composable fun pluralStringResource(id: Int, count: Int): String = TODO()
     @Composable fun pluralStringResource(id: Int, count: Int, vararg formatArgs: Any): String = TODO()
+    @Composable fun painterResource(id: Int): androidx.compose.ui.graphics.painter.Painter = TODO()
     """,
 ).indented()
 
@@ -550,6 +551,13 @@ private val material3Stubs = kotlin(
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
+        content: @Composable () -> Unit,
+    ) {}
+
+    @Composable
+    fun FloatingActionButton(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
         content: @Composable () -> Unit,
     ) {}
 

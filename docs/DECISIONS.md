@@ -40,3 +40,26 @@
 
 - Moved the sample app from the template package `com.example.accessibilitychecker` to `org.svu.sedra.a11ylint.sample` (namespace and `applicationId`), as fixed in CLAUDE.md.
 - `scripts/check_sample_expectations.py` reads the project's issue IDs from the lint-rules sources by matching `id = "Compose..."`. Every `Issue.create` call must therefore pass the ID as the named argument `id = "..."`. Built-in Lint issues are ignored.
+
+### Compiled libraries behave differently from the test stubs (found while building P-01)
+
+The P-01 unit tests passed, but the first run on the sample app reported nothing. Two differences between the source stubs and the real compiled Compose libraries were the cause. Both are now handled in `ComposeCalls`:
+
+- **JVM name mangling.** Kotlin changes the JVM name of a function that takes a value class parameter. The compiled Material3 `Icon` takes `tint: Color` (a value class), so Lint sees it as `Icon-ww6aTOc`. `clickable` (`role: Role?`) and semantics setters such as `role` are mangled the same way. `ComposeCalls.declaredName` removes everything from the first `-`, which is safe because a Kotlin identifier cannot contain `-`. All resolved names go through it.
+- **Wrong overload for `Card(onClick = ...)`.** Against the compiled Material3 1.4.0 library, UAST resolves `Card(onClick = onAction) { ... }` to the non-clickable `Card(modifier, shape, ...)` overload, which has no `onClick` parameter, so argument mapping cannot find `onClick`. `ComposeCalls.argument` now falls back to an argument written by name in the Kotlin source when the mapping finds nothing.
+- **Consequence for testing.** Unit tests with source stubs cannot show these problems. The sample app run (`lintDebug` plus `check_sample_expectations.py`) is the check against the real libraries, so every rule must pass it before it is done.
+
+### Issue creation
+
+- `taxonomy/A11yIssues.create` builds every issue: category `A11Y`, and severity and Lint priority derived from the taxonomy priority (Critical: error, 9; Major: warning, 6; Minor: warning, 3). `TaxonomyTest` checks that every taxonomy entry matches its issue and that the registry contains every taxonomy issue.
+
+### P-01 ComposeMissingContentDescription
+
+- **What counts as the clickable parent.** The detector walks up from the Icon or Image through the enclosing lambdas until it reaches the enclosing function. The first call whose content lambda contains the icon and that is a clickable element (Material button, icon button, FAB, `Card`/`Surface` with `onClick` or `onCheckedChange`, or any composable with a click or toggle modifier) is the parent. Layout calls such as `Row` and `Box` in between are passed through.
+- **What counts as another name.** A `Text` (Material3, Material or `BasicText`) whose text is not `""`, another `Icon`/`Image` whose `contentDescription` is not `null` or `""` (a variable counts), or `contentDescription`/`text` set in semantics on the parent or on any element inside it. The whole content of the parent is searched, including nested layouts.
+- **Own clickable modifier.** An Icon with a click or toggle modifier is always reported when unlabelled, because it is its own clickable element. `onClickLabel` does not count as a name: it describes the action ("Activate to ..."), not the element.
+- **Report location.** The rule reports at the `contentDescription` argument, so the underline is on `null` or `""`. Phase 3 can slice the code around this line.
+- **Several unlabelled icons in one clickable.** Each one is reported, because each is a possible label.
+- **Overlap with O-05.** CLAUDE.md says "a clickable with no readable content at all is O-05; an Icon or Image inside a clickable with a missing label is P-01". So when a clickable contains an unlabelled Icon or Image, P-01 reports it, and O-05 must skip that clickable. O-05 will only report clickables that contain no Icon or Image at all and no Text.
+- **Test mode note.** Lint's `REORDER_ARGUMENTS` test mode cannot rewrite a call that has a trailing comma after the last named argument and is followed by a trailing lambda (it produces invalid code). One negative test therefore writes that call without the trailing comma. The detector is not affected.
+- **Sample app icons.** The sample screens use `painterResource(R.drawable.ic_launcher_foreground)` instead of `Icons.Filled.*`, because Material3 1.4.0 does not depend on the material icons library and adding it would be a new dependency.

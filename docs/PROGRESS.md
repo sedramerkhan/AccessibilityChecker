@@ -32,4 +32,17 @@ Open questions for Sedra:
 - `minApi = 14` lets the rules load on AGP 8.0 and newer, but this is untested on older AGP. Is that acceptable?
 - The Gradle daemon now uses JDK 25, because Android Studio wrote `gradle-daemon-jvm.properties`. The rules still compile with JDK 17. Keep it this way?
 
-Next: Milestone 2, starting with P-01 `ComposeMissingContentDescription`.
+## Milestone 2: Critical rules
+
+In progress.
+
+| Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
+|---|---|---|---|---|
+| P-01 `ComposeMissingContentDescription` | Done | 6 (7 reports) | 6 | 6, all matched |
+| O-01 `ComposeSmallTouchTarget` | Next | | | |
+| O-03, U-01, U-02, U-05, R-01 | To do | | | |
+
+Notes:
+- P-01 first matched nothing on the sample app although all unit tests passed. The compiled Compose libraries use mangled JVM names (`Icon-ww6aTOc`) and Lint resolves `Card(onClick = ...)` to the wrong overload. Both are handled in `ComposeCalls` (see DECISIONS, 2026-10-03). From now on the sample app check is required for every rule.
+- Shared helpers for later rules: `taxonomy/A11yIssues` (issue creation with the severity mapping) and `util/Clickables` (clickable elements, Text and Icon names, accessible name search).
+- `TaxonomyTest` checks taxonomy entries against their issues and the registry.

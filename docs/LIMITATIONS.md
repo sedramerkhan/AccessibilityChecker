@@ -188,3 +188,21 @@ Row(Modifier.semantics(mergeDescendants = true) { heading() }) {
     Text("Inbox", style = MaterialTheme.typography.titleLarge) // reported
 }
 ```
+
+## U-02 ComposeMissingStateDescription
+
+### Flips that are not written in the click lambda
+
+```kotlin
+Row(Modifier.clickable { viewModel.toggleFavorite() }) { ... } // not reported
+Row(Modifier.clickable { toggle() }) { ... } // not reported
+Row(Modifier.clickable { expanded = expanded.not() }) { ... } // not reported
+```
+
+### Material buttons that toggle
+
+The rule only checks modifier-based clicks.
+
+```kotlin
+IconButton(onClick = { favorite = !favorite }) { ... } // not reported; IconToggleButton is the fix
+```

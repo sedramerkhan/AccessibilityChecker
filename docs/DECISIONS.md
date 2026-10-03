@@ -97,3 +97,11 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Ignored containers.** Text inside a Material clickable component (the same list as P-01 and O-03) or a top app bar, anywhere above it in the same function.
 - **Report location.** The name of the `Text` call.
 - **Getter names.** A property resolved through its getter gives a lowercase name (`FontWeight.Bold` resolves to `getBold`, which gives `bold`), so font weight names are compared without case.
+
+### U-02 ComposeMissingStateDescription
+
+- **What counts as a flip.** Three patterns, chosen from the CLAUDE.md wording: an assignment whose right side is the negation of its left side (`x = !x`, `x.value = !x.value`), compared by source text without whitespace and parentheses; and a call to a function whose name matches `on...Change` or `on...Changed` with a negated argument (`onCheckedChange(!checked)`). The whole click lambda is searched, including `if` branches.
+- **What counts as exposed state.** A `toggleable`, `triStateToggleable` or `selectable` modifier in the same chain, or `stateDescription`, `toggleableState` or `selected` in its semantics. The whole chain is checked, so the state modifier or semantics may come before or after the click modifier.
+- **Material components.** Only modifier-based clicks are checked, as in CLAUDE.md. A Material `IconButton` whose `onClick` flips a Boolean has the same problem (the fix is `IconToggleButton`), but it is not reported. A chain passed to a Material clickable component is also skipped.
+- **Report location.** The name of the `clickable` call, because the click handler is where the toggle happens.
+- **Shared code.** The code that finds the whole modifier chain around a modifier call (`outermostExpression`) and the element it is passed to (`receivingElement`) moved from O-01 into `ModifierChain`, so O-01 and U-02 use the same logic.

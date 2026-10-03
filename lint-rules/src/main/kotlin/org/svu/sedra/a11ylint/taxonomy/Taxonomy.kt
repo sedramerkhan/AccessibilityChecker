@@ -5,6 +5,7 @@ import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
 import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
+import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
 
 enum class Pour {
     PERCEIVABLE,
@@ -66,6 +67,14 @@ object Taxonomy {
             pour = Pour.UNDERSTANDABLE,
             wcag = listOf("1.3.1", "2.4.6"),
             detection = DetectionType.STATIC_LLM,
+            priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = U02MissingStateDescriptionDetector.TAXONOMY_ID,
+            issue = U02MissingStateDescriptionDetector.ISSUE,
+            pour = Pour.UNDERSTANDABLE,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
         ),
     )

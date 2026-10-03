@@ -8,6 +8,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
+| U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 
 ---
 
@@ -252,3 +253,58 @@ Text(
 
 - `U01MissingHeadingDetectorTest`: 5 positive tests (6 reports) and 5 negative tests.
 - Sample: `sample-app/.../defects/u01/U01BadScreen.kt` (4 `// EXPECT` lines) and `U01GoodScreen.kt` (no reports).
+
+---
+
+## U-02 · ComposeMissingStateDescription
+
+- **Taxonomy:** Understandable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/understandable/U02MissingStateDescriptionDetector.kt`
+- **Message:** `[U-02] Clickable element toggles expanded but exposes no state, so screen readers do not announce whether it is on or off` (names the flipped Boolean as written in the code).
+- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
+
+### What it flags
+
+`Modifier.clickable { }` or `Modifier.combinedClickable { }` whose click lambda flips a Boolean:
+
+- `x = !x` (also with a delegated `var x by remember { mutableStateOf(false) }`),
+- `x.value = !x.value`,
+- a call to a function named `on...Change` or `on...Changed` with a negated argument, for example `onCheckedChange(!checked)`,
+
+when the same modifier chain does not expose the state: no `toggleable`, `triStateToggleable` or `selectable` modifier, and no `stateDescription`, `toggleableState` or `selected` set in semantics.
+
+### What it ignores
+
+- Material `Switch`, `Checkbox` and `RadioButton`, and `Modifier.toggleable`/`selectable` (they expose state already).
+- Click handlers that do not flip a Boolean (navigation, counters, `x = true`).
+- Chains with state semantics.
+- A chain passed to a Material clickable component.
+
+### Example
+
+Bad:
+
+```kotlin
+var expanded by remember { mutableStateOf(false) }
+Row(Modifier.clickable { expanded = !expanded }) { Text("Details") }
+```
+
+Good:
+
+```kotlin
+Row(
+    Modifier.toggleable(value = expanded, onValueChange = { expanded = it }),
+) { Text("Details") }
+```
+
+### Known limitations
+
+- Only the three flip patterns above are recognised. A flip inside a called function (`toggle()`), `x = x.not()`, `setX(!x)` from a destructured state, or a ViewModel method is not seen.
+- Material clickable components with a flipping `onClick` (for example `IconButton(onClick = { favorite = !favorite })`) are not checked, because CLAUDE.md limits the rule to `Modifier.clickable`.
+
+### Tests and sample
+
+- `U02MissingStateDescriptionDetectorTest`: 4 positive tests and 4 negative tests (9 cases in the negative tests).
+- Sample: `sample-app/.../defects/u02/U02BadScreen.kt` (3 `// EXPECT` lines) and `U02GoodScreen.kt` (no reports).

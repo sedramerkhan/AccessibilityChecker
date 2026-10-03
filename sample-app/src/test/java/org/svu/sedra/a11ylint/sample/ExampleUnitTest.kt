@@ -1,4 +1,4 @@
-package com.example.accessibilitychecker
+package org.svu.sedra.a11ylint.sample
 
 import org.junit.Test
 

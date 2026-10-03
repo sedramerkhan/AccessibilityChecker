@@ -1,4 +1,4 @@
-package com.example.accessibilitychecker.ui.theme
+package org.svu.sedra.a11ylint.sample.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

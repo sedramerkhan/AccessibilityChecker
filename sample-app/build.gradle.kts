@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.accessibilitychecker"
+    namespace = "org.svu.sedra.a11ylint.sample"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.accessibilitychecker"
+        applicationId = "org.svu.sedra.a11ylint.sample"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

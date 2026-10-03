@@ -1,9 +1,12 @@
 package org.svu.sedra.a11ylint.util
 
 import com.android.tools.lint.detector.api.JavaContext
+import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
+import org.jetbrains.uast.UQualifiedReferenceExpression
+import org.jetbrains.uast.UReturnExpression
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
@@ -117,6 +120,34 @@ object Clickables {
             .mapNotNull { Literals.unwrap(it) as? ULambdaExpression }
             .forEach { it.body.accept(visitor) }
         return found
+    }
+
+    /** Layout containers that CLAUDE.md treats as custom clickable elements in O-04 and R-01. */
+    val layoutContainers = setOf("$FOUNDATION.layout.Box", "$FOUNDATION.layout.Row", "$FOUNDATION.layout.Column")
+
+    private const val SPACER = "$FOUNDATION.layout.Spacer"
+
+    /**
+     * Returns true when [container] is a `Box`, `Row` or `Column` whose content is button-like:
+     * exactly one Text, or one Icon or Image and one Text in any order. `Spacer` calls between
+     * them are ignored. Only the direct children of the content lambda are read. This is the
+     * O-04 case of the overlap policy (CLAUDE.md 7.1).
+     */
+    fun isButtonLikeContainer(context: JavaContext, container: UCallExpression): Boolean {
+        if (!ComposeCalls.isCall(container, layoutContainers)) return false
+        val lambda = ComposeCalls.contentLambda(context, container) ?: return false
+        val statements = (lambda.body as? UBlockExpression)?.expressions ?: return false
+        val children = statements.map { statement ->
+            when (val value = Literals.unwrap((statement as? UReturnExpression)?.returnExpression ?: statement)) {
+                is UCallExpression -> value
+                // A fully qualified call (`androidx.compose.material3.Text(...)`).
+                is UQualifiedReferenceExpression -> value.selector as? UCallExpression ?: return false
+                else -> return false
+            }
+        }.filterNot { ComposeCalls.isCall(it, SPACER) }
+        val texts = children.count { ComposeCalls.isCall(it, textCalls) }
+        val images = children.count { ComposeCalls.isCall(it, imageCalls) }
+        return texts == 1 && images <= 1 && texts + images == children.size
     }
 
     private fun isNamingCall(context: JavaContext, call: UCallExpression): Boolean = when {

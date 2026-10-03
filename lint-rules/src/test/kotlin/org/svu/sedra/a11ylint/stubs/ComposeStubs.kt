@@ -513,6 +513,8 @@ private val layoutStubs = kotlin(
         content: @Composable ColumnScope.() -> Unit,
     ) {}
 
+    @Composable fun Spacer(modifier: Modifier) {}
+
     fun Modifier.size(size: Dp): Modifier = this
     fun Modifier.size(width: Dp, height: Dp): Modifier = this
     fun Modifier.width(width: Dp): Modifier = this

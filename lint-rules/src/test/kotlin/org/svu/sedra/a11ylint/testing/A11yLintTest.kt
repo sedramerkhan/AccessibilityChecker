@@ -3,35 +3,30 @@ package org.svu.sedra.a11ylint.testing
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestLintResult
-import com.android.tools.lint.detector.api.Detector
-import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.client.api.IssueRegistry
-import com.android.tools.lint.client.api.Vendor
-import com.android.tools.lint.detector.api.CURRENT_API
 import org.svu.sedra.a11ylint.stubs.composeStubs
 
-/** Base class that supplies Compose stubs to detector tests. */
+/**
+ * Base class for detector tests. Subclasses override `getDetector()` and `getIssues()`.
+ *
+ * Every run adds the Compose stubs automatically. Compilation errors are not allowed: if a
+ * test file or a stub does not compile, calls do not resolve and a detector would silently
+ * match nothing, so the test must fail instead. Lint's default test modes stay on.
+ */
 abstract class A11yLintTest : LintDetectorTest() {
-    protected abstract val testDetector: Detector
-    protected abstract val issue: Issue
-
-    override fun getDetector(): Detector = testDetector
-
-    override fun getIssues(): List<Issue> = listOf(issue)
-
-    /** Runs lint with the shared Compose API stubs and the supplied source files. */
+    /** Runs lint on [files] together with the Compose stubs. */
     protected fun lintWithCompose(vararg files: TestFile): TestLintResult =
         lint()
-            .files(*(composeStubs + files))
-            .issues(issue)
+            .files(*composeStubs, *files)
             .allowMissingSdk()
-            .allowCompilationErrors()
             .run()
 
-    /** Creates a registry containing the test issue for fixture-level use. */
-    protected fun testRegistry(): IssueRegistry = object : IssueRegistry() {
-        override val issues: List<Issue> = listOf(issue)
-        override val api: Int = CURRENT_API
-        override val vendor: Vendor = Vendor("Compose A11y Lint Test")
+    /** Asserts that lint reports exactly [expected] (Lint's text output format) for [files]. */
+    protected fun expectWarnings(expected: String, vararg files: TestFile) {
+        lintWithCompose(*files).expect(expected)
+    }
+
+    /** Asserts that lint reports nothing for [files]. */
+    protected fun expectClean(vararg files: TestFile) {
+        lintWithCompose(*files).expectClean()
     }
 }

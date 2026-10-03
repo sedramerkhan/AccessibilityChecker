@@ -100,3 +100,35 @@ Row(Modifier.clickable { open() }) {
 ### Custom icon wrappers
 
 Only Material `Icon` and foundation `Image` are checked. A project's own wrapper, such as `AppIcon(resId, description)`, is not recognised.
+
+## O-01 ComposeSmallTouchTarget
+
+### Size comes from the parent or the layout
+
+The rule only reads the modifiers of the element. Constraints from the parent are unknown, so an element that the parent forces to a larger size is still reported.
+
+```kotlin
+Box(
+    modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+    propagateMinConstraints = true,
+) {
+    Box(Modifier.size(20.dp).clickable { open() }) // reported, but the parent makes it 48dp
+}
+```
+
+### Sizes that are not dp literals
+
+Constants, `dimensionResource(...)`, `DpSize` values and computed sizes are unknown, so the element is not reported.
+
+```kotlin
+val iconSize = 20.dp
+Box(Modifier.size(iconSize).clickable { open() }) // not reported
+```
+
+### `minimumInteractiveComponentSize()` in an order where it does not help
+
+Any position in the chain suppresses the warning.
+
+```kotlin
+Modifier.size(20.dp).clickable { open() }.minimumInteractiveComponentSize() // not reported
+```

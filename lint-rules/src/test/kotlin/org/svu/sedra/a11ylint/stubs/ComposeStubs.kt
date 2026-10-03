@@ -247,7 +247,11 @@ private val unitStubs = kotlin(
     package androidx.compose.ui.unit
 
     @JvmInline
-    value class Dp(val value: Float)
+    value class Dp(val value: Float) {
+        companion object {
+            val Unspecified = Dp(Float.NaN)
+        }
+    }
     val Int.dp: Dp get() = Dp(this.toFloat())
     val Double.dp: Dp get() = Dp(this.toFloat())
     val Float.dp: Dp get() = Dp(this)
@@ -346,6 +350,16 @@ private val foundationStubs = kotlin(
         onClick: () -> Unit,
     ): Modifier = this
 
+    fun Modifier.combinedClickable(
+        enabled: Boolean = true,
+        onClickLabel: String? = null,
+        role: Role? = null,
+        onLongClickLabel: String? = null,
+        onLongClick: (() -> Unit)? = null,
+        onDoubleClick: (() -> Unit)? = null,
+        onClick: () -> Unit,
+    ): Modifier = this
+
     fun Modifier.background(color: Color, shape: Shape = RectangleShape): Modifier = this
 
     class ScrollState
@@ -421,6 +435,7 @@ private val layoutStubs = kotlin(
     import androidx.compose.ui.Alignment
     import androidx.compose.ui.Modifier
     import androidx.compose.ui.unit.Dp
+    import androidx.compose.ui.unit.dp
 
     interface BoxScope
     interface RowScope
@@ -453,12 +468,21 @@ private val layoutStubs = kotlin(
     fun Modifier.height(height: Dp): Modifier = this
     fun Modifier.requiredSize(size: Dp): Modifier = this
     fun Modifier.requiredSize(width: Dp, height: Dp): Modifier = this
+    fun Modifier.requiredWidth(width: Dp): Modifier = this
+    fun Modifier.requiredHeight(height: Dp): Modifier = this
+    fun Modifier.widthIn(min: Dp = Dp.Unspecified, max: Dp = Dp.Unspecified): Modifier = this
+    fun Modifier.heightIn(min: Dp = Dp.Unspecified, max: Dp = Dp.Unspecified): Modifier = this
+    fun Modifier.defaultMinSize(minWidth: Dp = Dp.Unspecified, minHeight: Dp = Dp.Unspecified): Modifier = this
     fun Modifier.padding(all: Dp): Modifier = this
     // The real overload has defaults (0.dp). They are left out because Lint's JVM_OVERLOADS test
     // mode would turn them into a padding(Dp) overload that clashes with padding(all).
     fun Modifier.padding(horizontal: Dp, vertical: Dp): Modifier = this
+    // Same reason: the real defaults (0.dp) would create a padding(Dp) overload under JVM_OVERLOADS.
+    fun Modifier.padding(start: Dp, top: Dp, end: Dp, bottom: Dp): Modifier = this
+    fun Modifier.absolutePadding(left: Dp = 0.dp, top: Dp = 0.dp, right: Dp = 0.dp, bottom: Dp = 0.dp): Modifier = this
     fun Modifier.fillMaxWidth(fraction: Float = 1f): Modifier = this
     fun Modifier.fillMaxSize(fraction: Float = 1f): Modifier = this
+    fun Modifier.fillMaxHeight(fraction: Float = 1f): Modifier = this
     """,
 ).indented()
 

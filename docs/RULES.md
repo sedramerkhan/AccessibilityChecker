@@ -5,6 +5,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | ID | Issue ID | Severity | Detection | WCAG | Status |
 |---|---|---|---|---|---|
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
+| O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 
 ---
 
@@ -71,3 +72,64 @@ O-05 (`ComposeEmptyClickable`) covers clickables with no readable content at all
 
 - `P01MissingContentDescriptionDetectorTest`: 6 positive tests (7 reported icons) and 6 negative tests.
 - Sample: `sample-app/.../defects/p01/P01BadScreen.kt` (6 `// EXPECT` lines) and `P01GoodScreen.kt` (no reports).
+
+---
+
+## O-01 · ComposeSmallTouchTarget
+
+- **Taxonomy:** Operable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 2.5.8 Target Size (Minimum). The threshold is the Android guideline of 48dp, which is stricter than the 24 CSS pixels of WCAG.
+- **Detector:** `detectors/operable/O01SmallTouchTargetDetector.kt`
+- **Message:** `[O-01] Clickable element is only 20dp wide and 20dp high, smaller than the 48dp minimum touch target` (only the axes below 48dp are named).
+- **Reported at:** the size modifier call that makes the target too small (for example `size(20.dp)`).
+
+### What it flags
+
+A modifier chain with `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` or `selectable` whose clickable area is narrower or lower than 48dp, measured from literal sizes:
+
+- A size set before the clickable modifier (`Modifier.size(20.dp).clickable { }`) is the clickable size, minus any padding between the two (`Modifier.size(48.dp).padding(8.dp).clickable { }` is 32dp).
+- Without one, the first size set after it (`Modifier.clickable { }.size(32.dp)`) is used, plus any padding between the two.
+- Sizes are read from `size`, `width`, `height`, `requiredSize`, `requiredWidth` and `requiredHeight`. Paddings from every `padding` overload and `absolutePadding`.
+- A modifier chain stored in a local `val` of the same function is followed.
+
+### What it ignores
+
+- Chains that contain `minimumInteractiveComponentSize()` anywhere.
+- Chains passed to Material components that enforce 48dp themselves: buttons, icon buttons, FABs, and `Card`/`Surface` with `onClick`.
+- Sizes or paddings that are not literals, and axes set by `fillMaxWidth`, `widthIn`, `sizeIn`, `defaultMinSize`, `weight`, `aspectRatio` and similar. Such an axis is unknown and never reported.
+- Elements without a click or toggle modifier.
+
+### Example
+
+Bad:
+
+```kotlin
+Icon(
+    painter = closeIcon,
+    contentDescription = "Close",
+    modifier = Modifier.size(24.dp).clickable { onClose() },
+)
+```
+
+Good:
+
+```kotlin
+IconButton(onClick = onClose) {
+    Icon(closeIcon, contentDescription = "Close", modifier = Modifier.size(24.dp))
+}
+
+Box(Modifier.clickable { onClose() }.padding(12.dp).size(24.dp)) { ... } // 48dp target
+```
+
+### Known limitations
+
+- The size of the parent and the layout constraints are not known. A small element inside a parent that stretches it (for example `Row` with `fillMaxHeight` children) may be reported.
+- A modifier passed in as a parameter is not followed (see LIMITATIONS).
+- `minimumInteractiveComponentSize()` anywhere in the chain suppresses the warning, even in an order where it would not help.
+- Only `dp` literals are read. `DpSize`, values from `dimensionResource` and constants are unknown.
+
+### Tests and sample
+
+- `O01SmallTouchTargetDetectorTest`: 5 positive tests and 5 negative tests (13 cases in the negative tests).
+- Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines) and `O01GoodScreen.kt` (no reports).

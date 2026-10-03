@@ -11,3 +11,4 @@ gradle/gradle-daemon-jvm.properties
 local.properties
 *.log
 .DS_Store
+__pycache__/

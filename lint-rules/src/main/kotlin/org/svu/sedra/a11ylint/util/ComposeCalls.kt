@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import com.intellij.psi.PsiParameter
 import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
@@ -14,6 +15,9 @@ import org.jetbrains.uast.ULambdaExpression
 object ComposeCalls {
     /** Fully qualified name of the Compose `@Composable` annotation. */
     const val COMPOSABLE = "androidx.compose.runtime.Composable"
+
+    /** Name the compiled library gives a parameter whose real name was lost. */
+    private val SYNTHETIC_NAME = Regex("""p\d*""")
 
     /** Returns true when the resolved method has the Compose `@Composable` annotation. */
     fun isComposableCall(call: UCallExpression): Boolean =
@@ -79,22 +83,53 @@ object ComposeCalls {
      * Returns the argument expression passed for the parameter [name], whether the argument
      * was written by name or by position. Returns null when the argument is not passed.
      *
-     * The resolved method's argument mapping is used first. When it finds nothing, an argument
-     * written by name in the Kotlin source (`name = ...`) is used. This covers calls that Lint
-     * resolves to the wrong overload: against the compiled Material3 1.4.0 library,
-     * `Card(onClick = ...) { }` resolves to the `Card(modifier, ...)` overload, which has no
-     * `onClick` parameter.
+     * The resolved method's argument mapping is used first. Two problems of compiled Kotlin
+     * libraries are handled:
+     *
+     * - A parameter whose type is a value class (for example `size: Dp`) loses its name in the
+     *   compiled library and appears as `p`, `p0`, ... When the caller passes [kotlinNames], the
+     *   Kotlin parameter names of the resolved overload in declaration order (without the
+     *   extension receiver), such a parameter is found by its position.
+     * - Lint can resolve a call to the wrong overload: against the compiled Material3 1.4.0
+     *   library, `Card(onClick = ...) { }` resolves to the `Card(modifier, ...)` overload,
+     *   which has no `onClick` parameter. When the mapping finds nothing, an argument written by
+     *   name in the Kotlin source (`name = ...`) is used.
      */
-    fun argument(context: JavaContext, call: UCallExpression, name: String): UExpression? =
-        mappedArgument(context, call, name) ?: namedArgumentInSource(call, name)
+    fun argument(
+        context: JavaContext,
+        call: UCallExpression,
+        name: String,
+        kotlinNames: List<String>? = null,
+    ): UExpression? = mappedArgument(context, call, name, kotlinNames) ?: namedArgumentInSource(call, name)
 
-    private fun mappedArgument(context: JavaContext, call: UCallExpression, name: String): UExpression? {
+    /**
+     * Returns the value parameters of [method] without the extension receiver (`$this$...`) and
+     * without the parameters the Compose compiler adds (`$composer`, `$changed`, `$default`).
+     */
+    fun valueParameters(method: PsiMethod): List<PsiParameter> =
+        method.parameterList.parameters.filterNot { it.name.startsWith("$") }
+
+    private fun mappedArgument(
+        context: JavaContext,
+        call: UCallExpression,
+        name: String,
+        kotlinNames: List<String>?,
+    ): UExpression? {
         val method = call.resolve() ?: return null
-        val parameter = method.parameterList.parameters.firstOrNull { it.name == name } ?: return null
+        val parameter = method.parameterList.parameters.firstOrNull { it.name == name }
+            ?: positionalParameter(method, name, kotlinNames)
+            ?: return null
         return context.evaluator.computeArgumentMapping(call, method)
             .entries
             .firstOrNull { it.value == parameter }
             ?.key
+    }
+
+    /** Finds the parameter for [name] by its position, only when its compiled name was lost. */
+    private fun positionalParameter(method: PsiMethod, name: String, kotlinNames: List<String>?): PsiParameter? {
+        val index = kotlinNames?.indexOf(name)?.takeIf { it >= 0 } ?: return null
+        val parameter = valueParameters(method).getOrNull(index) ?: return null
+        return parameter.takeIf { SYNTHETIC_NAME.matches(it.name) }
     }
 
     private fun namedArgumentInSource(call: UCallExpression, name: String): UExpression? {

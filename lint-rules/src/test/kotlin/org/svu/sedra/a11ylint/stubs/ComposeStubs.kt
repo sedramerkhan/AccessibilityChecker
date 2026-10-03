@@ -29,6 +29,10 @@ private val runtimeStubs = kotlin(
 
     interface State<out T> { val value: T }
     interface MutableState<T> : State<T> { override var value: T }
+    inline operator fun <T> State<T>.getValue(thisObj: Any?, property: kotlin.reflect.KProperty<*>): T = value
+    inline operator fun <T> MutableState<T>.setValue(thisObj: Any?, property: kotlin.reflect.KProperty<*>, value: T) {
+        this.value = value
+    }
 
     @Composable inline fun <T> remember(crossinline calculation: () -> T): T = calculation()
     @Composable inline fun <T> remember(key1: Any?, crossinline calculation: () -> T): T = calculation()
@@ -160,9 +164,24 @@ private val semanticsStubs = kotlin(
     var SemanticsPropertyReceiver.progressBarRangeInfo: ProgressBarRangeInfo
         get() = TODO()
         set(value) {}
+    var SemanticsPropertyReceiver.selected: Boolean
+        get() = TODO()
+        set(value) {}
+    var SemanticsPropertyReceiver.toggleableState: androidx.compose.ui.state.ToggleableState
+        get() = TODO()
+        set(value) {}
 
     fun SemanticsPropertyReceiver.heading() {}
     fun SemanticsPropertyReceiver.error(description: String) {}
+    """,
+).indented()
+
+private val toggleableStateStubs = kotlin(
+    "src/androidx/compose/ui/state/ToggleableState.kt",
+    """
+    package androidx.compose.ui.state
+
+    enum class ToggleableState { On, Off, Indeterminate }
     """,
 ).indented()
 
@@ -875,6 +894,7 @@ val composeStubs: Array<TestFile> = arrayOf(
     coroutineStubs,
     uiStubs,
     semanticsStubs,
+    toggleableStateStubs,
     pointerStubs,
     drawStubs,
     graphicsStubs,

@@ -277,11 +277,19 @@ private val textStubs = kotlin(
     import androidx.compose.ui.text.font.FontWeight
     import androidx.compose.ui.unit.TextUnit
 
+    class TextLayoutResult
+
     class TextStyle(
         val color: Color = Color.Unspecified,
         val fontSize: TextUnit = TextUnit.Unspecified,
         val fontWeight: FontWeight? = null,
-    )
+    ) {
+        fun copy(
+            color: Color = this.color,
+            fontSize: TextUnit = this.fontSize,
+            fontWeight: FontWeight? = this.fontWeight,
+        ): TextStyle = TODO()
+    }
     """,
 ).indented()
 
@@ -290,12 +298,36 @@ private val fontStubs = kotlin(
     """
     package androidx.compose.ui.text.font
 
+    class FontStyle
+    class FontFamily
+
     class FontWeight(val weight: Int) {
         companion object {
             val Normal = FontWeight(400)
             val Medium = FontWeight(500)
             val SemiBold = FontWeight(600)
             val Bold = FontWeight(700)
+            val ExtraBold = FontWeight(800)
+            val Black = FontWeight(900)
+            val W700 = FontWeight(700)
+            val W800 = FontWeight(800)
+            val W900 = FontWeight(900)
+        }
+    }
+    """,
+).indented()
+
+private val textStyleStubs = kotlin(
+    "src/androidx/compose/ui/text/style/TextStyles.kt",
+    """
+    package androidx.compose.ui.text.style
+
+    class TextDecoration
+    class TextAlign
+    class TextOverflow {
+        companion object {
+            val Clip = TextOverflow()
+            val Ellipsis = TextOverflow()
         }
     }
     """,
@@ -516,8 +548,14 @@ private val material3Stubs = kotlin(
     import androidx.compose.ui.graphics.Color
     import androidx.compose.ui.graphics.painter.Painter
     import androidx.compose.ui.graphics.vector.ImageVector
+    import androidx.compose.ui.text.TextLayoutResult
     import androidx.compose.ui.text.TextStyle
+    import androidx.compose.ui.text.font.FontFamily
+    import androidx.compose.ui.text.font.FontStyle
     import androidx.compose.ui.text.font.FontWeight
+    import androidx.compose.ui.text.style.TextAlign
+    import androidx.compose.ui.text.style.TextDecoration
+    import androidx.compose.ui.text.style.TextOverflow
     import androidx.compose.ui.unit.TextUnit
 
     @Composable
@@ -542,7 +580,18 @@ private val material3Stubs = kotlin(
         modifier: Modifier = Modifier,
         color: Color = Color.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
+        fontStyle: FontStyle? = null,
         fontWeight: FontWeight? = null,
+        fontFamily: FontFamily? = null,
+        letterSpacing: TextUnit = TextUnit.Unspecified,
+        textDecoration: TextDecoration? = null,
+        textAlign: TextAlign? = null,
+        lineHeight: TextUnit = TextUnit.Unspecified,
+        overflow: TextOverflow = TextOverflow.Clip,
+        softWrap: Boolean = true,
+        maxLines: Int = Int.MAX_VALUE,
+        minLines: Int = 1,
+        onTextLayout: ((TextLayoutResult) -> Unit)? = null,
         style: TextStyle = TextStyle(),
     ) {}
 
@@ -676,6 +725,22 @@ private val material3Stubs = kotlin(
     ) {}
 
     @Composable
+    fun CenterAlignedTopAppBar(
+        title: @Composable () -> Unit,
+        modifier: Modifier = Modifier,
+        navigationIcon: @Composable () -> Unit = {},
+        actions: @Composable RowScope.() -> Unit = {},
+    ) {}
+
+    @Composable
+    fun LargeTopAppBar(
+        title: @Composable () -> Unit,
+        modifier: Modifier = Modifier,
+        navigationIcon: @Composable () -> Unit = {},
+        actions: @Composable RowScope.() -> Unit = {},
+    ) {}
+
+    @Composable
     fun ModalBottomSheet(
         onDismissRequest: () -> Unit,
         modifier: Modifier = Modifier,
@@ -713,6 +778,62 @@ private val material3Stubs = kotlin(
         val typography: Typography
             @Composable get() = TODO()
         val colorScheme: ColorScheme
+            @Composable get() = TODO()
+    }
+    """,
+).indented()
+
+private val material2Stubs = kotlin(
+    "src/androidx/compose/material/Material.kt",
+    """
+    package androidx.compose.material
+
+    import androidx.compose.runtime.Composable
+    import androidx.compose.ui.Modifier
+    import androidx.compose.ui.graphics.Color
+    import androidx.compose.ui.text.TextLayoutResult
+    import androidx.compose.ui.text.TextStyle
+    import androidx.compose.ui.text.font.FontFamily
+    import androidx.compose.ui.text.font.FontStyle
+    import androidx.compose.ui.text.font.FontWeight
+    import androidx.compose.ui.text.style.TextAlign
+    import androidx.compose.ui.text.style.TextDecoration
+    import androidx.compose.ui.text.style.TextOverflow
+    import androidx.compose.ui.unit.TextUnit
+
+    @Composable
+    fun Text(
+        text: String,
+        modifier: Modifier = Modifier,
+        color: Color = Color.Unspecified,
+        fontSize: TextUnit = TextUnit.Unspecified,
+        fontStyle: FontStyle? = null,
+        fontWeight: FontWeight? = null,
+        fontFamily: FontFamily? = null,
+        letterSpacing: TextUnit = TextUnit.Unspecified,
+        textDecoration: TextDecoration? = null,
+        textAlign: TextAlign? = null,
+        lineHeight: TextUnit = TextUnit.Unspecified,
+        overflow: TextOverflow = TextOverflow.Clip,
+        softWrap: Boolean = true,
+        maxLines: Int = Int.MAX_VALUE,
+        minLines: Int = 1,
+        onTextLayout: ((TextLayoutResult) -> Unit)? = null,
+        style: TextStyle = TextStyle(),
+    ) {}
+
+    class Typography(
+        val h1: TextStyle = TextStyle(),
+        val h2: TextStyle = TextStyle(),
+        val h3: TextStyle = TextStyle(),
+        val h4: TextStyle = TextStyle(),
+        val h5: TextStyle = TextStyle(),
+        val h6: TextStyle = TextStyle(),
+        val body1: TextStyle = TextStyle(),
+    )
+
+    object MaterialTheme {
+        val typography: Typography
             @Composable get() = TODO()
     }
     """,
@@ -763,6 +884,7 @@ val composeStubs: Array<TestFile> = arrayOf(
     unitStubs,
     textStubs,
     fontStubs,
+    textStyleStubs,
     resourceStubs,
     previewStubs,
     foundationStubs,
@@ -771,6 +893,7 @@ val composeStubs: Array<TestFile> = arrayOf(
     layoutStubs,
     lazyStubs,
     material3Stubs,
+    material2Stubs,
     iconsStubs,
     filledIconsStubs,
 )

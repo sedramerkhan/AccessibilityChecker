@@ -6,10 +6,6 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.UElement
-import org.jetbrains.uast.UExpression
-import org.jetbrains.uast.UParenthesizedExpression
-import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.svu.sedra.a11ylint.taxonomy.A11yIssues
 import org.svu.sedra.a11ylint.taxonomy.Priority
 import org.svu.sedra.a11ylint.util.Clickables
@@ -32,14 +28,14 @@ class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         if (!ComposeCalls.isCall(node, Clickables.clickableModifiers)) return
-        val top = chainTop(node)
+        val top = ModifierChain.outermostExpression(node)
         val calls = ModifierChain.calls(top)
         val index = calls.indexOfFirst { it.sourcePsi == node.sourcePsi }
         if (index < 0) return
         // One report per chain: only the first click or toggle modifier is checked.
         if (calls.take(index).any { ComposeCalls.isCall(it, Clickables.clickableModifiers) }) return
         if (calls.any { ComposeCalls.isCall(it, MINIMUM_SIZE_MODIFIERS) }) return
-        val receiver = receivingElement(top) as? UCallExpression
+        val receiver = ModifierChain.receivingElement(top) as? UCallExpression
         if (receiver != null && Clickables.isMaterialClickable(context, receiver)) return
 
         val small = Axis.entries.mapNotNull { axis ->
@@ -61,31 +57,6 @@ class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
                 "Clickable element is only $description, smaller than the 48dp minimum touch target",
             ),
         )
-    }
-
-    /**
-     * Returns the whole modifier expression that contains [call]: walks up through qualified
-     * expressions, parentheses and `then(...)` arguments.
-     */
-    private fun chainTop(call: UCallExpression): UExpression {
-        var top: UExpression = call
-        while (true) {
-            val parent = top.uastParent
-            top = when {
-                parent is UQualifiedReferenceExpression -> parent
-                parent is UParenthesizedExpression -> parent
-                parent is UCallExpression && ComposeCalls.name(parent) == "then" &&
-                    parent.valueArguments.any { it.sourcePsi == top.sourcePsi } -> parent
-                else -> return top
-            }
-        }
-    }
-
-    /** Returns the element that receives the modifier expression [top], skipping parentheses. */
-    private fun receivingElement(top: UExpression): UElement? {
-        var parent = top.uastParent
-        while (parent is UParenthesizedExpression) parent = parent.uastParent
-        return parent
     }
 
     private fun format(dp: Float): String =

@@ -6,9 +6,11 @@ import com.intellij.psi.PsiNamedElement
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULocalVariable
+import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.UastBinaryOperator
@@ -36,6 +38,35 @@ object ModifierChain {
     /** Returns the expression passed as the `modifier` argument of a composable call. */
     fun modifierArgument(context: JavaContext, call: UCallExpression): UExpression? =
         ComposeCalls.argument(context, call, "modifier")
+
+    /**
+     * Returns the whole modifier expression that contains the modifier call [call]: walks up
+     * through qualified expressions, parentheses and `then(...)` arguments. For
+     * `Modifier.size(20.dp).clickable { }` and the `clickable` call, this is the full chain.
+     */
+    fun outermostExpression(call: UCallExpression): UExpression {
+        var top: UExpression = call
+        while (true) {
+            val parent = top.uastParent
+            top = when {
+                parent is UQualifiedReferenceExpression -> parent
+                parent is UParenthesizedExpression -> parent
+                parent is UCallExpression && ComposeCalls.name(parent) == "then" &&
+                    parent.valueArguments.any { it.sourcePsi == top.sourcePsi } -> parent
+                else -> return top
+            }
+        }
+    }
+
+    /**
+     * Returns the element that receives the modifier expression [expression] (usually the
+     * composable call it is passed to), skipping parentheses.
+     */
+    fun receivingElement(expression: UExpression): UElement? {
+        var parent = expression.uastParent
+        while (parent is UParenthesizedExpression) parent = parent.uastParent
+        return parent
+    }
 
     /** Returns the modifier calls in source order, for example `[size, clickable, semantics]`. */
     fun calls(expression: UExpression?): List<UCallExpression> {

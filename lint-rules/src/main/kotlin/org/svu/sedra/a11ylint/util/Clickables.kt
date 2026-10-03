@@ -62,13 +62,20 @@ object Clickables {
      * Material container called with `onClick` or `onCheckedChange`, or any composable whose
      * `modifier` argument contains a click or toggle modifier.
      */
-    fun isClickableElement(context: JavaContext, call: UCallExpression): Boolean {
+    fun isClickableElement(context: JavaContext, call: UCallExpression): Boolean =
+        isMaterialClickable(context, call) ||
+            hasClickableModifier(ModifierChain.modifierArgument(context, call))
+
+    /**
+     * Returns true when [call] is a Material clickable component, or a Material container
+     * called with `onClick` or `onCheckedChange`. These components handle the click and set
+     * the minimum touch target size themselves.
+     */
+    fun isMaterialClickable(context: JavaContext, call: UCallExpression): Boolean {
         if (ComposeCalls.isCall(call, clickableComponents)) return true
-        if (ComposeCalls.isCall(call, clickableContainers)) {
-            return ComposeCalls.argument(context, call, "onClick") != null ||
-                ComposeCalls.argument(context, call, "onCheckedChange") != null
-        }
-        return hasClickableModifier(ModifierChain.modifierArgument(context, call))
+        if (!ComposeCalls.isCall(call, clickableContainers)) return false
+        return ComposeCalls.argument(context, call, "onClick") != null ||
+            ComposeCalls.argument(context, call, "onCheckedChange") != null
     }
 
     /** Returns true when a modifier expression sets `contentDescription` or `text` in semantics. */

@@ -1,6 +1,7 @@
 package org.svu.sedra.a11ylint.util
 
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
+import org.junit.Assert.assertEquals
 import org.svu.sedra.a11ylint.testing.UtilityProbeTest
 
 class ComposeCallsTest : UtilityProbeTest() {
@@ -111,5 +112,12 @@ class ComposeCallsTest : UtilityProbeTest() {
             "c: lambda with Icon",
             "d: none",
         )
+    }
+
+    fun testMangledJvmNamesBecomeKotlinNames() {
+        // Names as Lint sees them in the compiled Compose libraries.
+        assertEquals("Icon", ComposeCalls.declaredName("Icon-ww6aTOc"))
+        assertEquals("clickable", ComposeCalls.declaredName("clickable-XHw0xAI"))
+        assertEquals("Image", ComposeCalls.declaredName("Image"))
     }
 }

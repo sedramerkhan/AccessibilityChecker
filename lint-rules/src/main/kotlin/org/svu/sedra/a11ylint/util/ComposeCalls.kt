@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
@@ -44,13 +45,23 @@ object ComposeCalls {
         val owner = method.containingClass ?: return emptyList()
         val ownerName = owner.qualifiedName ?: return emptyList()
         if (method.isConstructor) return listOf(ownerName)
-        val names = mutableListOf("$ownerName.${method.name}")
+        val name = declaredName(method.name)
+        val names = mutableListOf("$ownerName.$name")
         val packageName = packageName(method)
         if (method.hasModifierProperty(PsiModifier.STATIC) && packageName != null) {
-            names += if (packageName.isEmpty()) method.name else "$packageName.${method.name}"
+            names += if (packageName.isEmpty()) name else "$packageName.$name"
         }
         return names
     }
+
+    /**
+     * Returns the Kotlin name for a JVM method name. Kotlin mangles the JVM name of a function
+     * that takes a value class parameter by adding a hash, so the compiled Material3 `Icon`
+     * (which takes `tint: Color`) is `Icon-ww6aTOc` and `clickable` (which takes `role: Role?`)
+     * is mangled too. A Kotlin identifier cannot contain `-`, so everything from the first `-`
+     * is removed.
+     */
+    fun declaredName(jvmName: String): String = jvmName.substringBefore('-')
 
     /** Returns the package that declares [element], or null when it cannot be found. */
     fun packageName(element: PsiElement): String? =
@@ -58,22 +69,40 @@ object ComposeCalls {
 
     /**
      * Returns the declared name of the called function. This uses the resolved method when it
-     * can, so an import alias (`import ...clickable as click`) still gives `clickable`.
+     * can, so an import alias (`import ...clickable as click`) still gives `clickable`. JVM name
+     * mangling is removed (see [declaredName]).
      */
-    fun name(call: UCallExpression): String? = call.resolve()?.name ?: call.methodName
+    fun name(call: UCallExpression): String? =
+        call.resolve()?.name?.let(::declaredName) ?: call.methodName
 
     /**
      * Returns the argument expression passed for the parameter [name], whether the argument
-     * was written by name or by position. Returns null when the argument is not passed or the
-     * call cannot be resolved.
+     * was written by name or by position. Returns null when the argument is not passed.
+     *
+     * The resolved method's argument mapping is used first. When it finds nothing, an argument
+     * written by name in the Kotlin source (`name = ...`) is used. This covers calls that Lint
+     * resolves to the wrong overload: against the compiled Material3 1.4.0 library,
+     * `Card(onClick = ...) { }` resolves to the `Card(modifier, ...)` overload, which has no
+     * `onClick` parameter.
      */
-    fun argument(context: JavaContext, call: UCallExpression, name: String): UExpression? {
+    fun argument(context: JavaContext, call: UCallExpression, name: String): UExpression? =
+        mappedArgument(context, call, name) ?: namedArgumentInSource(call, name)
+
+    private fun mappedArgument(context: JavaContext, call: UCallExpression, name: String): UExpression? {
         val method = call.resolve() ?: return null
         val parameter = method.parameterList.parameters.firstOrNull { it.name == name } ?: return null
         return context.evaluator.computeArgumentMapping(call, method)
             .entries
             .firstOrNull { it.value == parameter }
             ?.key
+    }
+
+    private fun namedArgumentInSource(call: UCallExpression, name: String): UExpression? {
+        val ktCall = call.sourcePsi as? KtCallElement ?: return null
+        val expression = ktCall.valueArguments
+            .firstOrNull { it.getArgumentName()?.asName?.asString() == name }
+            ?.getArgumentExpression() ?: return null
+        return call.valueArguments.firstOrNull { it.sourcePsi == expression }
     }
 
     /**

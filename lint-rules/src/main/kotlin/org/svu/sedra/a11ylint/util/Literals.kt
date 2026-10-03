@@ -98,8 +98,12 @@ object Literals {
         return name == unit && ComposeCalls.packageName(resolved) == UNIT_PACKAGE
     }
 
-    /** Turns a getter or setter name such as `getDp` into the property name `dp`. */
-    internal fun propertyName(accessorName: String): String {
+    /**
+     * Turns a getter or setter name such as `getDp` into the property name `dp`. A mangled JVM
+     * name such as `setRole-kuIjeqM` gives `role` (see [ComposeCalls.declaredName]).
+     */
+    internal fun propertyName(jvmAccessorName: String): String {
+        val accessorName = ComposeCalls.declaredName(jvmAccessorName)
         val prefix = listOf("get", "set").firstOrNull {
             accessorName.length > it.length &&
                 accessorName.startsWith(it) &&

@@ -113,5 +113,6 @@ class LiteralsTest : UtilityProbeTest() {
         assertEquals("contentDescription", Literals.propertyName("setContentDescription"))
         assertEquals("settings", Literals.propertyName("settings"))
         assertEquals("get", Literals.propertyName("get"))
+        assertEquals("role", Literals.propertyName("setRole-kuIjeqM"))
     }
 }

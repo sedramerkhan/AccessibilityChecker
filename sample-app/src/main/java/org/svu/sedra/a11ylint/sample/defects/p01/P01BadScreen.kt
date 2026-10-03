@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import org.svu.sedra.a11ylint.sample.R
 
 /**
@@ -43,7 +44,7 @@ fun P01BadScreen(onAction: () -> Unit) {
         Icon(
             painter = icon,
             contentDescription = null, // EXPECT: ComposeMissingContentDescription
-            modifier = Modifier.clickable { onAction() },
+            modifier = Modifier.clickable(role = Role.Button) { onAction() },
         )
 
         // A toggleable image.
@@ -54,7 +55,7 @@ fun P01BadScreen(onAction: () -> Unit) {
         )
 
         // A clickable container whose only content is an icon, nested in a Row.
-        Box(modifier = Modifier.clickable { onAction() }) {
+        Box(modifier = Modifier.clickable(role = Role.Button) { onAction() }) {
             Row {
                 Icon(icon, contentDescription = null) // EXPECT: ComposeMissingContentDescription
             }

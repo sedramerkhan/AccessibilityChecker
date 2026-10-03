@@ -13,6 +13,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import org.svu.sedra.a11ylint.sample.R
 
@@ -34,13 +35,13 @@ fun O01GoodScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .minimumInteractiveComponentSize()
                 .size(24.dp)
-                .clickable { onAction() },
+                .clickable(role = Role.Button) { onAction() },
         )
 
         // Padding inside the clickable area makes it 48dp around a 20dp icon.
         Box(
             modifier = Modifier
-                .clickable { onAction() }
+                .clickable(role = Role.Button) { onAction() }
                 .padding(14.dp)
                 .size(20.dp),
         ) {
@@ -52,7 +53,7 @@ fun O01GoodScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clickable { onAction() },
+                .clickable(role = Role.Button) { onAction() },
         ) {
             Icon(icon, contentDescription = "Settings")
         }

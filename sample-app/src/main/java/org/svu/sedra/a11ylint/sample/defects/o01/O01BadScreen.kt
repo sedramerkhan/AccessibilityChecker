@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import org.svu.sedra.a11ylint.sample.R
 
@@ -36,13 +37,13 @@ fun O01BadScreen(onAction: () -> Unit) {
             contentDescription = "Close",
             modifier = Modifier
                 .size(24.dp) // EXPECT: ComposeSmallTouchTarget
-                .clickable { onAction() },
+                .clickable(role = Role.Button) { onAction() },
         )
 
         // The size is set after the clickable, which still limits its bounds.
         Box(
             modifier = Modifier
-                .clickable { onAction() }
+                .clickable(role = Role.Button) { onAction() }
                 .size(32.dp), // EXPECT: ComposeSmallTouchTarget
         ) {
             Icon(icon, contentDescription = "Open")
@@ -53,7 +54,7 @@ fun O01BadScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .size(48.dp) // EXPECT: ComposeSmallTouchTarget
                 .padding(8.dp)
-                .clickable { onAction() },
+                .clickable(role = Role.Button) { onAction() },
         ) {
             Icon(icon, contentDescription = "Share")
         }
@@ -70,7 +71,7 @@ fun O01BadScreen(onAction: () -> Unit) {
 
         // The size comes from a local value.
         val small = Modifier.requiredSize(20.dp) // EXPECT: ComposeSmallTouchTarget
-        Box(modifier = small.clickable { onAction() }) {
+        Box(modifier = small.clickable(role = Role.Button) { onAction() }) {
             Icon(icon, contentDescription = "More")
         }
     }

@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import org.svu.sedra.a11ylint.sample.R
 
 /**
@@ -38,7 +39,7 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
         }
 
         // A clickable row that contains a button.
-        Row(modifier = Modifier.clickable { onOpen() }) {
+        Row(modifier = Modifier.clickable(role = Role.Button) { onOpen() }) {
             Text("Running shoes")
             Button(onClick = onShare) { // EXPECT: ComposeNestedClickable
                 Text("Buy")

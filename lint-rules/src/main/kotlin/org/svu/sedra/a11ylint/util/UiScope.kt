@@ -5,9 +5,16 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 
-/** Identifies emitted Compose UI and excludes state/effect implementation lambdas. */
+/** Identifies emitted Compose UI and excludes state, effect and coroutine lambdas. */
 object UiScope {
-    private val nonUiLambdaCalls = setOf(
+    /** Fully qualified name of the Compose `@Preview` annotation. */
+    const val PREVIEW = "androidx.compose.ui.tooling.preview.Preview"
+
+    /**
+     * Functions whose lambda runs outside UI emission: state holders, effects and coroutine
+     * builders. Matched by the declared function name.
+     */
+    val nonUiLambdaCalls = setOf(
         "remember",
         "rememberSaveable",
         "derivedStateOf",
@@ -19,38 +26,30 @@ object UiScope {
         "async",
     )
 
-    /** Returns true when a node is inside a composable function and emitted UI scope. */
+    /**
+     * Returns true when [node] is inside a function annotated `@Composable` and not inside the
+     * lambda of a call in [nonUiLambdaCalls]. The search stops at the nearest enclosing function,
+     * so a composable lambda inside a non-composable function (for example `setContent { }` in
+     * an Activity) is not UI scope.
+     */
     fun isInUiScope(node: UElement): Boolean {
-        var current: UElement? = node
-        var composable = false
-        while (current != null) {
-            if (current is UMethod) {
-                composable = current.hasAnnotation("androidx.compose.runtime.Composable")
-                break
+        for (element in ancestors(node)) {
+            if (element is UMethod) return element.hasAnnotation(ComposeCalls.COMPOSABLE)
+            if (element is ULambdaExpression) {
+                val call = element.uastParent as? UCallExpression
+                if (call != null && ComposeCalls.name(call) in nonUiLambdaCalls) return false
             }
-            if (current is ULambdaExpression && current.uastParent is UCallExpression) {
-                val call = current.uastParent as UCallExpression
-                if (call.methodName in nonUiLambdaCalls) return false
-            }
-            current = current.uastParent
         }
-        return composable
+        return false
     }
 
-    /** Returns true when a declaration has the Preview annotation. */
+    /** Returns true when the function enclosing [node] is annotated `@Preview`. */
     fun isPreview(node: UElement): Boolean =
-        ancestors(node).filterIsInstance<UMethod>().any {
-            it.hasAnnotation("androidx.compose.ui.tooling.preview.Preview")
-        }
+        ancestors(node).filterIsInstance<UMethod>().firstOrNull()?.hasAnnotation(PREVIEW) == true
 
     private fun UMethod.hasAnnotation(name: String): Boolean =
-        annotations.any { it.qualifiedName == name }
+        uAnnotations.any { it.qualifiedName == name }
 
-    private fun ancestors(node: UElement): Sequence<UElement> = sequence {
-        var current: UElement? = node
-        while (current != null) {
-            yield(current)
-            current = current.uastParent
-        }
-    }
+    private fun ancestors(node: UElement): Sequence<UElement> =
+        generateSequence(node) { it.uastParent }
 }

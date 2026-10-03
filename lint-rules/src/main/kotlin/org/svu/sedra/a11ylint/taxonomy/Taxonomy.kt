@@ -4,6 +4,7 @@ import com.android.tools.lint.detector.api.Issue
 import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
 import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
+import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 
 enum class Pour {
     PERCEIVABLE,
@@ -57,6 +58,14 @@ object Taxonomy {
             pour = Pour.OPERABLE,
             wcag = listOf("2.4.3", "4.1.2"),
             detection = DetectionType.STATIC,
+            priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = U01MissingHeadingDetector.TAXONOMY_ID,
+            issue = U01MissingHeadingDetector.ISSUE,
+            pour = Pour.UNDERSTANDABLE,
+            wcag = listOf("1.3.1", "2.4.6"),
+            detection = DetectionType.STATIC_LLM,
             priority = Priority.CRITICAL,
         ),
     )

@@ -41,8 +41,9 @@ In progress.
 | P-01 `ComposeMissingContentDescription` | Done | 6 (7 reports) | 6 | 6, all matched |
 | O-01 `ComposeSmallTouchTarget` | Done | 5 | 5 (13 cases) | 5, all matched |
 | O-03 `ComposeNestedClickable` | Done | 5 (8 reports) | 5 | 4, all matched |
-| U-01 `ComposeMissingHeading` | Next | | | |
-| U-02, U-05, R-01 | To do | | | |
+| U-01 `ComposeMissingHeading` | Done | 5 (6 reports) | 5 | 4, all matched |
+| U-02 `ComposeMissingStateDescription` | Next | | | |
+| U-05, R-01 | To do | | | |
 
 Notes:
 - P-01 first matched nothing on the sample app although all unit tests passed. The compiled Compose libraries use mangled JVM names (`Icon-ww6aTOc`) and Lint resolves `Card(onClick = ...)` to the wrong overload. Both are handled in `ComposeCalls` (see DECISIONS, 2026-10-03). From now on the sample app check is required for every rule.
@@ -50,3 +51,4 @@ Notes:
 - `TaxonomyTest` checks taxonomy entries against their issues and the registry.
 - O-01 also first failed on the sample app: compiled `Dp` parameters lose their names (`p`). `ComposeCalls.argument` now matches them by position (see DECISIONS). New shared helper: `util/ModifierSizes` (literal sizes and paddings along a modifier chain).
 - O-03 matched the sample app on the first run. Open question for Sedra: should `Checkbox`/`Switch`/`RadioButton` with a callback inside a clickable row also count as nested clickables (see DECISIONS)?
+- U-01: Material3 top app bars do not mark their title as a heading. The rule ignores them as CLAUDE.md says. Question for Sedra: keep ignoring or report them? New shared helper: `util/TextStyles` (typography style, font size, bold).

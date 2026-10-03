@@ -86,3 +86,14 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Selection controls are not included.** CLAUDE.md lists `Modifier.clickable`, `Button`, `IconButton` and `Card(onClick)`. A `Checkbox` or `Switch` with a callback inside a clickable `Row` is a closely related defect (the usual fix is `Modifier.toggleable` on the row and `onCheckedChange = null` on the checkbox), but it is not in the spec and adding it could raise the false positive rate. Left out for now. Question for Sedra.
 - **Overlap with O-07.** O-07 (Minor, Milestone 4) will report a clickable container that has two or more clickable children and no `customActions`. That warning is on the container, while O-03 warns on each child, so they are different nodes. If this gives too many warnings for one card, the precedence will be decided with Sedra when O-07 is built.
 - **Element without a modifier argument.** A clickable modifier in a local `val` that is passed to a container (`Box(clickableModifier)`) is followed through `ModifierChain`, so the container is still recognised as clickable.
+
+### U-01 ComposeMissingHeading
+
+- **Material3 top app bars do not mark their title as a heading.** Checked in the Material3 1.4.0 sources (`AppBar.kt`): the title slot gets `isTraversalGroup` and is hidden from accessibility while the bar collapses, but `heading()` is never set anywhere in Material3. CLAUDE.md asks to ignore `TopAppBar` titles, so the rule ignores Text inside any top app bar, but this means a real heading is not reported there. Question for Sedra: keep ignoring them, or report them (the title is usually the main heading of the screen)?
+- **Heading styles.** The Material 3 styles from CLAUDE.md (`display*`, `headline*`, `titleLarge`). Material 2 `h1` to `h6` are added because they are the Material 2 equivalents. `titleMedium` and `titleSmall` are not included: Material uses them for list item titles and card titles, which are usually not headings.
+- **Bold.** "Bold" means a weight of 700 or more, the CSS and WCAG meaning. `SemiBold` (600) does not count.
+- **20sp threshold.** As in CLAUDE.md. Kept as the constant `MIN_HEADING_SP`.
+- **Where the style is read.** The `style` argument must be a direct `MaterialTheme.typography.<style>` expression (optionally with `.copy(...)`), checked by resolving the property to the `androidx.compose.material3` or `androidx.compose.material` package. Size and weight are read from the Text arguments first and then from a `TextStyle(...)` or `.copy(...)` passed as `style`.
+- **Ignored containers.** Text inside a Material clickable component (the same list as P-01 and O-03) or a top app bar, anywhere above it in the same function.
+- **Report location.** The name of the `Text` call.
+- **Getter names.** A property resolved through its getter gives a lowercase name (`FontWeight.Bold` resolves to `getBold`, which gives `bold`), so font weight names are compared without case.

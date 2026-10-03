@@ -7,6 +7,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
+| U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 
 ---
 
@@ -196,3 +197,58 @@ Card(
 
 - `O03NestedClickableDetectorTest`: 5 positive tests (8 reports) and 5 negative tests.
 - Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (4 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports).
+
+---
+
+## U-01 · ComposeMissingHeading
+
+- **Taxonomy:** Understandable, Critical, STATIC_LLM (a candidate: whether the text is really a heading needs a judgement about intent).
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships, 2.4.6 Headings and Labels.
+- **Detector:** `detectors/understandable/U01MissingHeadingDetector.kt`
+- **Message:** `[U-01] Possible heading: this Text is styled like a heading (headlineSmall) but has no heading() semantics, so screen reader users cannot jump to it`. The part in brackets names the style, or the size, for example `24sp bold`.
+- **Reported at:** the name of the `Text` call.
+
+### What it flags
+
+A Material 3 or Material 2 `Text` that looks like a heading and whose own modifier has no `heading()` in `semantics { }` or `clearAndSetSemantics { }`. It looks like a heading when:
+
+1. its `style` is `MaterialTheme.typography.<style>` (also with `.copy(...)`) and the style is `displayLarge`, `displayMedium`, `displaySmall`, `headlineLarge`, `headlineMedium`, `headlineSmall` or `titleLarge` (Material 2: `h1` to `h6`), or
+2. its font size is at least 20sp and its font weight is bold (700 or more: `Bold`, `ExtraBold`, `Black`, `W700` to `W900`, or `FontWeight(700+)`). Size and weight are read from the `fontSize`/`fontWeight` arguments, or from a `TextStyle(...)` or `.copy(...)` passed as `style`.
+
+### What it ignores
+
+- Text with `heading()` in its own semantics.
+- Text inside a Material button, icon button or FAB (it is the button label).
+- Text inside a top app bar (`TopAppBar`, `CenterAlignedTopAppBar`, `MediumTopAppBar`, `LargeTopAppBar`, Material 2 `TopAppBar`). Note: Material3 does not mark these titles as headings (see DECISIONS).
+- Body, label and other title styles, large text that is not bold, and bold text below 20sp.
+- A style stored in a variable or passed in as a parameter.
+
+### Example
+
+Bad:
+
+```kotlin
+Text("Account settings", style = MaterialTheme.typography.headlineSmall)
+```
+
+Good:
+
+```kotlin
+Text(
+    text = "Account settings",
+    style = MaterialTheme.typography.headlineSmall,
+    modifier = Modifier.semantics { heading() },
+)
+```
+
+### Known limitations
+
+- Large numbers, prices or display text in a heading style are reported although they are not headings. The message says "Possible", and Phase 3 will judge intent.
+- `heading()` on a parent (for example a `Row` with `mergeDescendants = true` that holds the title) is not considered.
+- Styles from variables, custom theme objects (`AppTheme.typography.title`) and a theme's own `TextStyle` constants are not recognised.
+
+### Tests and sample
+
+- `U01MissingHeadingDetectorTest`: 5 positive tests (6 reports) and 5 negative tests.
+- Sample: `sample-app/.../defects/u01/U01BadScreen.kt` (4 `// EXPECT` lines) and `U01GoodScreen.kt` (no reports).

@@ -158,3 +158,33 @@ fun Tile(modifier: Modifier) = Box(modifier) { Button(onClick = {}) { Text("Go")
 
 Tile(Modifier.clickable { open() }) // not reported
 ```
+
+## U-01 ComposeMissingHeading
+
+### Text styles from variables or custom themes
+
+Only `MaterialTheme.typography.<style>` written in the call is recognised.
+
+```kotlin
+val titleStyle = MaterialTheme.typography.headlineSmall
+Text("Settings", style = titleStyle) // not reported
+Text("Settings", style = AppTheme.typography.screenTitle) // not reported
+```
+
+### Heading-styled text that is not a heading
+
+Big numbers and promotional text often use display or headline styles. They are reported as possible headings, and only a judgement about intent (Phase 3) can rule them out.
+
+```kotlin
+Text("42 steps", style = MaterialTheme.typography.displayLarge) // reported, but not a heading
+```
+
+### Heading set on a parent
+
+`heading()` is only looked for on the Text's own modifier.
+
+```kotlin
+Row(Modifier.semantics(mergeDescendants = true) { heading() }) {
+    Text("Inbox", style = MaterialTheme.typography.titleLarge) // reported
+}
+```

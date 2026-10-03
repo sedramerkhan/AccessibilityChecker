@@ -206,3 +206,18 @@ The rule only checks modifier-based clicks.
 ```kotlin
 IconButton(onClick = { favorite = !favorite }) { ... } // not reported; IconToggleButton is the fix
 ```
+
+## U-05 ComposeTextFieldWithoutLabel
+
+### Text fields that are not Material components
+
+`BasicTextField` and a project's own field wrapper are not checked.
+
+```kotlin
+BasicTextField(value = query, onValueChange = onQueryChange) // not reported
+AppTextField(value = query, onValueChange = onQueryChange) // not reported
+```
+
+### Text above the field
+
+A `Text` shown above the field looks like a label but is not linked to it, so the field is still reported. The rule cannot tell whether the developer meant the Text as the label.

@@ -105,3 +105,11 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Material components.** Only modifier-based clicks are checked, as in CLAUDE.md. A Material `IconButton` whose `onClick` flips a Boolean has the same problem (the fix is `IconToggleButton`), but it is not reported. A chain passed to a Material clickable component is also skipped.
 - **Report location.** The name of the `clickable` call, because the click handler is where the toggle happens.
 - **Shared code.** The code that finds the whole modifier chain around a modifier call (`outermostExpression`) and the element it is passed to (`receivingElement`) moved from O-01 into `ModifierChain`, so O-01 and U-02 use the same logic.
+
+### U-05 ComposeTextFieldWithoutLabel
+
+- **Overloads.** All six Material3 1.4.0 text field overloads (`TextField` and `OutlinedTextField` with `String`, `TextFieldValue` or `TextFieldState`) have a nullable `label` parameter, checked in the sources. The rule reads it with `ComposeCalls.argument`, so the named argument fallback also covers a wrong overload resolution.
+- **Missing label.** Not passed, or the literal `null`. Any other expression counts as a label, because its value is unknown.
+- **Semantics labels are not accepted.** A `contentDescription` in semantics gives a name to screen readers but no visible label. CLAUDE.md asks for the `label` argument, and WCAG 3.3.2 needs a visible label, so such fields are still reported.
+- **Message.** The message names the component and mentions the placeholder when one is set, so the developer sees why the placeholder is not enough.
+- **Material 2.** `androidx.compose.material.TextField` and `OutlinedTextField` are included; they have the same `label` parameter.

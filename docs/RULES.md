@@ -9,6 +9,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
+| U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 
 ---
 
@@ -308,3 +309,57 @@ Row(
 
 - `U02MissingStateDescriptionDetectorTest`: 4 positive tests and 4 negative tests (9 cases in the negative tests).
 - Sample: `sample-app/.../defects/u02/U02BadScreen.kt` (3 `// EXPECT` lines) and `U02GoodScreen.kt` (no reports).
+
+---
+
+## U-05 · ComposeTextFieldWithoutLabel
+
+- **Taxonomy:** Understandable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions.
+- **Detector:** `detectors/understandable/U05TextFieldWithoutLabelDetector.kt`
+- **Message:** `[U-05] TextField has no label, so screen reader users are not told what to enter`. When a placeholder is set, the message adds `(the placeholder disappears when the user types)`.
+- **Reported at:** the name of the text field call.
+
+### What it flags
+
+A Material 3 or Material 2 `TextField` or `OutlinedTextField` (every overload: `String`, `TextFieldValue` and `TextFieldState`) whose `label` argument is not passed or is the literal `null`. A `placeholder` alone does not count.
+
+### What it ignores
+
+- Fields with any `label` argument other than `null`, including a label passed in as a variable.
+- Functions with the same name in other packages.
+
+### Example
+
+Bad:
+
+```kotlin
+OutlinedTextField(
+    value = email,
+    onValueChange = onEmailChange,
+    placeholder = { Text("you@example.com") },
+)
+```
+
+Good:
+
+```kotlin
+OutlinedTextField(
+    value = email,
+    onValueChange = onEmailChange,
+    label = { Text("Email address") },
+    placeholder = { Text("you@example.com") },
+)
+```
+
+### Known limitations
+
+- A field labelled through `Modifier.semantics { contentDescription = ... }` is still reported. It has a name for screen readers but no visible label, so 3.3.2 is still not met. Decide with Sedra if this should change.
+- `BasicTextField` and custom field wrappers are not checked.
+- A visible `Text` above the field is not linked to the field and does not count as a label.
+
+### Tests and sample
+
+- `U05TextFieldWithoutLabelDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
+- Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (3 `// EXPECT` lines) and `U05GoodScreen.kt` (no reports).

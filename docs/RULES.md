@@ -7,6 +7,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
 | P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
 | P-03 | `ComposeLowContrastColors` | Warning (Major) | STATIC | 1.4.3 | Done |
+| P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
@@ -72,6 +73,35 @@ Only one level of container is checked. A background set two levels up, or a bac
 
 - `P03LowContrastColorsDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/p03/P03BadScreen.kt` and `P03GoodScreen.kt`.
+
+---
+
+## P-04 · ComposeTextSizeInDp
+
+- **Taxonomy:** Perceivable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 1.4.4 Resize Text.
+- **Detector:** `detectors/perceivable/P04TextSizeInDpDetector.kt`
+- **Message:** `[P-04] Text size is converted from a dp value, so it will not scale again when the user changes their system font size`.
+
+### What it flags
+
+A `fontSize` (on `Text` directly, or in a `TextStyle(...)`/`.copy(...)` passed as `style`) computed by calling `.toSp()` on a `Dp` value, for example `with(LocalDensity.current) { 16.dp.toSp() }` or `with(LocalDensity.current) { cardPadding.toSp() }`.
+
+### What it ignores
+
+- A literal or variable `sp` value.
+- A Material typography style with no `fontSize` override.
+- Any other expression as `fontSize` (its value is unknown, so it is not assumed to be a problem).
+
+### Known limitations
+
+Only a `with(density) { ... }` block or a bare `.toSp()` call is recognised. A `.toSp()` call made another way (for example `density.run { ... }`, or inside a separate function that returns the converted size) is not seen.
+
+### Tests and sample
+
+- `P04TextSizeInDpDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/p04/P04BadScreen.kt` and `P04GoodScreen.kt`.
 
 ---
 

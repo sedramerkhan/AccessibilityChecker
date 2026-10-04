@@ -6,6 +6,7 @@ import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P02DecorativeImageLabeledDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P03LowContrastColorsDetector
+import org.svu.sedra.a11ylint.detectors.perceivable.P04TextSizeInDpDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
@@ -62,6 +63,14 @@ object Taxonomy {
             issue = P03LowContrastColorsDetector.ISSUE,
             pour = Pour.PERCEIVABLE,
             wcag = listOf("1.4.3"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MAJOR,
+        ),
+        TaxonomyEntry(
+            id = P04TextSizeInDpDetector.TAXONOMY_ID,
+            issue = P04TextSizeInDpDetector.ISSUE,
+            pour = Pour.PERCEIVABLE,
+            wcag = listOf("1.4.4"),
             detection = DetectionType.STATIC,
             priority = Priority.MAJOR,
         ),

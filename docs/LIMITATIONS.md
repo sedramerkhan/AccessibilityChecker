@@ -249,6 +249,20 @@ val warningColor = if (isDark) Color(0xFFB0B0B0) else Color(0xFF909090)
 Text("Delete draft", color = warningColor) // not reported
 ```
 
+## P-04 ComposeTextSizeInDp
+
+### Conversion through another function or receiver
+
+Only a `with(density) { ... }` block or a bare `.toSp()` call in the `fontSize` expression itself is recognised.
+
+```kotlin
+fun pixelsToSp(dp: Dp, density: Density): TextUnit = density.run { dp.toSp() } // not recognised
+
+@Composable
+fun cardFontSize(): TextUnit = LocalDensity.current.run { 16.dp.toSp() }
+Text("Caption", fontSize = cardFontSize()) // not recognised
+```
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

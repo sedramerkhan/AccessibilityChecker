@@ -49,6 +49,12 @@ private val runtimeStubs = kotlin(
     interface ProduceStateScope<T> : MutableState<T>
     @Composable fun <T> produceState(initialValue: T, producer: suspend ProduceStateScope<T>.() -> Unit): State<T> = TODO()
     @Composable fun rememberCoroutineScope(): kotlinx.coroutines.CoroutineScope = TODO()
+
+    abstract class CompositionLocal<T> {
+        @Composable val current: T get() = TODO()
+    }
+    abstract class ProvidableCompositionLocal<T> : CompositionLocal<T>()
+    fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableCompositionLocal<T> = TODO()
     """,
 ).indented()
 
@@ -284,6 +290,26 @@ private val unitStubs = kotlin(
     val Float.sp: TextUnit get() = TODO()
     val Double.sp: TextUnit get() = TODO()
     val Int.sp: TextUnit get() = TODO()
+
+    interface FontScaling {
+        val fontScale: Float
+        fun Dp.toSp(): TextUnit
+    }
+    interface Density : FontScaling {
+        val density: Float
+    }
+    """,
+).indented()
+
+private val platformStubs = kotlin(
+    "src/androidx/compose/ui/platform/CompositionLocals.kt",
+    """
+    package androidx.compose.ui.platform
+
+    import androidx.compose.runtime.staticCompositionLocalOf
+    import androidx.compose.ui.unit.Density
+
+    val LocalDensity = staticCompositionLocalOf<Density> { TODO() }
     """,
 ).indented()
 
@@ -904,6 +930,7 @@ val composeStubs: Array<TestFile> = arrayOf(
     vectorStubs,
     painterStubs,
     unitStubs,
+    platformStubs,
     textStubs,
     fontStubs,
     textStyleStubs,

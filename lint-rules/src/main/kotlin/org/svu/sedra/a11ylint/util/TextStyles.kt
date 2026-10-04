@@ -83,7 +83,7 @@ object TextStyles {
     }
 
     /** The `TextStyle(...)` constructor call or `.copy(...)` call passed as `style`, if any. */
-    private fun styleCall(context: JavaContext, text: UCallExpression): UCallExpression? {
+    fun styleCall(context: JavaContext, text: UCallExpression): UCallExpression? {
         val style = Literals.unwrap(ComposeCalls.argument(context, text, "style"))
         val call = when (style) {
             is UCallExpression -> style

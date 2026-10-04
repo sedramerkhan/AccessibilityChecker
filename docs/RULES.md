@@ -5,12 +5,43 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | ID | Issue ID | Severity | Detection | WCAG | Status |
 |---|---|---|---|---|---|
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
+| P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
+
+---
+
+## P-02 · ComposeDecorativeImageLabeled
+
+- **Taxonomy:** Perceivable, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 1.1.1 Non-text Content.
+- **Detector:** `detectors/perceivable/P02DecorativeImageLabeledDetector.kt`
+- **Message:** `[P-02] Possible decorative image label repeats visible text`.
+
+### What it flags
+
+A non-interactive Material `Icon` or foundation `Image` with a non-empty literal `contentDescription` that equals or is contained in a direct sibling `Text` literal in the same content lambda.
+
+### What it ignores
+
+- Interactive images.
+- Resource, variable, or computed descriptions.
+- Different descriptions and visible text.
+- Text emitted by another composable function.
+
+### Known limitations
+
+Only direct sibling literal text is compared. Aliases, string resources, variables, and text in separately called composables are not followed.
+
+### Tests and sample
+
+- `P02DecorativeImageLabeledDetectorTest`: 2 positive and 4 negative cases.
+- Sample: `sample-app/.../defects/p02/P02BadScreen.kt` and `P02GoodScreen.kt`.
 
 ---
 

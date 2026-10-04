@@ -9,6 +9,12 @@
 
 ## 2026-10-03
 
+### P-02 Decorative image labels
+
+- Compare only direct sibling `Text` literals in the same content lambda.
+- Matching is case-insensitive and reports equality or containment in either direction.
+- Resource calls and variables remain unknown rather than being guessed.
+
 ### Build and Lint versions
 
 - **Registry `minApi = 14`.** Lint API 14 is AGP 8.0 (`CURRENT_API` is 16, which is AGP 8.7 and newer). The development apps and the evaluation apps may use an older AGP than this project, so the rules should still load there. Lint older than AGP 8.0 is not supported. Loading on older Lint is not tested yet; if a rule fails there, raise `minApi`. Alternative considered: `minApi = CURRENT_API`, which is safer but refuses to load on AGP 8.0 to 8.6.

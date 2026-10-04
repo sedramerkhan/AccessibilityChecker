@@ -8,6 +8,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
 | P-03 | `ComposeLowContrastColors` | Warning (Major) | STATIC | 1.4.3 | Done |
 | P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
+| P-06 | `ComposeMissingLiveRegion` | Warning (Major) | STATIC_LLM | 4.1.3 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
@@ -102,6 +103,35 @@ Only a `with(density) { ... }` block or a bare `.toSp()` call is recognised. A `
 
 - `P04TextSizeInDpDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/p04/P04BadScreen.kt` and `P04GoodScreen.kt`.
+
+---
+
+## P-06 · ComposeMissingLiveRegion
+
+- **Taxonomy:** Perceivable, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.3 Status Messages.
+- **Detector:** `detectors/perceivable/P06MissingLiveRegionDetector.kt`
+- **Message:** `[P-06] Possible live region: this text may change without a direct click, but screen readers are not told to announce the change`.
+
+### What it flags
+
+A `Text(text = s)` (or `Text(text = s.value)`) where `s` is a local declared with `mutableStateOf` in the same function, when at least one assignment to `s` in that function is not inside a direct click handler (`onClick`, `onCheckedChange` or `onValueChange`), and the Text has no `liveRegion` in its semantics. This covers a `LaunchedEffect`, a coroutine started from a click (the update itself still happens later, asynchronously), or any other callback.
+
+### What it ignores
+
+- State assigned only inside a click handler.
+- Text that already sets `liveRegion`.
+- A variable with no `mutableStateOf` in its initializer or delegate, or no assignment found at all in the function (a value coming from a ViewModel, for example).
+
+### Known limitations
+
+Only a direct `Text(text = s)`/`Text(text = s.value)` read and assignments in the same function are seen. See `docs/LIMITATIONS.md`.
+
+### Tests and sample
+
+- `P06MissingLiveRegionDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/p06/P06BadScreen.kt` and `P06GoodScreen.kt`.
 
 ---
 

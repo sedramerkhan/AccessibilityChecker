@@ -263,6 +263,23 @@ fun cardFontSize(): TextUnit = LocalDensity.current.run { 16.dp.toSp() }
 Text("Caption", fontSize = cardFontSize()) // not recognised
 ```
 
+## P-06 ComposeMissingLiveRegion
+
+### State read or assigned in another function
+
+Only a direct `Text(text = s)`/`Text(text = s.value)` in the same function as the declaration is recognised, and only assignments written in that same function are searched.
+
+```kotlin
+@Composable
+fun StatusText(viewModel: StatusViewModel) {
+    Text(text = viewModel.status) // not recognised: the state and its assignment are in the ViewModel
+}
+```
+
+### A state holder other than `mutableStateOf`
+
+`mutableStateListOf`, `mutableIntStateOf` and similar specialised holders are not recognised, only a declaration whose initializer or delegate calls `mutableStateOf` itself.
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

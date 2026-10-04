@@ -6,6 +6,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 |---|---|---|---|---|---|
 | P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
 | P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
+| P-03 | `ComposeLowContrastColors` | Warning (Major) | STATIC | 1.4.3 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
@@ -42,6 +43,35 @@ Only direct sibling literal text is compared. Aliases, string resources, variabl
 
 - `P02DecorativeImageLabeledDetectorTest`: 2 positive and 4 negative cases.
 - Sample: `sample-app/.../defects/p02/P02BadScreen.kt` and `P02GoodScreen.kt`.
+
+---
+
+## P-03 · ComposeLowContrastColors
+
+- **Taxonomy:** Perceivable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 1.4.3 Contrast (Minimum).
+- **Detector:** `detectors/perceivable/P03LowContrastColorsDetector.kt`
+- **Message:** `[P-03] Text color has a contrast ratio of X:1 against its background, below the required Y:1`.
+
+### What it flags
+
+A `Text` whose literal `color = Color(0x...)` has a WCAG contrast ratio below 4.5:1 (or 3:1 for text at 18sp and above, or 14sp and above when bold) against a literal background color. The background is read from the Text's own `Modifier.background(Color(...))`, or else from the single composable call whose content lambda directly contains the Text: a `Surface(color = ...)` or a `Box`/`Row`/`Column` with `Modifier.background(...)`.
+
+### What it ignores
+
+- Any non-literal text or background color, including `MaterialTheme.colorScheme...` and variables.
+- A container that is not the Text's direct parent (no multi-level lookup).
+- Text with no background found at all (own modifier, and direct parent, both without a literal background).
+
+### Known limitations
+
+Only one level of container is checked. A background set two levels up, or a background that comes from a `Modifier` passed in as a function parameter, is not seen (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `P03LowContrastColorsDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/p03/P03BadScreen.kt` and `P03GoodScreen.kt`.
 
 ---
 

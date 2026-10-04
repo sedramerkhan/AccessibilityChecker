@@ -222,6 +222,33 @@ AppTextField(value = query, onValueChange = onQueryChange) // not reported
 
 A `Text` shown above the field looks like a label but is not linked to it, so the field is still reported. The rule cannot tell whether the developer meant the Text as the label.
 
+## P-03 ComposeLowContrastColors
+
+### Background set two levels up, or through a parameter
+
+Only the Text's own modifier and its single direct parent call are checked.
+
+```kotlin
+Surface(color = Color(0xFFFFFFFF)) {
+    Box { // no background of its own
+        Text("Delete draft", color = Color(0xFFB0B0B0)) // not reported; Surface is one level too far
+    }
+}
+
+@Composable
+fun Tile(modifier: Modifier) = Box(modifier) { Text("Delete draft", color = Color(0xFFB0B0B0)) }
+Tile(Modifier.background(Color(0xFFFFFFFF))) // not reported
+```
+
+### Color read at run time
+
+A color computed from a theme, a resource, or a variable is unknown, even if it resolves to a low-contrast literal in practice.
+
+```kotlin
+val warningColor = if (isDark) Color(0xFFB0B0B0) else Color(0xFF909090)
+Text("Delete draft", color = warningColor) // not reported
+```
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

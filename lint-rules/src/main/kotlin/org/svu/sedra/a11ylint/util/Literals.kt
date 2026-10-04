@@ -21,6 +21,7 @@ import org.jetbrains.uast.UastBinaryOperator
 object Literals {
     private const val UNIT_PACKAGE = "androidx.compose.ui.unit"
     private const val RESOURCE_PACKAGE = "androidx.compose.ui.res"
+    private const val GRAPHICS_PACKAGE = "androidx.compose.ui.graphics"
 
     /** Removes any parentheses around an expression, so `((x))` gives `x`. */
     fun unwrap(expression: UExpression?): UExpression? {
@@ -63,6 +64,20 @@ object Literals {
 
     /** Reads a numeric sp literal, so `16.sp` gives `16f`. Returns null for anything else. */
     fun spValue(expression: UExpression?): Float? = dimensionValue(expression, "sp")
+
+    /**
+     * Reads a literal `Color(0x...)` call: the single numeric literal argument to the
+     * `androidx.compose.ui.graphics.Color` factory function, packed as ARGB bits in an Int.
+     * Returns null for anything else, including `Color.Black`, `MaterialTheme.colorScheme...`,
+     * a multi-component `Color(r, g, b, a)` call, and any non-literal argument.
+     */
+    fun colorLiteralValue(expression: UExpression?): Int? {
+        val call = selectorCall(expression) ?: return null
+        if (!ComposeCalls.isCall(call, "$GRAPHICS_PACKAGE.Color")) return null
+        val argument = call.valueArguments.singleOrNull() ?: return null
+        val value = (unwrap(argument) as? ULiteralExpression)?.value as? Number ?: return null
+        return value.toLong().toInt()
+    }
 
     private fun polyadicStringValue(expression: UPolyadicExpression): String? {
         if (expression.operator != UastBinaryOperator.PLUS) return null

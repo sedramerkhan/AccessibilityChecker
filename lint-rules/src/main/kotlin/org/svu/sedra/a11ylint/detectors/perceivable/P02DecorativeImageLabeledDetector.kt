@@ -8,7 +8,7 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
-import org.jetbrains.uast.ULambdaExpression
+import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.UReturnExpression
 import org.svu.sedra.a11ylint.taxonomy.A11yIssues
 import org.svu.sedra.a11ylint.taxonomy.Priority
@@ -46,32 +46,28 @@ class P02DecorativeImageLabeledDetector : Detector(), SourceCodeScanner {
     }
 
     private fun directSiblingText(context: JavaContext, image: UCallExpression): List<String> {
-        val lambda = nearestLambda(image) ?: return emptyList()
-        val body = lambda.body as? UBlockExpression ?: return emptyList()
+        val body = nearestBlock(image) ?: return emptyList()
         return body.expressions
             .asSequence()
             .mapNotNull { expression ->
-                val call = when (expression) {
-                    is UCallExpression -> expression
-                    is UReturnExpression -> expression.returnExpression as? UCallExpression
+                val unwrapped = Literals.unwrap(
+                    (expression as? UReturnExpression)?.returnExpression ?: expression,
+                )
+                val call = when (unwrapped) {
+                    is UCallExpression -> unwrapped
+                    is UQualifiedReferenceExpression -> Literals.unwrap(unwrapped.selector) as? UCallExpression
                     else -> null
                 } ?: return@mapNotNull null
-                if (!isDirectSibling(call, image)) return@mapNotNull null
                 if (!ComposeCalls.isCall(call, Clickables.textCalls)) return@mapNotNull null
                 Literals.stringLiteralValue(ComposeCalls.argument(context, call, "text"))
             }
             .toList()
     }
 
-    private fun isDirectSibling(candidate: UCallExpression, image: UCallExpression): Boolean {
-        val imageLambda = nearestLambda(image) ?: return false
-        return nearestLambda(candidate) == imageLambda
-    }
-
-    private fun nearestLambda(node: UElement): ULambdaExpression? {
+    private fun nearestBlock(node: UElement): UBlockExpression? {
         var current = node.uastParent
         while (current != null) {
-            if (current is ULambdaExpression) return current
+            if (current is UBlockExpression) return current
             current = current.uastParent
         }
         return null

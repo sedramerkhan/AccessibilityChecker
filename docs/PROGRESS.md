@@ -56,3 +56,15 @@ Notes:
 - U-02 matched the sample app on the first run. `outermostExpression` and `receivingElement` moved from O-01 into `ModifierChain` for reuse.
 - U-05 passed its tests and the sample app on the first run.
 - R-01 reported 10 role-less custom clickables in the earlier sample screens. They were given `role = Role.Button` so each screen shows only its own rule. New shared helper: `Clickables.isButtonLikeContainer` (the O-04 case of the overlap policy).
+
+## Milestone 3: Major rules
+
+In progress.
+
+| Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
+|---|---|---|---|---|
+| P-02 `ComposeDecorativeImageLabeled` | Done | 2 | 4 | 1, matched |
+
+Notes:
+- P-02 first failed under the `PARENTHESIZED` lint test mode: the sibling-text lookup only matched a direct `UCallExpression` as a block statement, so wrapping sub-expressions in parentheses made the detector silently stop matching anything. Fixed with the same `Literals.unwrap(...)` pattern already used in `Clickables.isButtonLikeContainer`, also handling the fully-qualified-call case (see DECISIONS, 2026-10-04).
+- The sample screens originally called `Icon`/`Image` with only `contentDescription`, which does not compile against the real Material3/Foundation signatures (both overloads require `imageVector` or `painter`). Fixed by passing a `painterResource`, matching the P-01 sample pattern.

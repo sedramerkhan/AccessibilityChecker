@@ -15,6 +15,14 @@
 - Matching is case-insensitive and reports equality or containment in either direction.
 - Resource calls and variables remain unknown rather than being guessed.
 
+## 2026-10-04
+
+### P-02 fixed: sibling text lookup must unwrap parentheses and qualified calls
+
+The P-02 unit tests passed in isolation, but failed under Lint's default `PARENTHESIZED` test mode: wrapping sub-expressions in parentheses turns a block statement like `Text("Delete")` into a `UParenthesizedExpression`, so the original `is UCallExpression -> expression` match in `directSiblingText` silently stopped matching anything. Fixed by running `Literals.unwrap(...)` on each block statement first, and also handling the fully-qualified-call case (`UQualifiedReferenceExpression`), the same pattern already used in `Clickables.isButtonLikeContainer`. No test mode is disabled; the detector was made to handle the AST shapes Lint's modes already produce.
+
+Also: the P-02 sample screens (`P02BadScreen.kt`, `P02GoodScreen.kt`) originally called `Icon`/`Image` with only `contentDescription`, which does not compile against the real Material3/Foundation signatures (both overloads require `imageVector` or `painter`, neither has a default). Fixed by passing a `painterResource`, matching the P-01 sample pattern. This is a reminder that `./gradlew :sample-app:lintDebug` must be run for every rule, not just the unit tests, per CLAUDE.md section 5.2's note on compiled-library differences.
+
 ### Build and Lint versions
 
 - **Registry `minApi = 14`.** Lint API 14 is AGP 8.0 (`CURRENT_API` is 16, which is AGP 8.7 and newer). The development apps and the evaluation apps may use an older AGP than this project, so the rules should still load there. Lint older than AGP 8.0 is not supported. Loading on older Lint is not tested yet; if a rule fails there, raise `minApi`. Alternative considered: `minApi = CURRENT_API`, which is safer but refuses to load on AGP 8.0 to 8.6.

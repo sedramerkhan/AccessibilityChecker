@@ -59,7 +59,11 @@ Notes:
 
 ## Milestone 3: Major rules
 
-In progress.
+Status: done (2026-10-05). Eleven rules implemented and one (R-03) dropped as not applicable.
+Across the whole sample app the expectation check is 18 issue IDs, 64 expected, 64 reported,
+0 missing, 0 unexpected. The development app run on Jetnews and Jetchat is next, and it is now
+overdue: it was already due after Milestone 2, and CLAUDE.md asks for O-02 and O-03 precision to
+be measured there before either is tuned.
 
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|
@@ -74,6 +78,7 @@ In progress.
 | U-04 `ComposeVagueButtonLabel` | Done | 4 | 6 | 3, all matched |
 | R-02 `ComposeClearAndSetSemanticsLoss` | Done | 4 | 5 | 4, all matched |
 | R-03 `ComposeMergeHidesInteractive` | Dropped, not applicable | — | — | — |
+| R-06 `ComposeComposableWithoutSemantics` | Done | 3 | 5 | 2, all matched |
 
 Notes:
 - P-02 first failed under the `PARENTHESIZED` lint test mode: the sibling-text lookup only matched a direct `UCallExpression` as a block statement, so wrapping sub-expressions in parentheses made the detector silently stop matching anything. Fixed with the same `Literals.unwrap(...)` pattern already used in `Clickables.isButtonLikeContainer`, also handling the fully-qualified-call case (see DECISIONS, 2026-10-04).
@@ -81,6 +86,7 @@ Notes:
 - P-03 unit tests (4 positive, 6 negative) passed on the first run, but the sample app first reported only 2 of the 4 EXPECT lines: `Modifier.background(Color(...))` written positionally was not found, because `Color`'s compiled parameter name is lost the same way `Dp`'s is (found while building O-01). Fixed the same way `ModifierSizes` does, with a `kotlinNames` fallback (see DECISIONS). New shared helper: `Literals.colorLiteralValue` (reads a literal `Color(0x...)` factory call as packed ARGB). Message formatting avoids `String.format` to stay locale-independent (see DECISIONS).
 - P-04 passed its unit tests and the sample app on the first run. New stubs: `Density`/`FontScaling` (`androidx.compose.ui.unit`), `CompositionLocal`/`staticCompositionLocalOf` (`androidx.compose.runtime`), `LocalDensity` (`androidx.compose.ui.platform`). `TextStyles.styleCall` was made non-private so P-04 can read a `TextStyle`'s own `fontSize` expression (see DECISIONS).
 - P-06's first version checked for `mutableStateOf` by searching the variable declaration's source text, like U-02 does for flip targets, but this failed under the `IMPORT_ALIAS` test mode because that mode renames the call site. Fixed by resolving every call in the declaration's initializer or delegate and checking it against `androidx.compose.runtime.mutableStateOf` (see DECISIONS). Sample app and unit tests then passed together. This is the first STATIC_LLM rule since R-01; both are always reported as candidates, not hidden on uncertainty.
+- R-06 passed its unit tests and the sample app on the first run. It narrows the taxonomy wording as CLAUDE.md anticipated: it reports **custom gestures** with no semantics, not "clickable or toggleable UI", because a clickable already carries an action and is covered by R-01, O-02 and U-02. **The thesis taxonomy text for R-06 needs that wording change.** Two of the gesture APIs CLAUDE.md names could not be used: `swipeable` exists only in Material 2 and is entirely deprecated, and `anchoredDraggable` is internal in Material3 1.4.0, so `draggable2D` and the `detect*Gestures` family were matched instead (see DECISIONS). New stubs: `draggable`, `Orientation`, `DraggableState` and two more gesture detectors.
 - R-03 was dropped after the check CLAUDE.md asks for. Compose does not hide interactive children inside `semantics(mergeDescendants = true)`: merging stops at any child that is itself a merging root, and `AbstractClickableNode` (the base of every clickable modifier and so of every Material button) sets `shouldMergeDescendantSemantics = true`. The rule would only ever report correct code, so it is recorded as not applicable rather than implemented, agreed with Sedra on 2026-10-05 (see DECISIONS for the source evidence). The implemented taxonomy is therefore 26 rules plus R-03 documented as void. Layout Inspector was not available here, so the finding rests on the Compose 1.10.4 sources; worth confirming on a device before the thesis text is final.
 - R-02 passed its unit tests and the sample app on the first run. One message covers whichever of the name, role and state the block failed to put back. **Question for Sedra:** CLAUDE.md asks to flag every empty `clearAndSetSemantics { }`, but an empty block is also the documented way to hide a decorative subtree, so that legitimate use is reported too. Should the empty case be narrowed to blocks whose content had a name or was interactive (see DECISIONS)?
 - U-04 passed its unit tests and the sample app on the first run. The vague label list lives in one constant (`VAGUE_LABELS`) so the rule and the thesis cannot drift apart, and the whole trimmed label must match, so "Read more about shipping" stays clean while "more" is reported (see DECISIONS).

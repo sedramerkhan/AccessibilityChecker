@@ -218,6 +218,13 @@ Every `TextField`, `OutlinedTextField` and `SecureTextField` overload in both li
 - **What the content "had".** A Text with non-empty text, or a labelled Icon or Image, counts as a name. Being clickable (the usual `Clickables.isClickableElement` test, on the element or anything inside it) or holding a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` counts as role and state. The Material state components are included because CLAUDE.md says "or had state", and those carry state without any click modifier.
 - **One report per block, naming what was lost**, rather than one per missing property, so a block that drops both the name and the role gives a single warning that says so.
 
+### R-06 ComposableWithoutSemantics
+
+- **The narrowing CLAUDE.md asks to record.** The taxonomy wording is "a composable that contains clickable or toggleable UI and sets no semantics". The rule as built reports only **custom gestures** with no semantics, and deliberately ignores `clickable`/`toggleable`, because those already add an action and a role of their own and are covered by R-01, O-02 and U-02. The real defect is the gesture that gives TalkBack nothing at all. **The thesis taxonomy text for R-06 should be updated to say "custom gestures" instead of "clickable or toggleable UI".**
+- **`swipeable` and `anchoredDraggable` are not matched.** CLAUDE.md names both, but neither is public API in the versions this project builds against, checked in the sources: `swipeable` exists only in Material 2 and its whole API is annotated `@Deprecated(SwipeableDeprecation)`, and `anchoredDraggable` is `androidx.compose.material3.internal.anchoredDraggable`, that is internal, with `draggableAnchors` and `AnchoredDraggableState` as the public surface. Rather than invent a fully qualified name that matches nothing, they are left out and recorded here. `draggable2D` and the whole `detect*Gestures` family are included instead, which covers the same kind of defect with names that exist.
+- **Reported on the function declaration**, as CLAUDE.md asks, rather than on the gesture modifier: the fix is a property of the component as a whole, and one report per composable avoids several warnings for a function with more than one gesture.
+- **Per function, no call following.** A gesture in one composable and semantics applied by its caller are not connected (recorded in LIMITATIONS), which matches how every other rule in this project stops at the enclosing function.
+
 ### R-03: the premise does not hold in Compose 1.10.4 (the check CLAUDE.md asks for first)
 
 CLAUDE.md 7.3 asks to verify how Compose treats interactive children inside

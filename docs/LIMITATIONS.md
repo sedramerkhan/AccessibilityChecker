@@ -344,6 +344,24 @@ Row(Modifier.clearAndSetSemantics { }) { // reported, although hiding this is de
 
 The content is read only where it is written. A row whose children come from another composable is not known to have a name or to be interactive, so a block that drops them is not reported.
 
+## R-06 ComposeComposableWithoutSemantics
+
+### The gesture and the semantics are in different functions
+
+The check is per function, so a composable that only draws the gesture and leaves the semantics to its caller is reported.
+
+```kotlin
+@Composable
+fun Swatch(modifier: Modifier) = // reported
+    Box(modifier.pointerInput(Unit) { detectTapGestures { pick() } })
+
+Swatch(Modifier.semantics { contentDescription = "Pick red" }) // the caller supplies the name
+```
+
+### Gesture APIs that are not public
+
+`swipeable` (Material 2 only, fully deprecated) and `anchoredDraggable` (internal in Material3 1.4.0) are not matched, so a component built on them is not reported. See `docs/DECISIONS.md`.
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

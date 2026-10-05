@@ -493,6 +493,7 @@ private val gestureStubs = kotlin(
     """
     package androidx.compose.foundation.gestures
 
+    import androidx.compose.ui.Modifier
     import androidx.compose.ui.input.pointer.PointerInputScope
 
     suspend fun PointerInputScope.detectTapGestures(
@@ -500,6 +501,17 @@ private val gestureStubs = kotlin(
         onLongPress: ((Any) -> Unit)? = null,
         onTap: ((Any) -> Unit)? = null,
     ) {}
+    suspend fun PointerInputScope.detectDragGestures(onDrag: (Any, Any) -> Unit) {}
+    suspend fun PointerInputScope.detectTransformGestures(onGesture: (Any, Any, Float, Float) -> Unit) {}
+
+    enum class Orientation { Vertical, Horizontal }
+    interface DraggableState
+
+    fun Modifier.draggable(
+        state: DraggableState,
+        orientation: Orientation,
+        enabled: Boolean = true,
+    ): Modifier = this
     """,
 ).indented()
 

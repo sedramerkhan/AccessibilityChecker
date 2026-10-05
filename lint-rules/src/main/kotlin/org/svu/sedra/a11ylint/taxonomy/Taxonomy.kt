@@ -13,6 +13,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P04TextSizeInDpDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
+import org.svu.sedra.a11ylint.detectors.robust.R06ComposableWithoutSemanticsDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U03MissingSemanticErrorDetector
@@ -183,6 +184,15 @@ object Taxonomy {
             pour = Pour.ROBUST,
             wcag = listOf("4.1.2"),
             detection = DetectionType.STATIC,
+            priority = Priority.MAJOR,
+        ),
+        // R-03 is deliberately absent: the defect it describes cannot occur in Compose (see DECISIONS).
+        TaxonomyEntry(
+            id = R06ComposableWithoutSemanticsDetector.TAXONOMY_ID,
+            issue = R06ComposableWithoutSemanticsDetector.ISSUE,
+            pour = Pour.ROBUST,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC_LLM,
             priority = Priority.MAJOR,
         ),
     )

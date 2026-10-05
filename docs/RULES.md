@@ -22,6 +22,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
 | R-02 | `ComposeClearAndSetSemanticsLoss` | Warning (Major) | STATIC | 4.1.2 | Done |
 | R-03 | `ComposeMergeHidesInteractive` | — | — | 4.1.2 | **Not applicable** |
+| R-06 | `ComposeComposableWithoutSemantics` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
 
 ---
 
@@ -347,6 +348,39 @@ independently focusable, and the rule would only ever report correct code.
 
 The modifier that really does remove interactive children is `clearAndSetSemantics`, which
 **R-02** covers. See `docs/DECISIONS.md` for the full evidence and the decision.
+
+---
+
+## R-06 · ComposeComposableWithoutSemantics
+
+- **Taxonomy:** Robust, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R06ComposableWithoutSemanticsDetector.kt`
+- **Message:** `[R-06] Possible missing semantics: <function> handles input with a custom gesture but sets no semantics, so screen readers have no action to offer`.
+
+### What it flags
+
+Reported on the **function declaration**: a `@Composable` function whose body uses a custom gesture API and contains no semantics anywhere.
+
+Gestures: `pointerInput`, `draggable`, `draggable2D`, and the `detect*Gestures` family (`detectTapGestures`, `detectDragGestures`, `detectDragGesturesAfterLongPress`, `detectVerticalDragGestures`, `detectHorizontalDragGestures`, `detectTransformGestures`).
+
+Semantics that clear the rule: `semantics`, `clearAndSetSemantics`, `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`.
+
+### What it ignores
+
+- Functions that also use `clickable` or `toggleable`, which already carry an action and are covered by R-01, O-02 and U-02.
+- Functions that set any semantics at all.
+- Functions that are not `@Composable`.
+
+### Known limitations
+
+The check is per function, so a gesture in one composable and the semantics in its caller are not connected. `swipeable` and `anchoredDraggable`, which CLAUDE.md also names, are not matched: neither is public API in these versions (see `docs/DECISIONS.md`).
+
+### Tests and sample
+
+- `R06ComposableWithoutSemanticsDetectorTest`: 3 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/r06/R06BadScreen.kt` and `R06GoodScreen.kt`.
 
 ---
 

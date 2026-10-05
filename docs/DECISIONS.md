@@ -203,6 +203,14 @@ Every `TextField`, `OutlinedTextField` and `SecureTextField` overload in both li
 - **Report location.** The `isError` argument, so the underline is on the expression that turns the error state on, consistent with P-01 (reports at `contentDescription`) and P-03 (reports at `color`).
 - **Scope.** `TextField` and `OutlinedTextField` in both Material and Material3, the same four names U-05 uses. `SecureTextField` behaves identically in the sources but is not named in CLAUDE.md, so it is left out.
 
+### U-04 ComposeVagueButtonLabel
+
+- **The word list is exactly CLAUDE.md's**, kept in one constant (`VAGUE_LABELS`) so the thesis and the rule cannot drift apart. Compared after `trim()` and `lowercase()`, so `"  DONE  "` matches.
+- **The whole label must be vague, not contain a vague word.** The comparison is on the entire trimmed label, so "Read more about shipping" is clean while "more" is reported. Matching substrings would flag most real labels.
+- **Exactly one Text.** CLAUDE.md says "whose only Text literal", so a button with two Texts, or with none, is left alone: the readable label is then more than the one literal, and judging it from that literal would be guessing. A non-literal text (`stringResource`, a variable) is unknown for the same reason.
+- **`contentDescription` in the button's semantics wins.** It replaces the visible label for screen readers, which is a legitimate way to keep a short visible label with a full spoken one, and is the "contentDescription override" CLAUDE.md asks to ignore.
+- **Report location.** The `text` argument of the Text, so the underline is on the label itself rather than on the button.
+
 ### `ComposeCalls.argument` now reads the source name first (found while building U-03)
 
 U-03's unit tests all passed, but on the sample app the `Modifier.semantics { error("...") }` field was still reported. A probe put into the message showed why: for the compiled Material3 `TextField`, `argument(context, call, "modifier")` returned the **`onValueChange`** argument.

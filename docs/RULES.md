@@ -17,6 +17,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
+| U-04 | `ComposeVagueButtonLabel` | Warning (Major) | STATIC_LLM | 2.4.6 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
 
@@ -256,6 +257,40 @@ A message shown by a sibling composable (a `Text` under the field, rather than i
 
 - `U03MissingSemanticErrorDetectorTest`: 4 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/u03/U03BadScreen.kt` and `U03GoodScreen.kt`.
+
+---
+
+## U-04 · ComposeVagueButtonLabel
+
+- **Taxonomy:** Understandable, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 2.4.6 Headings and Labels.
+- **Detector:** `detectors/understandable/U04VagueButtonLabelDetector.kt`
+- **Message:** `[U-04] Possible vague button label: "<label>" does not say what the button does`.
+
+### What it flags
+
+A `Button`, `TextButton` or `OutlinedButton` (Material or Material3) holding exactly one Text whose text is a literal and, trimmed and lowercased, is one of:
+
+`ok`, `click`, `click here`, `here`, `tap`, `tap here`, `go`, `submit`, `done`, `more`, `yes`, `no`
+
+The list is `U04VagueButtonLabelDetector.VAGUE_LABELS`, taken from CLAUDE.md 7.3.
+
+### What it ignores
+
+- A descriptive label, including one that merely contains a vague word ("Read more about shipping").
+- A `contentDescription` set in the button's own semantics, which overrides the visible label for screen readers.
+- Text that is not a literal, for example `stringResource(...)` or a variable.
+- A button with no Text, or with more than one Text, since the label cannot be judged from one literal.
+
+### Known limitations
+
+A vague Text next to a labelled Icon is still reported, although the icon's `contentDescription` becomes part of the announced name. The icon is not read as part of the label.
+
+### Tests and sample
+
+- `U04VagueButtonLabelDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/u04/U04BadScreen.kt` and `U04GoodScreen.kt`.
 
 ---
 

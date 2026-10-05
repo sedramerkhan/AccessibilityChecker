@@ -220,6 +220,23 @@ Column {
 }
 ```
 
+## U-04 ComposeVagueButtonLabel
+
+### A labelled icon is not read as part of the label
+
+The icon's `contentDescription` becomes part of the name a screen reader announces, but the rule only judges the Text, so this button is still reported.
+
+```kotlin
+Button(onClick = onDelete) {
+    Icon(Icons.Filled.Delete, contentDescription = "Delete draft")
+    Text("OK") // reported, although TalkBack says "Delete draft OK"
+}
+```
+
+### Labels that are not literals
+
+A label from `stringResource(...)` or a variable is unknown, so a vague label kept in `strings.xml` is never reported.
+
 ## U-05 ComposeTextFieldWithoutLabel
 
 ### Text fields that are not Material components

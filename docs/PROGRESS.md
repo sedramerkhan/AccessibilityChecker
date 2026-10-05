@@ -1,5 +1,77 @@
 # Progress
 
+## Where the project stands (2026-10-05)
+
+| Milestone | Status |
+|---|---|
+| 0 Setup | Done |
+| 1 Infrastructure | Done |
+| 2 Critical rules (7) | Rules done. The development app run was deferred and is still open. |
+| 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
+| 4 Minor rules (8) | Not started: P-05, P-07, O-06, O-07, U-06, U-07, R-04, R-05. |
+| 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
+
+18 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 18 issue IDs, 64 expected,
+64 reported, 0 missing, 0 unexpected.
+
+### What is left, in order
+
+1. **Development app run on Jetnews and Jetchat**, and `DEV_APP_RESULTS.md`, which is still a
+   stub. This was due after Milestone 2 and is now overdue. CLAUDE.md asks for O-02 and O-03
+   precision to be measured there *before* either rule is tuned, so every rule added before this
+   run has only ever been judged against our own sample app.
+   The publishing blocker is cleared: `./gradlew :lint-library:publishToMavenLocal` now works and
+   was verified by unpacking the artifact (see DECISIONS, two bugs fixed). A development app
+   consumes the rules with `mavenLocal()` in its repositories and
+   `implementation("org.svu.sedra:a11ylint:0.1.0")`. Still needed: clone Jetnews and Jetchat into
+   `../dev-apps/`, outside this repository, and run lint on each.
+2. **Milestone 4**, the eight minor rules. Two need more than a detector: P-07 needs the
+   Material3 check for whether `ModalBottomSheet`, `ModalNavigationDrawer` and `AlertDialog`
+   already set a pane title, and U-06 is project-wide and needs Lint partial analysis.
+3. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
+   Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
+   already done and verified.
+
+### Open questions for Sedra
+
+Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
+belongs to.
+
+1. **`minApi = 14`** (Milestone 1) lets the rules load on AGP 8.0 and newer, untested on older
+   AGP. Acceptable?
+2. **Gradle daemon on JDK 25** (Milestone 1), written by Android Studio into
+   `gradle-daemon-jvm.properties`. The rules still compile with JDK 17. Keep it?
+3. **O-03**: should `Checkbox`, `Switch` or `RadioButton` with a callback inside a clickable row
+   count as a nested clickable? Currently they do not.
+4. **U-01**: Material3 top app bars do not mark their title as a heading. The rule ignores them,
+   as CLAUDE.md says. Keep ignoring, or report them, since the title is usually the screen's
+   main heading?
+5. **R-02**: CLAUDE.md asks to flag every empty `clearAndSetSemantics { }`, but an empty block is
+   also the documented way to hide a decorative subtree, so that legitimate use is reported too.
+   Narrow the empty case to blocks whose content had a name or was interactive?
+
+### Thesis text that needs updating
+
+These are not questions, they are edits the taxonomy chapter needs.
+
+1. **R-03 `ComposeMergeHidesInteractive` is void.** The defect cannot occur in Compose 1.10.4:
+   merging stops at any child that is itself a merging root, and every clickable modifier sets
+   `shouldMergeDescendantSemantics = true`. No detector exists. The taxonomy becomes 26 rules
+   plus R-03 recorded as not applicable. Evidence in `DECISIONS.md`.
+2. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
+   semantics" to custom gestures only, which is what the rule detects and what the real defect
+   is. CLAUDE.md anticipated this change.
+
+### Known gap in the checks
+
+`scripts/check_sample_expectations.py` has not been run on this machine: Python is not
+installed here, although CLAUDE.md section 12 lists it as a standard command. Every sample app
+figure in this file was produced by an equivalent check written in PowerShell, which compares
+the same two things in both directions (every `// EXPECT:` marker against the Lint XML report).
+The Python script itself is therefore still unverified and should be run once on a machine that
+has Python.
+
 ## Milestone 0: Setup
 
 - Project renamed to `compose-a11y-lint`.
@@ -34,7 +106,8 @@ Open questions for Sedra:
 
 ## Milestone 2: Critical rules
 
-In progress: all 7 critical rules are done. The development app run (Jetnews and Jetchat) is next.
+Rules: done (2026-10-03), all 7. The development app run that closes this milestone was deferred
+in favour of continuing with Milestone 3 and is still open; see "What is left" at the top.
 
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|

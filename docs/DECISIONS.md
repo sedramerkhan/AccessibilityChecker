@@ -218,6 +218,29 @@ Every `TextField`, `OutlinedTextField` and `SecureTextField` overload in both li
 - **What the content "had".** A Text with non-empty text, or a labelled Icon or Image, counts as a name. Being clickable (the usual `Clickables.isClickableElement` test, on the element or anything inside it) or holding a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` counts as role and state. The Material state components are included because CLAUDE.md says "or had state", and those carry state without any click modifier.
 - **One report per block, naming what was lost**, rather than one per missing property, so a block that drops both the name and the role gives a single warning that says so.
 
+### Publishing `lint-library` to mavenLocal (two bugs, both fixed)
+
+The module applied `maven-publish` and set `group` and `version`, but `publishToMavenLocal`
+produced nothing usable. Two separate problems:
+
+1. **No publication.** `maven-publish` needs a publication and an Android component to publish.
+   Added `android { publishing { singleVariant("release") } }` and a `MavenPublication` named
+   `release` with `artifactId = "a11ylint"`, wired with `afterEvaluate { from(components["release"]) }`
+   because the Android component does not exist until after evaluation.
+2. **More than one jar in `lintPublish`.** With the publication in place the build failed with
+   "Found more than one jar in the 'lintPublish' configuration". The extra jars were
+   `kotlin-stdlib` and its transitive `annotations`, which the Kotlin JVM plugin adds to
+   `lint-rules` automatically; `lintPublish` accepts exactly one file. Fixed with
+   `lintPublish(project(":lint-rules")) { isTransitive = false }`, which is also correct at
+   runtime: Lint runs the rules in its own classloader and already provides the Kotlin stdlib,
+   the same reason `lint-api` and `lint-checks` are `compileOnly`.
+
+Verified by unpacking the published artifact rather than trusting the build result:
+`~/.m2/repository/org/svu/sedra/a11ylint/0.1.0/a11ylint-0.1.0.aar` contains `lint.jar`, whose
+manifest holds `Lint-Registry-v2: org.svu.sedra.a11ylint.ComposeA11yIssueRegistry` and which
+carries all 18 detector classes. The coordinates are the ones CLAUDE.md fixes,
+`org.svu.sedra:a11ylint:0.1.0`.
+
 ### R-06 ComposableWithoutSemantics
 
 - **The narrowing CLAUDE.md asks to record.** The taxonomy wording is "a composable that contains clickable or toggleable UI and sets no semantics". The rule as built reports only **custom gestures** with no semantics, and deliberately ignores `clickable`/`toggleable`, because those already add an action and a role of their own and are covered by R-01, O-02 and U-02. The real defect is the gesture that gives TalkBack nothing at all. **The thesis taxonomy text for R-06 should be updated to say "custom gestures" instead of "clickable or toggleable UI".**

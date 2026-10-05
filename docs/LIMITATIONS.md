@@ -286,6 +286,18 @@ fun StatusText(viewModel: StatusViewModel) {
 
 CLAUDE.md flags this rule as possibly noisy on real apps. It is implemented exactly as specified and will be measured, not pre-tuned, on the development app run.
 
+## O-05 ComposeEmptyClickable
+
+### The name comes from another composable
+
+A clickable whose content calls a composable the rule cannot see into is never reported, because that composable may well provide the name. This is a deliberate false negative: reporting it would flag most real clickable rows.
+
+```kotlin
+Box(Modifier.clickable { open() }) {
+    ItemRow(item) // may contain a Text; not reported either way
+}
+```
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

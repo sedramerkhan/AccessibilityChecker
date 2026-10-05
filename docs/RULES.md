@@ -13,6 +13,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
+| O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
@@ -192,6 +193,37 @@ Only the direct children of the content lambda are read, so a button-like layout
 
 - `O04ClickableContainerDetectorTest`: 5 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/o04/O04BadScreen.kt` and `O04GoodScreen.kt`.
+
+---
+
+## O-05 · ComposeEmptyClickable
+
+- **Taxonomy:** Operable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O05EmptyClickableDetector.kt`
+- **Message:** `[O-05] Clickable <element> has nothing to read: no text, no labelled icon and no contentDescription, so screen readers announce it without a name`.
+
+### What it flags
+
+A clickable element (the same definition P-01 and O-03 use) whose content holds no Icon or Image at all, no Text, and no `contentDescription` in semantics. Typical cases: a sized `Box` with no content, a tappable `Spacer` used as a scrim, an `IconButton` whose icon was never added, and a `Canvas` used as a custom control.
+
+### What it ignores
+
+- Anything with a name: a Text, a labelled Icon or Image, or `contentDescription` in semantics.
+- A clickable that holds an **unlabelled** Icon or Image. That is P-01's defect, not this one (CLAUDE.md overlap policy 7.1).
+- A clickable element that is itself an Icon, Image or Text, for the same reason.
+- A clickable whose content calls a composable this rule cannot see into, since that composable may provide the name.
+- `onClickLabel` is not a name: it describes the action, not the element, so it does not silence this rule.
+
+### Known limitations
+
+Content in another composable function is not read, so such clickables are never reported (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `O05EmptyClickableDetectorTest`: 6 positive and 7 negative cases.
+- Sample: `sample-app/.../defects/o05/O05BadScreen.kt` and `O05GoodScreen.kt`.
 
 ---
 

@@ -5,6 +5,7 @@ import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
 import org.svu.sedra.a11ylint.detectors.operable.O02MissingOnClickLabelDetector
 import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.operable.O04ClickableContainerDetector
+import org.svu.sedra.a11ylint.detectors.operable.O05EmptyClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P02DecorativeImageLabeledDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P03LowContrastColorsDetector
@@ -115,6 +116,14 @@ object Taxonomy {
             pour = Pour.OPERABLE,
             wcag = listOf("4.1.2"),
             detection = DetectionType.STATIC_LLM,
+            priority = Priority.MAJOR,
+        ),
+        TaxonomyEntry(
+            id = O05EmptyClickableDetector.TAXONOMY_ID,
+            issue = O05EmptyClickableDetector.ISSUE,
+            pour = Pour.OPERABLE,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC,
             priority = Priority.MAJOR,
         ),
         TaxonomyEntry(

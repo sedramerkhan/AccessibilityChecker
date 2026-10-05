@@ -48,7 +48,7 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
 
         // A clickable surface with a clickable box inside.
         Surface(onClick = onOpen) {
-            Box(modifier = Modifier.clickable(onClickLabel = "More options") { onShare() }) { // EXPECT: ComposeNestedClickable
+            Box(modifier = Modifier.clickable(onClickLabel = "More options", role = Role.Button) { onShare() }) { // EXPECT: ComposeNestedClickable
                 Text("More options")
             }
         }

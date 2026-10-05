@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import org.svu.sedra.a11ylint.sample.R
@@ -44,7 +45,7 @@ fun P01GoodScreen(onAction: () -> Unit) {
         }
 
         // A clickable Row whose Text names it.
-        Row(modifier = Modifier.clickable(onClickLabel = "Open") { onAction() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() }) {
             Icon(icon, contentDescription = null)
             Text("Open")
         }

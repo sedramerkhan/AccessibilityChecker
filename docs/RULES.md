@@ -12,6 +12,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
+| O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
@@ -162,6 +163,35 @@ CLAUDE.md names this rule as possibly noisy; it is reported as written, with no 
 
 - `O02MissingOnClickLabelDetectorTest`: 5 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/o02/O02BadScreen.kt` and `O02GoodScreen.kt`.
+
+---
+
+## O-04 · ComposeClickableContainer
+
+- **Taxonomy:** Operable, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O04ClickableContainerDetector.kt`
+- **Message:** `[O-04] Possible button: clickable <element> holds only a label, so screen readers announce a plain container instead of a button`.
+
+### What it flags
+
+A `Box`, `Row` or `Column` with `clickable` or `combinedClickable`, no role (no `role` argument and no `role` in the semantics of the same chain), whose content is button-like: exactly one Text, optionally with one Icon or Image, ignoring `Spacer`. This is the O-04 side of the overlap policy (CLAUDE.md 7.1): the same node is reported by O-04 when the content is button-like and by R-01 otherwise, so exactly one of the two fires.
+
+### What it ignores
+
+- Containers with a role, on the click modifier or in semantics.
+- Rich content (several Texts, or no Text at all).
+- Anything that is not a `Box`, `Row` or `Column`, including `Card`, `Surface` and Material buttons.
+
+### Known limitations
+
+Only the direct children of the content lambda are read, so a button-like layout wrapped in another layout is left to R-01 (see `docs/LIMITATIONS.md`, R-01).
+
+### Tests and sample
+
+- `O04ClickableContainerDetectorTest`: 5 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/o04/O04BadScreen.kt` and `O04GoodScreen.kt`.
 
 ---
 

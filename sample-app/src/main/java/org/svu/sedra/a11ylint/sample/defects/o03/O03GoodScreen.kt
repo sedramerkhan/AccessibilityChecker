@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import org.svu.sedra.a11ylint.sample.R
@@ -36,7 +37,7 @@ fun O03GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
         // One clickable row; the secondary action is a custom accessibility action.
         Row(
             modifier = Modifier
-                .clickable(onClickLabel = "Open") { onOpen() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }
                 .semantics {
                     customActions = listOf(
                         CustomAccessibilityAction("Share") {

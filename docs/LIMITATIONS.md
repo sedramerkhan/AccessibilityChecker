@@ -328,6 +328,22 @@ Box(Modifier.clickable { open() }) {
 }
 ```
 
+## R-02 ComposeClearAndSetSemanticsLoss
+
+### Hiding decoration on purpose is still reported
+
+An empty `clearAndSetSemantics { }` is the documented way to take a decorative subtree out of the accessibility tree, but CLAUDE.md asks for every empty block to be flagged, so this is reported too.
+
+```kotlin
+Row(Modifier.clearAndSetSemantics { }) { // reported, although hiding this is deliberate
+    DecorativeWave()
+}
+```
+
+### Content in another composable
+
+The content is read only where it is written. A row whose children come from another composable is not known to have a name or to be interactive, so a block that drops them is not reported.
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

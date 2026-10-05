@@ -20,6 +20,8 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | U-04 | `ComposeVagueButtonLabel` | Warning (Major) | STATIC_LLM | 2.4.6 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
+| R-02 | `ComposeClearAndSetSemanticsLoss` | Warning (Major) | STATIC | 4.1.2 | Done |
+| R-03 | `ComposeMergeHidesInteractive` | — | — | 4.1.2 | **Not applicable** |
 
 ---
 
@@ -291,6 +293,60 @@ A vague Text next to a labelled Icon is still reported, although the icon's `con
 
 - `U04VagueButtonLabelDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/u04/U04BadScreen.kt` and `U04GoodScreen.kt`.
+
+---
+
+## R-02 · ComposeClearAndSetSemanticsLoss
+
+- **Taxonomy:** Robust, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R02ClearAndSetSemanticsLossDetector.kt`
+- **Message:** `[R-02] clearAndSetSemantics is empty, so everything it covers is hidden from screen readers`, or `[R-02] clearAndSetSemantics does not put back <what was lost>, so screen readers lose it`.
+
+### What it flags
+
+A `Modifier.clearAndSetSemantics { }` that:
+
+- is empty, or
+- sets no `contentDescription` or `text` although the content holds a Text with text, or a labelled Icon or Image, or
+- sets no `role`, `stateDescription`, `toggleableState` or `selected` although the element or its content is clickable, toggleable, selectable, or a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton`.
+
+### What it ignores
+
+A block that puts back everything the content provided. Replacing several Texts with one sentence is the intended use of this modifier and is clean, as is adding a name to content that only had decorative icons.
+
+### Known limitations
+
+An empty block is always reported, including the case where it is used deliberately to hide a decorative subtree from screen readers. CLAUDE.md 7.3 asks for that; see `docs/DECISIONS.md` for the open question.
+
+### Tests and sample
+
+- `R02ClearAndSetSemanticsLossDetectorTest`: 4 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/r02/R02BadScreen.kt` and `R02GoodScreen.kt`.
+
+---
+
+## R-03 · ComposeMergeHidesInteractive — not applicable, no detector
+
+**This rule was dropped after the check CLAUDE.md asks for.** The defect it describes cannot
+occur in Compose 1.10.4, so no detector exists and no taxonomy entry is registered.
+
+CLAUDE.md 7.3 defines R-03 as a merged container (`semantics(mergeDescendants = true)`) hiding
+its interactive children. In Compose, merging deliberately stops at any child that is itself a
+merging root, and every clickable element is one:
+
+- `SemanticsNode.mergeConfig` skips a child when `child.isMergingSemanticsOfDescendants`, with
+  the comment "because that indicates they're independently screen-reader-focusable".
+- `AbstractClickableNode` (the base of `clickable`, `combinedClickable`, `toggleable` and
+  `selectable`, and so of every Material button) has
+  `final override val shouldMergeDescendantSemantics: Boolean get() = true`.
+
+So a `Button`, `IconButton`, `Checkbox` or `Switch` inside a merged container stays
+independently focusable, and the rule would only ever report correct code.
+
+The modifier that really does remove interactive children is `clearAndSetSemantics`, which
+**R-02** covers. See `docs/DECISIONS.md` for the full evidence and the decision.
 
 ---
 

@@ -211,6 +211,66 @@ Every `TextField`, `OutlinedTextField` and `SecureTextField` overload in both li
 - **`contentDescription` in the button's semantics wins.** It replaces the visible label for screen readers, which is a legitimate way to keep a short visible label with a full spoken one, and is the "contentDescription override" CLAUDE.md asks to ignore.
 - **Report location.** The `text` argument of the Text, so the underline is on the label itself rather than on the button.
 
+### R-02 ComposeClearAndSetSemanticsLoss
+
+- **An empty block is always reported, as CLAUDE.md 7.3 asks.** Question for Sedra: an empty `clearAndSetSemantics { }` is also the documented way to hide a purely decorative subtree from screen readers, so this will report that legitimate use as well. The alternative is to report an empty block only when the content had a name or was interactive, which would keep the deliberate "hide this decoration" case clean. The rule follows the literal wording for now, because narrowing it is a change to the taxonomy's intent.
+- **What counts as a name to put back:** `contentDescription` or `text`. What counts as a role or state: `role`, `stateDescription`, `toggleableState` or `selected`. Any one of a group is enough, because the block only has to carry the information forward, not mirror the original properties exactly.
+- **What the content "had".** A Text with non-empty text, or a labelled Icon or Image, counts as a name. Being clickable (the usual `Clickables.isClickableElement` test, on the element or anything inside it) or holding a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` counts as role and state. The Material state components are included because CLAUDE.md says "or had state", and those carry state without any click modifier.
+- **One report per block, naming what was lost**, rather than one per missing property, so a block that drops both the name and the role gives a single warning that says so.
+
+### R-03: the premise does not hold in Compose 1.10.4 (the check CLAUDE.md asks for first)
+
+CLAUDE.md 7.3 asks to verify how Compose treats interactive children inside
+`semantics(mergeDescendants = true)` before writing R-03. **The answer is that it does not hide
+them, so the defect R-03 describes does not exist in Compose 1.10.4.** Three places in the
+sources agree (Layout Inspector was not available in this environment, so this is a source
+reading rather than a device check):
+
+1. `ui/semantics/SemanticsNode.kt`, `mergeConfig`:
+
+   ```kotlin
+   // Don't merge children that themselves merge all their descendants (because that
+   // indicates they're independently screen-reader-focusable).
+   if (!child.isMergingSemanticsOfDescendants) {
+       mergedConfig.mergeChild(child.unmergedConfig)
+       child.mergeConfig(unmergedChildren, mergedConfig)
+   }
+   ```
+
+2. The KDoc of `Modifier.semantics` and of `SemanticsModifierNode`: "descendant nodes (except
+   those themselves marked [mergeDescendants]) will disappear from the tree".
+
+3. `foundation/Clickable.kt`, `AbstractClickableNode`, the base of `clickable`,
+   `combinedClickable`, `toggleable` and `selectable`:
+
+   ```kotlin
+   final override val shouldMergeDescendantSemantics: Boolean
+       get() = true
+   ```
+
+Put together: every interactive child is a merging root of its own, and merging deliberately
+stops at merging roots, so a `Button`, `IconButton`, `Checkbox`, `Switch` or any element with a
+click or toggle modifier stays independently focusable inside a merged container. Material
+buttons are built on the same clickable modifiers, so they behave the same way.
+
+A rule written to CLAUDE.md's wording would therefore report a non-defect on every merged
+container that happens to hold a button, which would hurt the precision figure the thesis
+measures. The modifier that genuinely does remove interactive children is
+`clearAndSetSemantics`, which R-02 already covers.
+
+**Decision (Sedra, 2026-10-05): R-03 is dropped and recorded as not applicable.** No detector is
+written and no taxonomy entry is registered, so the implemented taxonomy is 26 rules plus R-03
+documented as void. The alternatives considered were re-aiming R-03 at over-merging (a merged
+container whose many Texts become one long announcement), which would have needed new taxonomy
+wording, and implementing it as written and filtering the false positives in Phase 3, which
+would have cost precision in the evaluation.
+
+For the thesis this is a result rather than a gap: the taxonomy was drafted from the WCAG
+mapping and from how merging is commonly described, and checking it against the framework
+showed that this particular defect cannot occur in Compose. If a future Compose version stops
+treating clickable nodes as merging roots, the rule becomes meaningful again, and the check to
+repeat is `AbstractClickableNode.shouldMergeDescendantSemantics`.
+
 ### `ComposeCalls.argument` now reads the source name first (found while building U-03)
 
 U-03's unit tests all passed, but on the sample app the `Modifier.semantics { error("...") }` field was still reported. A probe put into the message showed why: for the compiled Material3 `TextField`, `argument(context, call, "modifier")` returned the **`onValueChange`** argument.

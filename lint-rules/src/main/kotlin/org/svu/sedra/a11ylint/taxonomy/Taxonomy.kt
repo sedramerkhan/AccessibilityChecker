@@ -12,6 +12,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P03LowContrastColorsDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P04TextSizeInDpDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
+import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U03MissingSemanticErrorDetector
@@ -175,6 +176,14 @@ object Taxonomy {
             wcag = listOf("4.1.2"),
             detection = DetectionType.STATIC_LLM,
             priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = R02ClearAndSetSemanticsLossDetector.TAXONOMY_ID,
+            issue = R02ClearAndSetSemanticsLossDetector.ISSUE,
+            pour = Pour.ROBUST,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MAJOR,
         ),
     )
 

@@ -55,7 +55,7 @@ fun P01BadScreen(onAction: () -> Unit) {
         )
 
         // A clickable container whose only content is an icon, nested in a Row.
-        Box(modifier = Modifier.clickable(role = Role.Button) { onAction() }) {
+        Box(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() }) {
             Row {
                 Icon(icon, contentDescription = null) // EXPECT: ComposeMissingContentDescription
             }

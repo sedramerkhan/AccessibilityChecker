@@ -280,6 +280,12 @@ fun StatusText(viewModel: StatusViewModel) {
 
 `mutableStateListOf`, `mutableIntStateOf` and similar specialised holders are not recognised, only a declaration whose initializer or delegate calls `mutableStateOf` itself.
 
+## O-02 ComposeMissingOnClickLabel
+
+### Noise acknowledged, not yet tuned
+
+CLAUDE.md flags this rule as possibly noisy on real apps. It is implemented exactly as specified and will be measured, not pre-tuned, on the development app run.
+
 ## R-01 ComposeClickableWithoutRole
 
 ### Role set elsewhere

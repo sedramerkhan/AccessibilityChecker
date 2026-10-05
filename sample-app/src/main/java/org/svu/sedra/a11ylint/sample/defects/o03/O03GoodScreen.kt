@@ -36,7 +36,7 @@ fun O03GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
         // One clickable row; the secondary action is a custom accessibility action.
         Row(
             modifier = Modifier
-                .clickable { onOpen() }
+                .clickable(onClickLabel = "Open") { onOpen() }
                 .semantics {
                     customActions = listOf(
                         CustomAccessibilityAction("Share") {

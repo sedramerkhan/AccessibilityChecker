@@ -44,7 +44,7 @@ fun P01GoodScreen(onAction: () -> Unit) {
         }
 
         // A clickable Row whose Text names it.
-        Row(modifier = Modifier.clickable { onAction() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open") { onAction() }) {
             Icon(icon, contentDescription = null)
             Text("Open")
         }

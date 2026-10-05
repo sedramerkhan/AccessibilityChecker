@@ -22,17 +22,21 @@ fun U02BadScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit) {
 
     Column {
         // An expandable section.
-        Row(modifier = Modifier.clickable { expanded = !expanded }) { // EXPECT: ComposeMissingStateDescription
+        Row(modifier = Modifier.clickable(onClickLabel = "Toggle details") { expanded = !expanded }) { // EXPECT: ComposeMissingStateDescription
             Text(if (expanded) "Hide details" else "Show details")
         }
 
         // A custom checkbox row backed by MutableState.
-        Row(modifier = Modifier.clickable { subscribed.value = !subscribed.value }) { // EXPECT: ComposeMissingStateDescription
+        Row(
+            modifier = Modifier.clickable(onClickLabel = "Toggle subscription") { // EXPECT: ComposeMissingStateDescription
+                subscribed.value = !subscribed.value
+            },
+        ) {
             Text("Subscribe to the newsletter")
         }
 
         // A custom switch row that reports the change to its caller.
-        Row(modifier = Modifier.clickable { onDarkModeChange(!darkMode) }) { // EXPECT: ComposeMissingStateDescription
+        Row(modifier = Modifier.clickable(onClickLabel = "Toggle dark mode") { onDarkModeChange(!darkMode) }) { // EXPECT: ComposeMissingStateDescription
             Text("Dark mode")
         }
     }

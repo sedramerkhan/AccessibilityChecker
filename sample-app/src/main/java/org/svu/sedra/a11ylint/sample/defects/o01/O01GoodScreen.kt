@@ -41,7 +41,7 @@ fun O01GoodScreen(onAction: () -> Unit) {
         // Padding inside the clickable area makes it 48dp around a 20dp icon.
         Box(
             modifier = Modifier
-                .clickable(role = Role.Button) { onAction() }
+                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() }
                 .padding(14.dp)
                 .size(20.dp),
         ) {
@@ -53,7 +53,7 @@ fun O01GoodScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clickable(role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Settings", role = Role.Button) { onAction() },
         ) {
             Icon(icon, contentDescription = "Settings")
         }

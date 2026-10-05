@@ -27,7 +27,7 @@ fun U02GoodScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit, onOpen
         // The state is described in semantics.
         Row(
             modifier = Modifier
-                .clickable { expanded = !expanded }
+                .clickable(onClickLabel = "Toggle details") { expanded = !expanded }
                 .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
         ) {
             Text(if (expanded) "Hide details" else "Show details")
@@ -52,7 +52,7 @@ fun U02GoodScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit, onOpen
         }
 
         // A plain click that does not toggle anything.
-        Row(modifier = Modifier.clickable { onOpen() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open settings") { onOpen() }) {
             Text("Open settings")
         }
     }

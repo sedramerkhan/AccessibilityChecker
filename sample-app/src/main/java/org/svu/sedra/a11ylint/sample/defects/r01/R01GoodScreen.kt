@@ -23,14 +23,14 @@ fun R01GoodScreen(onOpen: () -> Unit) {
 
     Column {
         // The role is passed to clickable.
-        Box(modifier = Modifier.clickable(role = Role.Button) { onOpen() }) {
+        Box(modifier = Modifier.clickable(onClickLabel = "Open gallery", role = Role.Button) { onOpen() }) {
             Icon(icon, contentDescription = "Open gallery")
         }
 
         // The role is set in semantics.
         Row(
             modifier = Modifier
-                .clickable { onOpen() }
+                .clickable(onClickLabel = "Open messages") { onOpen() }
                 .semantics { role = Role.Tab },
         ) {
             Text("Messages")

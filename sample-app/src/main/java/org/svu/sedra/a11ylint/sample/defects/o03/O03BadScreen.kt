@@ -39,7 +39,7 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
         }
 
         // A clickable row that contains a button.
-        Row(modifier = Modifier.clickable(role = Role.Button) { onOpen() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
             Text("Running shoes")
             Button(onClick = onShare) { // EXPECT: ComposeNestedClickable
                 Text("Buy")
@@ -48,7 +48,7 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
 
         // A clickable surface with a clickable box inside.
         Surface(onClick = onOpen) {
-            Box(modifier = Modifier.clickable { onShare() }) { // EXPECT: ComposeNestedClickable
+            Box(modifier = Modifier.clickable(onClickLabel = "More options") { onShare() }) { // EXPECT: ComposeNestedClickable
                 Text("More options")
             }
         }

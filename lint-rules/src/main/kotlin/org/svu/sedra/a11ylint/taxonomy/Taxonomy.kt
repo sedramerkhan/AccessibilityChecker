@@ -2,6 +2,7 @@ package org.svu.sedra.a11ylint.taxonomy
 
 import com.android.tools.lint.detector.api.Issue
 import org.svu.sedra.a11ylint.detectors.operable.O01SmallTouchTargetDetector
+import org.svu.sedra.a11ylint.detectors.operable.O02MissingOnClickLabelDetector
 import org.svu.sedra.a11ylint.detectors.operable.O03NestedClickableDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescriptionDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P02DecorativeImageLabeledDetector
@@ -90,6 +91,14 @@ object Taxonomy {
             wcag = listOf("2.5.8"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = O02MissingOnClickLabelDetector.TAXONOMY_ID,
+            issue = O02MissingOnClickLabelDetector.ISSUE,
+            pour = Pour.OPERABLE,
+            wcag = listOf("4.1.2"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MAJOR,
         ),
         TaxonomyEntry(
             id = O03NestedClickableDetector.TAXONOMY_ID,

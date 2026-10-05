@@ -43,7 +43,7 @@ fun O01BadScreen(onAction: () -> Unit) {
         // The size is set after the clickable, which still limits its bounds.
         Box(
             modifier = Modifier
-                .clickable(role = Role.Button) { onAction() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() }
                 .size(32.dp), // EXPECT: ComposeSmallTouchTarget
         ) {
             Icon(icon, contentDescription = "Open")
@@ -54,7 +54,7 @@ fun O01BadScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .size(48.dp) // EXPECT: ComposeSmallTouchTarget
                 .padding(8.dp)
-                .clickable(role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() },
         ) {
             Icon(icon, contentDescription = "Share")
         }
@@ -71,7 +71,7 @@ fun O01BadScreen(onAction: () -> Unit) {
 
         // The size comes from a local value.
         val small = Modifier.requiredSize(20.dp) // EXPECT: ComposeSmallTouchTarget
-        Box(modifier = small.clickable(role = Role.Button) { onAction() }) {
+        Box(modifier = small.clickable(onClickLabel = "More", role = Role.Button) { onAction() }) {
             Icon(icon, contentDescription = "More")
         }
     }

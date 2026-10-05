@@ -10,6 +10,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
 | P-06 | `ComposeMissingLiveRegion` | Warning (Major) | STATIC_LLM | 4.1.3 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
+| O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
@@ -132,6 +133,35 @@ Only a direct `Text(text = s)`/`Text(text = s.value)` read and assignments in th
 
 - `P06MissingLiveRegionDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/p06/P06BadScreen.kt` and `P06GoodScreen.kt`.
+
+---
+
+## O-02 · ComposeMissingOnClickLabel
+
+- **Taxonomy:** Operable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O02MissingOnClickLabelDetector.kt`
+- **Message:** `[O-02] Clickable <element> has no onClickLabel, so screen readers only announce "double tap to activate" with nothing describing what it does`.
+
+### What it flags
+
+`Modifier.clickable` with no `onClickLabel` (not passed, or the literal `null`), on the single container that directly receives the modifier: `Row`, `Box`, `Column`, `Card`, `Surface` or `ListItem` (Material3 or Material). Only `clickable` is checked, as named in CLAUDE.md; `combinedClickable` is not.
+
+### What it ignores
+
+- Any other element (a plain `Icon`/`Image`, or a custom composable not in the container list).
+- A literal or variable `onClickLabel`.
+- Material buttons, since they are never in the container list and already announce their own role.
+
+### Known limitations
+
+CLAUDE.md names this rule as possibly noisy; it is reported as written, with no tuning ahead of the development app run.
+
+### Tests and sample
+
+- `O02MissingOnClickLabelDetectorTest`: 5 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/o02/O02BadScreen.kt` and `O02GoodScreen.kt`.
 
 ---
 

@@ -182,3 +182,33 @@ Also: the P-02 sample screens (`P02BadScreen.kt`, `P02GoodScreen.kt`) originally
 - **"Another composable" is detected as `@Composable` returning Unit.** The exclusion CLAUDE.md asks for cannot simply be "any `@Composable` call": `remember` and `stringResource` are composable too and emit nothing. Only a composable that returns Unit emits UI, so that is the test, minus the few whose content the rule reads itself (`Box`, `Row`, `Column`, `Text`, `Icon`, `Image`, `Spacer`, `Canvas`).
 - **`onClickLabel` is not a name**, consistent with the P-01 decision: it describes the action ("Activate to open"), not the element. The sample screens rely on this, setting `onClickLabel` and `role` to keep O-02 and R-01 quiet while O-05 still reports.
 - **No sample retrofit was needed.** Unlike O-02 and O-04, O-05 reported nothing on the earlier screens: the overlap with P-01 was designed in advance, and every existing clickable already has a Text or a labelled Icon.
+
+### U-03 ComposeMissingSemanticError
+
+**Answer to the question CLAUDE.md asks first: yes, Material already sets an `error(...)` semantic for `isError = true`, but only a generic one.** Checked in the Material3 1.4.0 and Material 1.10.4 sources in the Gradle cache (`internal/TextFieldImpl.kt` in both):
+
+```kotlin
+// Developers need to handle invalid input manually. But since we don't provide an error message
+// slot API, we can set the default error message in case developers forget about it.
+internal fun Modifier.defaultErrorSemantics(
+    isError: Boolean,
+    defaultErrorMessage: String,
+): Modifier = if (isError) semantics { error(defaultErrorMessage) } else this
+```
+
+Every `TextField`, `OutlinedTextField` and `SecureTextField` overload in both libraries applies it with `getString(Strings.DefaultErrorMessage)`, which on Android is `R.string.default_error_message` ("Error"). So the defect U-03 reports is not a missing error semantic, it is an error state with no message that says what is actually wrong, which is exactly how CLAUDE.md 7.3 words it ("the user only hears a generic message, or nothing").
+
+- **What counts as a message.** A `supportingText` slot that is not the literal `null`, or `error(...)` set in the field's own semantics. Both are the places a specific message can live; `label` and `placeholder` are not, because they describe the field rather than the problem.
+- **What counts as an error state.** An `isError` argument that is passed and is not the literal `false`. A variable or a call (`isError = email.isBlank()`) counts, because its value is unknown and the field is clearly meant to have an error state.
+- **Report location.** The `isError` argument, so the underline is on the expression that turns the error state on, consistent with P-01 (reports at `contentDescription`) and P-03 (reports at `color`).
+- **Scope.** `TextField` and `OutlinedTextField` in both Material and Material3, the same four names U-05 uses. `SecureTextField` behaves identically in the sources but is not named in CLAUDE.md, so it is left out.
+
+### `ComposeCalls.argument` now reads the source name first (found while building U-03)
+
+U-03's unit tests all passed, but on the sample app the `Modifier.semantics { error("...") }` field was still reported. A probe put into the message showed why: for the compiled Material3 `TextField`, `argument(context, call, "modifier")` returned the **`onValueChange`** argument.
+
+This is the wrong-overload problem recorded for `Card(onClick = ...)` above, in a worse form. Lint resolves a `TextField(value = ..., onValueChange = ...)` call to the `TextFieldState` overload, whose parameters are shifted by one (`state, modifier, enabled, ...` instead of `value, onValueChange, modifier, ...`). Asking for the parameter named `modifier` therefore finds a real parameter at the wrong index, and `computeArgumentMapping` hands back the argument written in that position. The existing fallback did not help, because it only ran when the mapping returned **null**, and here it returned a wrong but non-null value.
+
+**Fix:** `argument` now tries `namedArgumentInSource` *before* the mapping. When the source writes `name = ...`, the Kotlin compiler has already matched that name against the overload that really applies, so the source name is the more trustworthy of the two. Positional arguments are unchanged and still go through the mapping (with the `kotlinNames` fallback for value class parameters).
+
+This is a shared utility every rule uses, so it was checked with the full unit suite and the full sample app expectation check, which stayed at 0 missing and 0 unexpected. It also silently fixes any rule that reads a named argument from a mis-resolved overload; U-05 was reading `label` from the same shifted mapping and only happened to reach the right verdict.

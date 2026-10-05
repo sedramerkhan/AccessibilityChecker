@@ -14,6 +14,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
+import org.svu.sedra.a11ylint.detectors.understandable.U03MissingSemanticErrorDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U05TextFieldWithoutLabelDetector
 
 enum class Pour {
@@ -141,6 +142,14 @@ object Taxonomy {
             wcag = listOf("4.1.2"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = U03MissingSemanticErrorDetector.TAXONOMY_ID,
+            issue = U03MissingSemanticErrorDetector.ISSUE,
+            pour = Pour.UNDERSTANDABLE,
+            wcag = listOf("3.3.1"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MAJOR,
         ),
         TaxonomyEntry(
             id = U05TextFieldWithoutLabelDetector.TAXONOMY_ID,

@@ -207,6 +207,19 @@ The rule only checks modifier-based clicks.
 IconButton(onClick = { favorite = !favorite }) { ... } // not reported; IconToggleButton is the fix
 ```
 
+## U-03 ComposeMissingSemanticError
+
+### The message is a sibling, not the supporting text
+
+Only the field's own `supportingText` slot and its own semantics are read. A message shown next to the field is not linked to it for accessibility anyway, so the field is still reported.
+
+```kotlin
+Column {
+    TextField(value = email, onValueChange = onChange, label = { Text("Email") }, isError = true) // reported
+    Text("Enter a valid email address") // not linked to the field
+}
+```
+
 ## U-05 ComposeTextFieldWithoutLabel
 
 ### Text fields that are not Material components

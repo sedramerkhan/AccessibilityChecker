@@ -83,24 +83,28 @@ object ComposeCalls {
      * Returns the argument expression passed for the parameter [name], whether the argument
      * was written by name or by position. Returns null when the argument is not passed.
      *
-     * The resolved method's argument mapping is used first. Two problems of compiled Kotlin
-     * libraries are handled:
+     * An argument written by name in the Kotlin source (`name = ...`) is used first, because
+     * the Kotlin compiler already matched that name to a parameter of the overload that really
+     * applies. Only then is the resolved method's argument mapping used, which handles
+     * positional arguments and these two problems of compiled Kotlin libraries:
      *
      * - A parameter whose type is a value class (for example `size: Dp`) loses its name in the
      *   compiled library and appears as `p`, `p0`, ... When the caller passes [kotlinNames], the
      *   Kotlin parameter names of the resolved overload in declaration order (without the
      *   extension receiver), such a parameter is found by its position.
-     * - Lint can resolve a call to the wrong overload: against the compiled Material3 1.4.0
-     *   library, `Card(onClick = ...) { }` resolves to the `Card(modifier, ...)` overload,
-     *   which has no `onClick` parameter. When the mapping finds nothing, an argument written by
-     *   name in the Kotlin source (`name = ...`) is used.
+     * - Lint can resolve a call to the wrong overload. Against the compiled Material3 1.4.0
+     *   library, `Card(onClick = ...) { }` resolves to the `Card(modifier, ...)` overload, which
+     *   has no `onClick` parameter, and a `TextField(value = ..., onValueChange = ...)` call
+     *   resolves to the `TextFieldState` overload, whose parameters are shifted by one, so the
+     *   mapping returns the wrong argument rather than none. Reading the source name first
+     *   avoids both.
      */
     fun argument(
         context: JavaContext,
         call: UCallExpression,
         name: String,
         kotlinNames: List<String>? = null,
-    ): UExpression? = mappedArgument(context, call, name, kotlinNames) ?: namedArgumentInSource(call, name)
+    ): UExpression? = namedArgumentInSource(call, name) ?: mappedArgument(context, call, name, kotlinNames)
 
     /**
      * Returns the value parameters of [method] without the extension receiver (`$this$...`) and

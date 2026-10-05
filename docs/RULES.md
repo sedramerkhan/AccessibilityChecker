@@ -16,6 +16,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
+| U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
 
@@ -224,6 +225,37 @@ Content in another composable function is not read, so such clickables are never
 
 - `O05EmptyClickableDetectorTest`: 6 positive and 7 negative cases.
 - Sample: `sample-app/.../defects/o05/O05BadScreen.kt` and `O05GoodScreen.kt`.
+
+---
+
+## U-03 · ComposeMissingSemanticError
+
+- **Taxonomy:** Understandable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 3.3.1 Error Identification.
+- **Detector:** `detectors/understandable/U03MissingSemanticErrorDetector.kt`
+- **Message:** `[U-03] <TextField> is in its error state but gives no message, so screen readers only announce the generic "Error" and the user is not told what is wrong`.
+
+### What it flags
+
+A `TextField` or `OutlinedTextField` (Material or Material3) whose `isError` argument is passed and is not the literal `false`, with neither a `supportingText` nor an `error(...)` in its own semantics.
+
+Material already sets an `error(...)` semantic for `isError = true`, but only with its generic default message ("Error"), confirmed in the Material3 1.4.0 and Material 1.10.4 sources (see `docs/DECISIONS.md`). So the defect is an error state with no message saying what is actually wrong, not a missing error semantic.
+
+### What it ignores
+
+- `isError = false`, or no `isError` argument at all.
+- A `supportingText` that is not the literal `null`.
+- A specific message set with `Modifier.semantics { error("...") }`.
+
+### Known limitations
+
+A message shown by a sibling composable (a `Text` under the field, rather than its `supportingText` slot) is not seen, so such a field is still reported.
+
+### Tests and sample
+
+- `U03MissingSemanticErrorDetectorTest`: 4 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/u03/U03BadScreen.kt` and `U03GoodScreen.kt`.
 
 ---
 

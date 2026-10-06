@@ -243,6 +243,23 @@ carries all 18 detector classes. The coordinates are the ones CLAUDE.md fixes,
 
 ## 2026-10-06
 
+### P-05 ComposeTextOverImage
+
+- **`Image` only, not `Icon`.** The first version matched `Clickables.imageCalls`, which also
+  holds `Icon`, and the sample app immediately caught it: the O-04 bad screen has a `Box` with an
+  `Icon` and a `Text`, an icon-and-label button, which P-05 reported as text over a picture.
+  CLAUDE.md 7.4 says `Image`, and an `Icon` is a small tinted symbol rather than a photo, so the
+  rule now matches `androidx.compose.foundation.Image` alone. A good example of the sample app
+  earning its keep: the unit tests all passed before this was found.
+- **Source order is the stacking order.** A `Box` draws its children in the order they are
+  written, so only a Text written *after* the Image is on top of it. A Text before the Image is
+  underneath and is not reported.
+- **One warning per Box.** Only the first Text above the Image is reported. Reporting every Text
+  would turn one design decision into several warnings.
+- **What counts as protection.** A `Modifier.background(...)` on the Text itself, or on any child
+  between the Image and the Text, which is how a scrim is normally written. A scrim drawn with
+  `drawBehind` or a gradient `Brush` is not recognised (recorded in LIMITATIONS).
+
 ### Two rules tuned after the development app run (agreed with Sedra)
 
 The first run against code we did not write produced 36 findings on JetNews and Jetchat, of

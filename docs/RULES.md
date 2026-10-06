@@ -8,6 +8,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
 | P-03 | `ComposeLowContrastColors` | Warning (Major) | STATIC | 1.4.3 | Done |
 | P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
+| P-05 | `ComposeTextOverImage` | Warning (Minor) | STATIC_LLM | 1.4.3 | Done |
 | P-06 | `ComposeMissingLiveRegion` | Warning (Major) | STATIC_LLM | 4.1.3 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
@@ -384,6 +385,37 @@ The check is per function, so a gesture in one composable and the semantics in i
 
 - `R06ComposableWithoutSemanticsDetectorTest`: 3 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/r06/R06BadScreen.kt` and `R06GoodScreen.kt`.
+
+---
+
+## P-05 · ComposeTextOverImage
+
+- **Taxonomy:** Perceivable, Minor, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 1.4.3 Contrast (Minimum).
+- **Detector:** `detectors/perceivable/P05TextOverImageDetector.kt`
+- **Message:** `[P-05] Possible text over an image: this Text is drawn on top of an Image with no background or scrim, so its contrast depends on the picture`.
+
+### What it flags
+
+A `Box` whose content lambda holds an `Image` and then, later in source order, a `Text`. In a `Box` children are stacked in the order they are written, so such a Text is drawn over the picture. The first Text above the Image is reported, so one `Box` gives at most one warning.
+
+### What it ignores
+
+- A Text with its own `Modifier.background(...)`.
+- A layer with a `Modifier.background(...)` between the Image and the Text, which is the usual way to write a scrim.
+- A Text written **before** the Image, since the picture is then drawn on top of it.
+- Any layout that is not a `Box`, because only a `Box` overlays its children.
+- An `Icon`, as opposed to an `Image`. CLAUDE.md 7.4 names `Image`, and a `Box` holding an Icon and a Text is normally an icon-and-label button rather than text over a photo.
+
+### Known limitations
+
+Whether the result is actually unreadable depends on the picture, which static analysis cannot know, so this is a candidate for Phase 3 rather than a certain defect. A scrim drawn some other way, for example with `drawBehind` or a gradient `Brush`, is not recognised.
+
+### Tests and sample
+
+- `P05TextOverImageDetectorTest`: 2 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/p05/P05BadScreen.kt` and `P05GoodScreen.kt`.
 
 ---
 

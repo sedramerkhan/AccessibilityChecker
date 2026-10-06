@@ -8,12 +8,12 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | Not started: P-05, P-07, O-06, O-07, U-06, U-07, R-04, R-05. |
+| 4 Minor rules (8) | In progress: P-05 done. Left: P-07, O-06, O-07, U-06, U-07, R-04, R-05. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-18 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 18 issue IDs, 64 expected,
-64 reported, 0 missing, 0 unexpected.
+19 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 19 issue IDs, 66 expected,
+66 reported, 0 missing, 0 unexpected.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
 Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
@@ -114,8 +114,9 @@ Open questions for Sedra:
 
 ## Milestone 2: Critical rules
 
-Rules: done (2026-10-03), all 7. The development app run that closes this milestone was deferred
-in favour of continuing with Milestone 3 and is still open; see "What is left" at the top.
+Status: done. The 7 rules were finished on 2026-10-03; the development app run that closes this
+milestone was deferred in favour of Milestone 3 and was carried out on 2026-10-06, see
+[DEV_APP_RESULTS.md](DEV_APP_RESULTS.md).
 
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|
@@ -175,3 +176,14 @@ Notes:
 - O-05 passed its unit tests and the sample app on the first run, and was the first Milestone 3 rule that needed no retrofit of the earlier screens: its overlap with P-01 was decided when P-01 was built, so it skips any clickable holding an Icon or Image and only reports one with no Icon, no Image and no Text (see DECISIONS). The full expectations check is now 52 expected, 52 reported, 0 missing, 0 unexpected.
 - O-04 completed the R-01 overlap that was prepared in Milestone 2: both rules visit the same node and both call `Clickables.isButtonLikeContainer`, R-01 to bail out and O-04 to continue, so exactly one of the two reports (see DECISIONS). One negative test first failed under the `REORDER_ARGUMENTS` test mode for the reason already recorded for P-01 (a trailing comma before a trailing lambda cannot be rewritten); the test was written without the trailing comma, and no test mode is disabled. O-04 then reported on eight role-less clickables in the O-03, P-01 and U-02 screens, which were given roles, the same retrofit R-01 and O-02 needed.
 - O-02 passed its unit tests on the first run, but the sample app first reported 25 warnings instead of 5: the container list (`Row`/`Box`/`Column`/`Card`/`ListItem`) also matched `Modifier.clickable` calls built earlier for O-01, O-03, P-01, R-01 and U-02, on both bad and good screens. The same situation happened when R-01 was added (see PROGRESS, Milestone 2). Fixed by giving every one of those 20 calls an `onClickLabel`, the same way they were earlier given a `role`.
+
+## Milestone 4: Minor rules
+
+In progress.
+
+| Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
+|---|---|---|---|---|
+| P-05 `ComposeTextOverImage` | Done | 2 | 5 | 2, all matched |
+
+Notes:
+- P-05's unit tests all passed, but the sample app caught a real scope error: the rule matched `Clickables.imageCalls`, which includes `Icon`, so it reported the O-04 bad screen's icon-and-label button as text over a picture. CLAUDE.md 7.4 says `Image`, and the rule now matches only that (see DECISIONS). A reminder that the sample app check earns its keep for every rule, not only for the ones that touch compiled-library behaviour.

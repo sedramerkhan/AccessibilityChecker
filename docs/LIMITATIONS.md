@@ -293,6 +293,24 @@ fun cardFontSize(): TextUnit = LocalDensity.current.run { 16.dp.toSp() }
 Text("Caption", fontSize = cardFontSize()) // not recognised
 ```
 
+## P-05 ComposeTextOverImage
+
+### Scrims drawn without a background modifier
+
+Only `Modifier.background(...)` is recognised as protection. A scrim painted with `drawBehind`, a gradient `Brush`, or a translucent overlay drawn in a `Canvas` is not seen, so the text is still reported.
+
+```kotlin
+Box {
+    Image(photo, contentDescription = null)
+    Box(Modifier.fillMaxSize().drawBehind { drawRect(scrimBrush) }) // not recognised
+    Text("Summer sale") // still reported
+}
+```
+
+### Whether it is actually unreadable
+
+The rule cannot know what the picture looks like. A caption over a dark, uniform photo may be perfectly readable, and one over a bright photo may not, so this is a candidate for Phase 3 rather than a certain defect.
+
 ## P-06 ComposeMissingLiveRegion
 
 ### State read or assigned in another function

@@ -10,6 +10,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P01MissingContentDescription
 import org.svu.sedra.a11ylint.detectors.perceivable.P02DecorativeImageLabeledDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P03LowContrastColorsDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P04TextSizeInDpDetector
+import org.svu.sedra.a11ylint.detectors.perceivable.P05TextOverImageDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
@@ -81,6 +82,14 @@ object Taxonomy {
             wcag = listOf("1.4.4"),
             detection = DetectionType.STATIC,
             priority = Priority.MAJOR,
+        ),
+        TaxonomyEntry(
+            id = P05TextOverImageDetector.TAXONOMY_ID,
+            issue = P05TextOverImageDetector.ISSUE,
+            pour = Pour.PERCEIVABLE,
+            wcag = listOf("1.4.3"),
+            detection = DetectionType.STATIC_LLM,
+            priority = Priority.MINOR,
         ),
         TaxonomyEntry(
             id = P06MissingLiveRegionDetector.TAXONOMY_ID,

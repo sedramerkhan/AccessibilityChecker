@@ -241,6 +241,59 @@ manifest holds `Lint-Registry-v2: org.svu.sedra.a11ylint.ComposeA11yIssueRegistr
 carries all 18 detector classes. The coordinates are the ones CLAUDE.md fixes,
 `org.svu.sedra:a11ylint:0.1.0`.
 
+## 2026-10-06
+
+### Two rules tuned after the development app run (agreed with Sedra)
+
+The first run against code we did not write produced 36 findings on JetNews and Jetchat, of
+which three were confirmed false positives from two rule defects. Both are now fixed. The
+evidence, and the counts before and after, are in `DEV_APP_RESULTS.md`.
+
+**O-05: the clickable element may itself be a composable the rule cannot read.** The rule already
+skipped a clickable whose *content* calls an unknown composable, because that composable may
+supply the name. It did not apply the same reasoning to the element itself, and a custom
+composable has no content lambda to walk, so the walk found nothing and the rule concluded there
+was nothing to read. Both of its development app findings were of exactly this shape:
+
+```kotlin
+PostCardTop(post = post, modifier = Modifier.clickable { navigateToPost(post.id) })   // renders the title
+JetchatIcon(contentDescription = "...", modifier = Modifier.size(64.dp).clickable { }) // has its own label
+```
+
+Fixed by applying the existing `emitsUnknownUi` test to the element as well as to its content.
+The set of composables the rule can read was renamed `READABLE_COMPOSABLES` and widened to
+include the Material clickable components and containers, because their content lambdas *are*
+walked: without that, an empty `IconButton` would have been skipped as "unknown" and the rule
+would have lost a true positive.
+
+**R-02: an empty block only loses what the content actually provided.** CLAUDE.md asks to flag
+every empty `clearAndSetSemantics { }`, and the open question recorded against R-02 asked whether
+that was too broad. The development app run answered it with Google's own code:
+
+```kotlin
+BookmarkButton(
+    isBookmarked = isFavorite,
+    onClick = onToggleFavorite,
+    // Remove button semantics so action can be handled at row level
+    modifier = Modifier.clearAndSetSemantics {}.padding(vertical = 2.dp, horizontal = 6.dp),
+)
+```
+
+The empty block is deliberate and correct: the row above offers the action as a custom
+accessibility action, so the inner button is silenced on purpose. The rule now computes what the
+content provided first, and reports an empty block only when there was a name or an interaction
+to lose. The message says which, so an empty block reads "is empty, so it hides the name of its
+content from screen readers" instead of a generic sentence.
+
+**This narrows the taxonomy wording for R-02**, which said "that is empty" without qualification.
+The thesis text should say that an empty block is reported when it hides a name or an
+interaction, so that deliberately hiding decoration stays clean.
+
+**Verification.** Both fixes were checked in all three directions: the unit tests (with a new
+regression test each, written from the real code above), the sample app expectation check, which
+stayed at 64 expected and 64 reported with 0 missing and 0 unexpected, and a re-run of both
+development apps, where the three false positives disappeared and every other finding stayed.
+
 ### R-06 ComposableWithoutSemantics
 
 - **The narrowing CLAUDE.md asks to record.** The taxonomy wording is "a composable that contains clickable or toggleable UI and sets no semantics". The rule as built reports only **custom gestures** with no semantics, and deliberately ignores `clickable`/`toggleable`, because those already add an action and a role of their own and are covered by R-01, O-02 and U-02. The real defect is the gesture that gives TalkBack nothing at all. **The thesis taxonomy text for R-06 should be updated to say "custom gestures" instead of "clickable or toggleable UI".**

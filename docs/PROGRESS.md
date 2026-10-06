@@ -6,7 +6,7 @@
 |---|---|
 | 0 Setup | Done |
 | 1 Infrastructure | Done |
-| 2 Critical rules (7) | Rules done. The development app run was deferred and is still open. |
+| 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
 | 4 Minor rules (8) | Not started: P-05, P-07, O-06, O-07, U-06, U-07, R-04, R-05. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
@@ -15,21 +15,17 @@
 by a bad and a good sample screen. Across the whole sample app: 18 issue IDs, 64 expected,
 64 reported, 0 missing, 0 unexpected.
 
+The rules have now also been run on code we did not write: **33 findings across JetNews and
+Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
+[DEV_APP_RESULTS.md](DEV_APP_RESULTS.md). O-02, which CLAUDE.md expected to be noisy, produced
+8 findings across two complete apps, and O-03 produced one, on a genuine defect.
+
 ### What is left, in order
 
-1. **Development app run on Jetnews and Jetchat**, and `DEV_APP_RESULTS.md`, which is still a
-   stub. This was due after Milestone 2 and is now overdue. CLAUDE.md asks for O-02 and O-03
-   precision to be measured there *before* either rule is tuned, so every rule added before this
-   run has only ever been judged against our own sample app.
-   The publishing blocker is cleared: `./gradlew :lint-library:publishToMavenLocal` now works and
-   was verified by unpacking the artifact (see DECISIONS, two bugs fixed). A development app
-   consumes the rules with `mavenLocal()` in its repositories and
-   `implementation("org.svu.sedra:a11ylint:0.1.0")`. Still needed: clone Jetnews and Jetchat into
-   `../dev-apps/`, outside this repository, and run lint on each.
-2. **Milestone 4**, the eight minor rules. Two need more than a detector: P-07 needs the
+1. **Milestone 4**, the eight minor rules. Two need more than a detector: P-07 needs the
    Material3 check for whether `ModalBottomSheet`, `ModalNavigationDrawer` and `AlertDialog`
    already set a pane title, and U-06 is project-wide and needs Lint partial analysis.
-3. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
+2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
    already done and verified.
 
@@ -47,13 +43,25 @@ belongs to.
 4. **U-01**: Material3 top app bars do not mark their title as a heading. The rule ignores them,
    as CLAUDE.md says. Keep ignoring, or report them, since the title is usually the screen's
    main heading?
-5. **R-02**: CLAUDE.md asks to flag every empty `clearAndSetSemantics { }`, but an empty block is
-   also the documented way to hide a decorative subtree, so that legitimate use is reported too.
-   Narrow the empty case to blocks whose content had a name or was interactive?
+5. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
+   that pattern deliberately and our rule still reports the icon, consistently with its recorded
+   decision that an action label is not a name. Left as it is; a good candidate for Phase 3 to
+   judge rather than for tuning the static rule. See `DEV_APP_RESULTS.md`.
+6. **U-01**: does Material3 give `AlertDialog` titles their own semantics? The same check that was
+   done for top app bars. U-01 reports a dialog title as a possible heading on JetNews.
+
+**Answered:** R-02's empty-block question. The development app run showed Google's own code using
+an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
+block only when the content had a name or an interaction to lose (2026-10-06, see DECISIONS).
 
 ### Thesis text that needs updating
 
 These are not questions, they are edits the taxonomy chapter needs.
+
+0. **R-02's wording narrows.** The taxonomy says an empty `clearAndSetSemantics { }` is flagged
+   without qualification. The rule now reports an empty block only when it hides a name or an
+   interaction, because flagging it unconditionally reported a correct, deliberate pattern on
+   JetNews. See `DEV_APP_RESULTS.md`.
 
 1. **R-03 `ComposeMergeHidesInteractive` is void.** The defect cannot occur in Compose 1.10.4:
    merging stops at any child that is itself a merging root, and every clickable modifier sets

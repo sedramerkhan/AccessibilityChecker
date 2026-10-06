@@ -33,6 +33,9 @@ class O05EmptyClickableDetector : Detector(), SourceCodeScanner {
             if (ComposeCalls.isCall(node, Clickables.imageCalls)) return
             if (ComposeCalls.isCall(node, Clickables.textCalls)) return
             if (Clickables.hasAccessibleName(context, node)) return
+            // The element is itself a composable this rule cannot see into, so it may well
+            // render its own name (found on the development apps, see DEV_APP_RESULTS).
+            if (emitsUnknownUi(node)) return
 
             val content = contentCalls(node)
             // An unlabelled Icon or Image inside the clickable is P-01 (overlap policy 7.1).
@@ -70,11 +73,11 @@ class O05EmptyClickableDetector : Detector(), SourceCodeScanner {
 
     /**
      * True when [call] emits UI this rule cannot read: a `@Composable` function that returns
-     * Unit and is not one of the few whose content is read directly. A `@Composable` that
-     * returns a value (`remember`, `stringResource`) emits nothing and does not count.
+     * Unit and is not one of the composables whose content is read directly. A `@Composable`
+     * that returns a value (`remember`, `stringResource`) emits nothing and does not count.
      */
     private fun emitsUnknownUi(call: UCallExpression): Boolean {
-        if (ComposeCalls.isCall(call, VISIBLE_CONTENT)) return false
+        if (ComposeCalls.isCall(call, READABLE_COMPOSABLES)) return false
         val method = call.resolve() ?: return false
         if (!method.hasAnnotation(ComposeCalls.COMPOSABLE)) return false
         return method.returnType?.canonicalText == "void"
@@ -83,10 +86,18 @@ class O05EmptyClickableDetector : Detector(), SourceCodeScanner {
     companion object {
         const val TAXONOMY_ID = "O-05"
 
-        /** Composables whose content this rule reads itself, so they never hide a name. */
-        private val VISIBLE_CONTENT = Clickables.layoutContainers +
+        /**
+         * Composables whose content this rule can read, either because it walks their content
+         * lambdas or because they have none. Anything else is a composable whose output is
+         * unknown: it may render its own name, so neither it nor its content is judged here.
+         * The Material components are included because their content lambdas are read like any
+         * other, so an empty `IconButton` is still reported.
+         */
+        private val READABLE_COMPOSABLES = Clickables.layoutContainers +
             Clickables.textCalls +
             Clickables.imageCalls +
+            Clickables.clickableComponents +
+            Clickables.clickableContainers +
             setOf(
                 "androidx.compose.foundation.layout.Spacer",
                 "androidx.compose.foundation.Canvas",

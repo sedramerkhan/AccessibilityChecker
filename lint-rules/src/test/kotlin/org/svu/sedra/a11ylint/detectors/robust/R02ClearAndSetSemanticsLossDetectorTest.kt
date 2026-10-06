@@ -40,7 +40,7 @@ $body
     fun testEmptyBlock() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:23: Warning: [R-02] clearAndSetSemantics is empty, so everything it covers is hidden from screen readers [ComposeClearAndSetSemanticsLoss]
+src/test/pkg/Screen.kt:23: Warning: [R-02] clearAndSetSemantics is empty, so it hides the name of its content from screen readers [ComposeClearAndSetSemanticsLoss]
                     Row(modifier = Modifier.clearAndSetSemantics { }) {
                                             ~~~~~~~~~~~~~~~~~~~~
 0 errors, 1 warning
@@ -168,6 +168,23 @@ src/test/pkg/Screen.kt:23: Warning: [R-02] clearAndSetSemantics does not put bac
             Row(modifier = Modifier.clearAndSetSemantics { contentDescription = "Running shoes" }) {
                 Text("Running shoes")
             }
+        }
+    """))
+
+    // Hiding a subtree whose name and interaction the rule cannot see is the documented use of
+    // an empty block. This is the JetNews BookmarkButton pattern, where the row above offers the
+    // action instead, and it was a false positive before (see DEV_APP_RESULTS).
+    fun testEmptyBlockOnUnreadableContentIsClean() = expectClean(screen("""
+        @Composable fun Screen(onToggle: () -> Unit) {
+            BookmarkButton(
+                onClick = onToggle,
+                // Remove button semantics so the action can be handled at row level
+                modifier = Modifier.clearAndSetSemantics { },
+            )
+        }
+
+        @Composable fun BookmarkButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+            Text("Bookmark", modifier = modifier)
         }
     """))
 }

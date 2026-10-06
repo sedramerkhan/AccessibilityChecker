@@ -219,6 +219,7 @@ A clickable element (the same definition P-01 and O-03 use) whose content holds 
 - A clickable that holds an **unlabelled** Icon or Image. That is P-01's defect, not this one (CLAUDE.md overlap policy 7.1).
 - A clickable element that is itself an Icon, Image or Text, for the same reason.
 - A clickable whose content calls a composable this rule cannot see into, since that composable may provide the name.
+- A clickable element that **is itself** such a composable, for the same reason. The rule reads the layouts, the Material components and `Spacer`/`Canvas`; anything else may render its own name. Added after the development app run, where both of this rule's findings were of this shape.
 - `onClickLabel` is not a name: it describes the action, not the element, so it does not silence this rule.
 
 ### Known limitations
@@ -303,23 +304,25 @@ A vague Text next to a labelled Icon is still reported, although the icon's `con
 - **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
 - **WCAG 2.2:** 4.1.2 Name, Role, Value.
 - **Detector:** `detectors/robust/R02ClearAndSetSemanticsLossDetector.kt`
-- **Message:** `[R-02] clearAndSetSemantics is empty, so everything it covers is hidden from screen readers`, or `[R-02] clearAndSetSemantics does not put back <what was lost>, so screen readers lose it`.
+- **Message:** `[R-02] clearAndSetSemantics is empty, so it hides <what was lost> from screen readers`, or `[R-02] clearAndSetSemantics does not put back <what was lost>, so screen readers lose it`.
 
 ### What it flags
 
-A `Modifier.clearAndSetSemantics { }` that:
+A `Modifier.clearAndSetSemantics { }` that drops something its content provided without putting it back. The rule works out what the content had, then checks the block against it:
 
-- is empty, or
-- sets no `contentDescription` or `text` although the content holds a Text with text, or a labelled Icon or Image, or
-- sets no `role`, `stateDescription`, `toggleableState` or `selected` although the element or its content is clickable, toggleable, selectable, or a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton`.
+- a **name**, when the content holds a Text with text, or a labelled Icon or Image, and the block sets no `contentDescription` or `text`;
+- a **role or state**, when the element or its content is clickable, toggleable, selectable, or holds a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton`, and the block sets no `role`, `stateDescription`, `toggleableState` or `selected`.
+
+An empty block loses whatever the content had, so it is reported whenever the content had either.
 
 ### What it ignores
 
-A block that puts back everything the content provided. Replacing several Texts with one sentence is the intended use of this modifier and is clean, as is adding a name to content that only had decorative icons.
+- A block that puts back everything the content provided. Replacing several Texts with one sentence is the intended use of this modifier, as is adding a name to content that only had decorative icons.
+- An empty block over content with no name and no interaction, which is the documented way to hide a decorative subtree. This also covers content the rule cannot see into.
 
 ### Known limitations
 
-An empty block is always reported, including the case where it is used deliberately to hide a decorative subtree from screen readers. CLAUDE.md 7.3 asks for that; see `docs/DECISIONS.md` for the open question.
+This narrows CLAUDE.md 7.3, which asks for every empty block to be flagged. The development app run showed that reporting an empty block unconditionally flags a correct and deliberate pattern; see `docs/DEV_APP_RESULTS.md` for the case and `docs/DECISIONS.md` for the decision.
 
 ### Tests and sample
 

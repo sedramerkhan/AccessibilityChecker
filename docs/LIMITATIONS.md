@@ -320,25 +320,30 @@ CLAUDE.md flags this rule as possibly noisy on real apps. It is implemented exac
 
 ### The name comes from another composable
 
-A clickable whose content calls a composable the rule cannot see into is never reported, because that composable may well provide the name. This is a deliberate false negative: reporting it would flag most real clickable rows.
+A clickable is never reported when the rule cannot read what it renders, because that composable may well provide the name. This holds both when the unreadable composable is the content and when it is the clickable element itself. A deliberate false negative: reporting these flagged correct code on both development apps.
 
 ```kotlin
 Box(Modifier.clickable { open() }) {
     ItemRow(item) // may contain a Text; not reported either way
 }
+
+// The element itself, as in JetNews PostCardTop and Jetchat JetchatIcon
+PostCardTop(post = post, modifier = Modifier.clickable { navigateToPost(post.id) }) // not reported
 ```
+
+So a genuinely empty custom composable with a click modifier is missed. The rule only judges what it can read: the layouts, the Material components, `Spacer` and `Canvas`.
 
 ## R-02 ComposeClearAndSetSemanticsLoss
 
-### Hiding decoration on purpose is still reported
+### An empty block over content the rule cannot read is never reported
 
-An empty `clearAndSetSemantics { }` is the documented way to take a decorative subtree out of the accessibility tree, but CLAUDE.md asks for every empty block to be flagged, so this is reported too.
+Since the development app run the rule only reports what the content demonstrably provided. When the content is a composable it cannot see into, nothing is known to be lost, so a block that really does hide a name stays silent.
 
 ```kotlin
-Row(Modifier.clearAndSetSemantics { }) { // reported, although hiding this is deliberate
-    DecorativeWave()
-}
+BookmarkButton(onClick = onToggle, modifier = Modifier.clearAndSetSemantics { }) // not reported
 ```
+
+This is the deliberate trade: the same shape is the documented way to hide a decorative subtree, and reporting it was a false positive on JetNews.
 
 ### Content in another composable
 

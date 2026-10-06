@@ -205,4 +205,33 @@ src/test/pkg/Screen.kt:23: Warning: [O-05] Clickable Box has nothing to read: no
             }
         }
     """))
+
+    // The clickable element is itself a composable the rule cannot see into, so it may render
+    // its own name. Both of this rule's findings on the development apps were of this shape:
+    // JetNews PostCardTop and Jetchat JetchatIcon (see DEV_APP_RESULTS).
+    fun testClickableUnknownComposableIsClean() = expectClean(screen("""
+        @Composable fun Screen(onAction: () -> Unit) {
+            PostCardTop(modifier = Modifier.clickable { onAction() })
+        }
+
+        @Composable fun PostCardTop(modifier: Modifier = Modifier) {
+            Column(modifier = modifier) {
+                Text("Reading list")
+            }
+        }
+    """))
+
+    // Same shape, but the custom composable takes its own contentDescription, like JetchatIcon.
+    fun testClickableUnknownComposableWithOwnLabelIsClean() = expectClean(screen("""
+        @Composable fun Screen(onAction: () -> Unit) {
+            JetchatIcon(
+                contentDescription = "Open the navigation drawer",
+                modifier = Modifier.size(48.dp).clickable { onAction() },
+            )
+        }
+
+        @Composable fun JetchatIcon(contentDescription: String, modifier: Modifier = Modifier) {
+            Icon(Icons.Filled.Delete, contentDescription = contentDescription, modifier = modifier)
+        }
+    """))
 }

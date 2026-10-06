@@ -30,24 +30,26 @@ class R02ClearAndSetSemanticsLossDetector : Detector(), SourceCodeScanner {
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         if (!ComposeCalls.isCall(node, CLEAR_AND_SET_SEMANTICS)) return
         val assigned = ModifierChain.blockAssignments(node)
-        val element = ModifierChain.receivingElement(ModifierChain.outermostExpression(node)) as? UCallExpression
+        val element = ModifierChain.receivingElement(ModifierChain.outermostExpression(node))
+            as? UCallExpression ?: return
 
-        val problem = when {
-            assigned.isEmpty() ->
-                "is empty, so everything it covers is hidden from screen readers"
-            element == null -> return
-            else -> {
-                val lost = buildList {
-                    if (contentHasName(context, element) && assigned.none { it in NAME_PROPERTIES }) {
-                        add("the name of its content")
-                    }
-                    if (isInteractive(context, element) && assigned.none { it in ROLE_PROPERTIES }) {
-                        add("the role and state of its content")
-                    }
-                }
-                if (lost.isEmpty()) return
-                "does not put back ${lost.joinToString(" or ")}, so screen readers lose it"
+        // Only what the content actually provided can be lost. An empty block over content with
+        // no name and no interaction is the documented way to hide decoration, and reporting it
+        // was a false positive on the development apps (see DEV_APP_RESULTS).
+        val lost = buildList {
+            if (contentHasName(context, element) && assigned.none { it in NAME_PROPERTIES }) {
+                add("the name of its content")
             }
+            if (isInteractive(context, element) && assigned.none { it in ROLE_PROPERTIES }) {
+                add("the role and state of its content")
+            }
+        }
+        if (lost.isEmpty()) return
+
+        val problem = if (assigned.isEmpty()) {
+            "is empty, so it hides ${lost.joinToString(" and ")} from screen readers"
+        } else {
+            "does not put back ${lost.joinToString(" or ")}, so screen readers lose it"
         }
 
         context.report(

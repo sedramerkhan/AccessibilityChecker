@@ -310,6 +310,46 @@ include the Material clickable components and containers, because their content 
 walked: without that, an empty `IconButton` would have been skipped as "unknown" and the rule
 would have lost a true positive.
 
+## 2026-10-07
+
+### O-06 ComposeDisabledButClickable
+
+- **What counts as a guard.** Two shapes, the two CLAUDE.md 7.4 names: an early return
+  (`if (!enabled) return@clickable`, anywhere in the handler, not only as the first statement)
+  and the whole handler wrapped in a condition (`if (enabled) { ... }` as the lambda's only
+  statement). Anything else is left alone. A condition that does not return, among several
+  statements, stops nothing, and the element really is live.
+- **A condition with an `else` branch is not a guard.** `if (expanded) onClose() else onOpen()`
+  as the only statement picks between two actions; the element is never disabled, so passing
+  `enabled` would be wrong. Without this test the rule reported every two-way toggle written
+  that way, which is a common shape.
+- **The condition is not read.** The rule does not check that the condition tests something
+  called "enabled", so `if (items.isEmpty()) return@clickable` is reported too. That is
+  deliberate: the shape of the defect is a handler that silently refuses while the element still
+  announces itself as clickable, and `enabled = items.isNotEmpty()` is the better form in that
+  case as well. Judging what the condition *means* is a Layer 3 question, which is why the rule
+  stays STATIC rather than becoming STATIC_LLM.
+- **Only `Modifier.clickable`.** `combinedClickable`, `toggleable` and `selectable` take the same
+  `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names `clickable`, so widening
+  the rule would be a taxonomy change. Noted as a question for Sedra rather than done quietly.
+- **Report location.** The `clickable` call itself (receiver and arguments excluded), so the
+  underline is on the modifier that should have carried `enabled`, not on the guard.
+
+### Two UAST shapes that O-06 exposed, both of general interest
+
+1. **`IF_TO_WHEN` rewrites every `if` into a `when`.** Lint's test mode does this to prove a
+   detector is not pattern matching on source text, and the first version of O-06 passed its
+   plain tests and failed under this mode: `UIfExpression` alone misses the rewritten code. A
+   detector that reasons about conditions must accept `USwitchExpression` too, and the "has an
+   else branch" question becomes "is there a clause with no case values". Any later rule that
+   looks at conditions needs the same pair.
+2. **Kotlin's implicit lambda return is a real UAST node.** The last expression of a lambda is
+   its value, and UAST models that by wrapping it in a `UReturnExpression`. So a handler whose
+   only statement is `if (enabled) { ... }` presents as a *return of* an `if`, not as an `if`,
+   and a plain type test on the block's statements finds nothing. O-06 unwraps that wrapper
+   (`statement()`) before looking at the shape. This is why the early return and the wrapped
+   handler, which look so different in source, both need the same unwrapping step.
+
 **R-02: an empty block only loses what the content actually provided.** CLAUDE.md asks to flag
 every empty `clearAndSetSemantics { }`, and the open question recorded against R-02 asked whether
 that was too broad. The development app run answered it with Google's own code:

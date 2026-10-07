@@ -16,6 +16,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
+| O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
@@ -445,6 +446,56 @@ Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a ful
 
 - `P07MissingPaneTitleDetectorTest`: 2 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/p07/P07BadScreen.kt` and `P07GoodScreen.kt`.
+
+---
+
+## O-06 · ComposeDisabledButClickable
+
+- **Taxonomy:** Operable, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O06DisabledButClickableDetector.kt`
+- **Message:** `[O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled`.
+
+### What it flags
+
+A `Modifier.clickable { ... }` with no `enabled` argument whose handler decides for itself whether to act. Two shapes are recognised, the two CLAUDE.md names:
+
+- an early return guard, `if (!enabled) return@clickable`, followed by the real work;
+- the whole handler wrapped in a condition, `if (enabled) { ... }` as the only statement in the lambda.
+
+The element then keeps its clickable state in the semantics tree, so TalkBack still offers it, the user activates it, and nothing happens with no explanation.
+
+### What it ignores
+
+- `Modifier.clickable(enabled = x) { ... }`. That is the correct form: it blocks the click and marks the element disabled.
+- A handler with no condition in it.
+- A condition with an `else` branch. That is a choice between two actions, so the element is never disabled.
+- A handler with several statements where the condition does not return. Nothing is being stopped, so the element is still live.
+- An empty handler.
+
+### Example
+
+Bad:
+
+```kotlin
+Row(modifier = Modifier.clickable { if (!formComplete) return@clickable; onSubmit() }) { Text("Send") }
+```
+
+Good:
+
+```kotlin
+Row(modifier = Modifier.clickable(enabled = formComplete) { onSubmit() }) { Text("Send") }
+```
+
+### Known limitations
+
+The rule does not read what the condition tests. A guard on something that is not an enabled state, for example `if (items.isEmpty()) return@clickable`, is reported in the same way. The condition is still a guard, and passing it as `enabled` is still the better form, but a rule that judges intent would belong to Layer 3.
+
+### Tests and sample
+
+- `O06DisabledButClickableDetectorTest`: 4 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/o06/O06BadScreen.kt` and `O06GoodScreen.kt`.
 
 ---
 

@@ -424,3 +424,42 @@ Box(Modifier.clickable { share() }) {
     Row { Icon(shareIcon, null); Text("Share") }
 }
 ```
+
+## O-06 ComposeDisabledButClickable
+
+### The guard may be in a function the rule cannot read
+
+Only the handler written at the call site is examined. A guard moved into a helper, or into a
+lambda the handler calls, is not seen:
+
+```kotlin
+fun submitIfReady(ready: Boolean, onSubmit: () -> Unit) { if (!ready) return; onSubmit() }
+
+Row(Modifier.clickable { submitIfReady(formComplete, onSubmit) }) { Text("Send") } // not reported
+```
+
+### What the condition tests is not read
+
+Any guard counts, not only one on an enabled state, so a guard on something else is reported
+with the same message:
+
+```kotlin
+Row(Modifier.clickable { if (items.isEmpty()) return@clickable; open() }) { Text("Open") }
+```
+
+The shape of the defect is the same, but the wording of the warning assumes an enabled state.
+Phase 3 can read the condition and say what it really means.
+
+### Guards written without a condition
+
+`require`, `check`, an early `?: return` or a `takeIf` are all ways to stop the handler that are
+not an `if` or a `when`, and none of them is matched:
+
+```kotlin
+Row(Modifier.clickable { formComplete.takeIf { it } ?: return@clickable; onSubmit() })
+```
+
+### Only `Modifier.clickable`
+
+`combinedClickable`, `toggleable` and `selectable` have the same `enabled` parameter and the same
+defect, but the rule follows CLAUDE.md 7.4 and matches `clickable` only.

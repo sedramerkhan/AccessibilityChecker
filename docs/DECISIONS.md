@@ -243,6 +243,33 @@ carries all 18 detector classes. The coordinates are the ones CLAUDE.md fixes,
 
 ## 2026-10-06
 
+### P-07 ComposeMissingPaneTitle
+
+**Answer to the question CLAUDE.md asks first: yes, all three Material overlays already set a
+`paneTitle`, so all three are excluded.** Checked in the Material3 1.4.0 sources:
+
+| Component | Where |
+|---|---|
+| `AlertDialog` | `AlertDialog.kt:171`, `Modifier.semantics { paneTitle = dialogPaneDescription }` |
+| `ModalBottomSheet` | `ModalBottomSheet.kt:335`, `paneTitle = bottomSheetPaneTitle` |
+| `ModalNavigationDrawer` and the other drawers | `NavigationDrawer.kt:398, 494, 777`, `paneTitle = navigationMenu` |
+
+`DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail` do the same, so the Material
+layer is well covered. The gap is one level down: `androidx.compose.ui.window.Popup` and `Dialog`
+contain **no** `paneTitle` at all, checked in `AndroidPopup.android.kt` and
+`AndroidDialog.android.kt`. Those are what the rule reports.
+
+- **Scope is `Popup` and `Dialog` only.** CLAUDE.md also mentions "a full-screen `Box` shown
+  conditionally with `AnimatedVisibility`". That shape is not detected: P-07 is a STATIC rule, so
+  it has to be reliable, and "a Box that is really an overlay" cannot be told apart from an
+  ordinary animated Box without guessing. Recorded in LIMITATIONS, and worth asking Sedra whether
+  the taxonomy wording should narrow to the overlay primitives.
+- **The title may be anywhere inside the overlay.** The rule looks at the overlay's own modifier
+  and then at every call in its content, so a `paneTitle` set on a nested Column still counts.
+  Overlay content is usually a small tree written in one place.
+- **Material overlays are excluded by not being in the list**, rather than by a special case, so
+  the exclusion is just the set of two primitives above.
+
 ### P-05 ComposeTextOverImage
 
 - **`Image` only, not `Icon`.** The first version matched `Clickables.imageCalls`, which also

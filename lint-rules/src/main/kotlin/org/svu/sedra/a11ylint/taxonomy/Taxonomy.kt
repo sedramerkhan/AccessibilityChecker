@@ -12,6 +12,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P03LowContrastColorsDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P04TextSizeInDpDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P05TextOverImageDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
+import org.svu.sedra.a11ylint.detectors.perceivable.P07MissingPaneTitleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
 import org.svu.sedra.a11ylint.detectors.robust.R06ComposableWithoutSemanticsDetector
@@ -98,6 +99,14 @@ object Taxonomy {
             wcag = listOf("4.1.3"),
             detection = DetectionType.STATIC_LLM,
             priority = Priority.MAJOR,
+        ),
+        TaxonomyEntry(
+            id = P07MissingPaneTitleDetector.TAXONOMY_ID,
+            issue = P07MissingPaneTitleDetector.ISSUE,
+            pour = Pour.PERCEIVABLE,
+            wcag = listOf("1.3.1"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MINOR,
         ),
         TaxonomyEntry(
             id = O01SmallTouchTargetDetector.TAXONOMY_ID,

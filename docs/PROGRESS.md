@@ -8,12 +8,12 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | In progress: P-05 done. Left: P-07, O-06, O-07, U-06, U-07, R-04, R-05. |
+| 4 Minor rules (8) | In progress: P-05 and P-07 done. Left: O-06, O-07, U-06, U-07, R-04, R-05. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-19 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 19 issue IDs, 66 expected,
-66 reported, 0 missing, 0 unexpected.
+20 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 20 issue IDs, 68 expected,
+68 reported, 0 missing, 0 unexpected.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
 Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
@@ -22,9 +22,8 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 
 ### What is left, in order
 
-1. **Milestone 4**, the eight minor rules. Two need more than a detector: P-07 needs the
-   Material3 check for whether `ModalBottomSheet`, `ModalNavigationDrawer` and `AlertDialog`
-   already set a pane title, and U-06 is project-wide and needs Lint partial analysis.
+1. **Milestone 4**: six minor rules left, O-06, O-07, U-06, U-07, R-04 and R-05. U-06 is the one
+   that needs more than a detector: it is project-wide and needs Lint partial analysis.
 2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
    already done and verified.
@@ -47,8 +46,11 @@ belongs to.
    that pattern deliberately and our rule still reports the icon, consistently with its recorded
    decision that an action label is not a name. Left as it is; a good candidate for Phase 3 to
    judge rather than for tuning the static rule. See `DEV_APP_RESULTS.md`.
-6. **U-01**: does Material3 give `AlertDialog` titles their own semantics? The same check that was
-   done for top app bars. U-01 reports a dialog title as a possible heading on JetNews.
+6. **U-01**: should a dialog title be marked as a heading? The P-07 check found that
+   `AlertDialog` sets a `paneTitle` on the dialog container (`AlertDialog.kt:171`), which is
+   announced when the dialog opens, but that is not the same as marking the title Text with
+   `heading()`. So U-01 reporting a dialog title as a possible heading is not wrong, it is a
+   judgement about whether a heading adds anything once the pane is already announced.
 
 **Answered:** R-02's empty-block question. The development app run showed Google's own code using
 an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
@@ -184,6 +186,9 @@ In progress.
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|
 | P-05 `ComposeTextOverImage` | Done | 2 | 5 | 2, all matched |
+| P-07 `ComposeMissingPaneTitle` | Done | 2 | 5 | 2, all matched |
 
 Notes:
+- P-07 began with the check CLAUDE.md asks for, and all three named Material overlays already set a `paneTitle`: `AlertDialog`, `ModalBottomSheet` and the modal drawers (so do `DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail`). All are excluded. The real gap is one level down, in `androidx.compose.ui.window.Popup` and `Dialog`, which set none at all; those are what the rule reports. See DECISIONS for the source references.
+- P-07's sample `ModalBottomSheet` needed `@OptIn(ExperimentalMaterial3Api::class)`. Until that was added the sample app did not compile, and because `lintDebug` then left the previous report in place, the expectation check was reading a **stale** report and appeared to show the rule finding nothing. Worth remembering: check for `BUILD SUCCESSFUL` explicitly, not just the task summary, and compare the report's timestamp when a result looks surprising.
 - P-05's unit tests all passed, but the sample app caught a real scope error: the rule matched `Clickables.imageCalls`, which includes `Icon`, so it reported the O-04 bad screen's icon-and-label button as text over a picture. CLAUDE.md 7.4 says `Image`, and the rule now matches only that (see DECISIONS). A reminder that the sample app check earns its keep for every rule, not only for the ones that touch compiled-library behaviour.

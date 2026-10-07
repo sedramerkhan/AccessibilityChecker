@@ -311,6 +311,24 @@ Box {
 
 The rule cannot know what the picture looks like. A caption over a dark, uniform photo may be perfectly readable, and one over a bright photo may not, so this is a candidate for Phase 3 rather than a certain defect.
 
+## P-07 ComposeMissingPaneTitle
+
+### Overlays that are not Popup or Dialog
+
+CLAUDE.md also mentions "a full-screen `Box` shown conditionally with `AnimatedVisibility`". That is not detected: a Box that is really an overlay cannot be told apart from an ordinary animated Box without guessing, and P-07 is a STATIC rule, so it only reports what it is sure of.
+
+```kotlin
+AnimatedVisibility(visible = filtersOpen) {
+    Box(Modifier.fillMaxSize().background(Color.White)) { // not reported
+        FilterOptions()
+    }
+}
+```
+
+### A title set by the caller
+
+The pane title is looked for on the overlay and inside its content. An overlay whose content is a composable that sets the title internally is still reported, since the rule does not follow calls.
+
 ## P-06 ComposeMissingLiveRegion
 
 ### State read or assigned in another function

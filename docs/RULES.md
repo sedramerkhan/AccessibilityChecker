@@ -10,6 +10,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
 | P-05 | `ComposeTextOverImage` | Warning (Minor) | STATIC_LLM | 1.4.3 | Done |
 | P-06 | `ComposeMissingLiveRegion` | Warning (Major) | STATIC_LLM | 4.1.3 | Done |
+| P-07 | `ComposeMissingPaneTitle` | Warning (Minor) | STATIC | 1.3.1 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
@@ -416,6 +417,34 @@ Whether the result is actually unreadable depends on the picture, which static a
 
 - `P05TextOverImageDetectorTest`: 2 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/p05/P05BadScreen.kt` and `P05GoodScreen.kt`.
+
+---
+
+## P-07 · ComposeMissingPaneTitle
+
+- **Taxonomy:** Perceivable, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships.
+- **Detector:** `detectors/perceivable/P07MissingPaneTitleDetector.kt`
+- **Message:** `[P-07] <Popup|Dialog> has no paneTitle, so screen readers do not announce what opened`.
+
+### What it flags
+
+A custom overlay built on `androidx.compose.ui.window.Popup` or `Dialog` where neither the overlay's own modifier nor anything in its content sets `paneTitle` in semantics.
+
+### What it ignores
+
+- The Material overlays. `AlertDialog`, `ModalBottomSheet` and the modal drawers all set a `paneTitle` of their own, verified in the Material3 1.4.0 sources (see `docs/DECISIONS.md`), so they are not in the rule's list at all.
+- An overlay that sets `paneTitle` anywhere inside, including on a nested child.
+
+### Known limitations
+
+Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a full-screen `Box` shown with `AnimatedVisibility`, which is not detected: that shape cannot be told apart from an ordinary animated `Box` without guessing, and P-07 is a STATIC rule.
+
+### Tests and sample
+
+- `P07MissingPaneTitleDetectorTest`: 2 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/p07/P07BadScreen.kt` and `P07GoodScreen.kt`.
 
 ---
 

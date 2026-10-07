@@ -301,6 +301,34 @@ private val unitStubs = kotlin(
     """,
 ).indented()
 
+private val windowStubs = kotlin(
+    "src/androidx/compose/ui/window/Window.kt",
+    """
+    package androidx.compose.ui.window
+
+    import androidx.compose.runtime.Composable
+    import androidx.compose.ui.Alignment
+
+    class PopupProperties
+    class DialogProperties
+
+    @Composable
+    fun Popup(
+        alignment: Alignment = Alignment.TopStart,
+        onDismissRequest: (() -> Unit)? = null,
+        properties: PopupProperties = PopupProperties(),
+        content: @Composable () -> Unit,
+    ) {}
+
+    @Composable
+    fun Dialog(
+        onDismissRequest: () -> Unit,
+        properties: DialogProperties = DialogProperties(),
+        content: @Composable () -> Unit,
+    ) {}
+    """,
+).indented()
+
 private val platformStubs = kotlin(
     "src/androidx/compose/ui/platform/CompositionLocals.kt",
     """
@@ -942,6 +970,7 @@ val composeStubs: Array<TestFile> = arrayOf(
     vectorStubs,
     painterStubs,
     unitStubs,
+    windowStubs,
     platformStubs,
     textStubs,
     fontStubs,

@@ -8,12 +8,12 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | In progress: P-05, P-07 and O-06 done. Left: O-07, U-06, U-07, R-04, R-05. |
+| 4 Minor rules (8) | In progress: P-05, P-07, O-06 and O-07 done. Left: U-06, U-07, R-04, R-05. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-21 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 21 issue IDs, 70 expected,
-70 reported, 0 missing, 0 unexpected.
+22 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 22 issue IDs, 77 expected,
+77 reported, 0 missing, 0 unexpected.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
 Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
@@ -22,7 +22,7 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 
 ### What is left, in order
 
-1. **Milestone 4**: five minor rules left, O-07, U-06, U-07, R-04 and R-05. U-06 is the one
+1. **Milestone 4**: four minor rules left, U-06, U-07, R-04 and R-05. U-06 is the one
    that needs more than a detector: it is project-wide and needs Lint partial analysis.
 2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
@@ -55,6 +55,12 @@ belongs to.
 7. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
    take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
    `clickable` only, so widening it is a taxonomy change.
+8. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
+   defect, and O-02 already treats them as containers, but CLAUDE.md 7.4 names `Card`, `Surface`
+   and `Row` for this rule.
+9. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
+   the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
+   container O-07 already reports? See the Milestone 4 notes.
 
 **Answered:** R-02's empty-block question. The development app run showed Google's own code using
 an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
@@ -192,10 +198,13 @@ In progress.
 | P-05 `ComposeTextOverImage` | Done | 2 | 5 | 2, all matched |
 | P-07 `ComposeMissingPaneTitle` | Done | 2 | 5 | 2, all matched |
 | O-06 `ComposeDisabledButClickable` | Done | 4 | 5 | 2, all matched |
+| O-07 `ComposeMissingCustomActions` | Done | 5 | 4 | 3, all matched |
 
 Notes:
 - P-07 began with the check CLAUDE.md asks for, and all three named Material overlays already set a `paneTitle`: `AlertDialog`, `ModalBottomSheet` and the modal drawers (so do `DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail`). All are excluded. The real gap is one level down, in `androidx.compose.ui.window.Popup` and `Dialog`, which set none at all; those are what the rule reports. See DECISIONS for the source references.
 - P-07's sample `ModalBottomSheet` needed `@OptIn(ExperimentalMaterial3Api::class)`. Until that was added the sample app did not compile, and because `lintDebug` then left the previous report in place, the expectation check was reading a **stale** report and appeared to show the rule finding nothing. Worth remembering: check for `BUILD SUCCESSFUL` explicitly, not just the task summary, and compare the report's timestamp when a result looks surprising.
 - P-05's unit tests all passed, but the sample app caught a real scope error: the rule matched `Clickables.imageCalls`, which includes `Icon`, so it reported the O-04 bad screen's icon-and-label button as text over a picture. CLAUDE.md 7.4 says `Image`, and the rule now matches only that (see DECISIONS). A reminder that the sample app check earns its keep for every rule, not only for the ones that touch compiled-library behaviour.
 - O-06 is the first rule that reasons about the *shape of a lambda body* rather than about arguments and modifiers, and the test modes found two UAST facts worth keeping (both in DECISIONS). `IF_TO_WHEN` rewrites every `if` into a `when`, so a detector that looks at conditions must accept `USwitchExpression` as well as `UIfExpression`. And Kotlin's implicit lambda return is a real node: a handler whose only statement is `if (enabled) { ... }` presents as a `UReturnExpression` wrapping an `if`, so the statements have to be unwrapped before their shape is tested. A third case, a condition with an `else` branch, was then excluded on its own merits: that is a choice between two actions, not a guard, and without the exclusion every two-way toggle written that way was reported. The full expectations check is 21 issue IDs, 70 expected, 70 reported, 0 missing, 0 unexpected.
+- O-07 passed its unit tests and the sample app on the first run. Counting clickable **descendants** rather than direct children is what makes it match real code, since the favourite and share buttons of a list row are nearly always wrapped in an inner layout. Counting a clickable child without searching inside it gives the rule a useful property for free: only the nearest clickable container is reported, so a clickable `Row` inside a clickable `Card` produces one warning, not two (see DECISIONS, with a unit test for it). The full expectations check is now 22 issue IDs, 77 expected, 77 reported, 0 missing, 0 unexpected.
+- **The O-03 overlap that DECISIONS parked on 2026-10-03 is now live, as predicted.** O-07 reports the container while O-03 reports each nested button, so a card with two icon buttons gives three warnings: two O-03 errors and one O-07 warning. They are different nodes, so CLAUDE.md 7.1 is satisfied, and they say different things: O-07's advice is literally the fix O-03's own explanation recommends. The `O03BadScreen.kt` sample now carries markers for both, which makes the arithmetic visible. **Question for Sedra:** is three warnings for one card acceptable, or should O-03 stop reporting children of a container that O-07 already covers? That changes a Critical rule whose precision has already been measured on the development apps, so it was not done unilaterally.
 - **Question for Sedra on O-06's scope:** `combinedClickable`, `toggleable` and `selectable` take the same `enabled` parameter and have exactly the same defect, but CLAUDE.md 7.4 names `clickable`, so the rule matches only that. Widening it would be a taxonomy change, which is why it was not done quietly.

@@ -17,6 +17,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
+| O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
@@ -496,6 +497,70 @@ The rule does not read what the condition tests. A guard on something that is no
 
 - `O06DisabledButClickableDetectorTest`: 4 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/o06/O06BadScreen.kt` and `O06GoodScreen.kt`.
+
+---
+
+## O-07 · ComposeMissingCustomActions
+
+- **Taxonomy:** Operable, Minor, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 2.1.1 Keyboard.
+- **Detector:** `detectors/operable/O07MissingCustomActionsDetector.kt`
+- **Message:** `[O-07] Possible missing custom actions: clickable <Card> holds <n> clickable children but offers no customActions, so screen readers announce one element with only its own action`.
+
+### What it flags
+
+A clickable `Card`, `Surface` or `Row` whose content holds two or more clickable elements and whose semantics set no `customActions`. The usual shape is a list row that opens a detail screen and also carries a favourite and a share button: a screen reader reaches the row as one element, is offered only the row's own action, and the inner buttons are skipped or can only be found by exploring the screen by touch.
+
+Clickable **descendants** are counted, not only direct children, because the buttons are normally wrapped in an inner `Row` or `Column`. A clickable child is counted and then not searched any further, so only the nearest clickable container is reported: a clickable `Row` inside a clickable `Card` is reported on the `Row`, and the `Card` sees one child, not two.
+
+### What it ignores
+
+- A container whose semantics set `customActions`.
+- A container that is not clickable itself. Each button is then its own element already.
+- A container with only one clickable child. That is O-03's defect, not a missing actions menu.
+- `Box`, `Column` and `ListItem`. CLAUDE.md 7.4 names `Card`, `Surface` and `Row` only (see the open question in `docs/PROGRESS.md`).
+
+### Example
+
+Bad:
+
+```kotlin
+Card(onClick = onOpen) {
+    Text("Shipping forecast")
+    IconButton(onClick = onFavorite) { Icon(icon, "Add to favourites") }
+    IconButton(onClick = onShare) { Icon(icon, "Share") }
+}
+```
+
+Good:
+
+```kotlin
+Card(
+    onClick = onOpen,
+    modifier = Modifier.semantics {
+        customActions = listOf(
+            CustomAccessibilityAction("Add to favourites") { onFavorite(); true },
+            CustomAccessibilityAction("Share") { onShare(); true },
+        )
+    },
+) {
+    Text("Shipping forecast")
+}
+```
+
+### Overlap with O-03
+
+Both rules fire on the same card, on different nodes: O-03 reports each nested button, O-07 reports the container. They say different things, and O-07's advice is exactly the fix O-03's explanation recommends. The sample `O03BadScreen.kt` carries markers for both. Whether that is the right amount of noise for one card is an open question for Sedra (see `docs/PROGRESS.md`).
+
+### Known limitations
+
+Children emitted by another composable function are not counted, and the rule does not check that `customActions` actually covers the children it found (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `O07MissingCustomActionsDetectorTest`: 5 positive and 4 negative cases.
+- Sample: `sample-app/.../defects/o07/O07BadScreen.kt` and `O07GoodScreen.kt`.
 
 ---
 

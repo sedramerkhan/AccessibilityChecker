@@ -20,7 +20,7 @@ its own: it is fully deterministic, works offline, and contains no LLM, network 
 
 ## What it finds
 
-21 rules are implemented, each mapped to a WCAG 2.2 success criterion and organised by the POUR
+22 rules are implemented, each mapped to a WCAG 2.2 success criterion and organised by the POUR
 principles. Some examples:
 
 - **P-01** an interactive `Icon` with no `contentDescription`, so TalkBack only says "button"
@@ -168,7 +168,7 @@ is left in order, and the questions waiting on a decision.
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run on JetNews and Jetchat |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable |
-| 4 Minor rules (8) | In progress: P-05, P-07 and O-06 done; O-07, U-06, U-07, R-04 and R-05 left |
+| 4 Minor rules (8) | In progress: P-05, P-07, O-06 and O-07 done; U-06, U-07, R-04 and R-05 left |
 | 5 Packaging and reporting | Publishing works; scripts and the final docs pass are open |
 
 One rule, **R-03**, was dropped after checking the framework: Compose does not hide interactive

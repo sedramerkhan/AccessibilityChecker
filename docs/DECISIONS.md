@@ -335,6 +335,45 @@ would have lost a true positive.
 - **Report location.** The `clickable` call itself (receiver and arguments excluded), so the
   underline is on the modifier that should have carried `enabled`, not on the guard.
 
+### O-07 ComposeMissingCustomActions
+
+- **Descendants are counted, not direct children.** The favourite and share buttons of a list row
+  are almost always wrapped in an inner `Row` or `Column`, so counting only direct children would
+  have made the rule fire on nothing real. The sample screen uses both shapes for that reason.
+- **A clickable child is counted but not searched.** This gives the rule a useful property for
+  free: only the **nearest** clickable container is reported. A clickable `Row` inside a clickable
+  `Card` is reported on the `Row`, and the `Card` counts one child, not two, so one design
+  mistake gives one warning rather than two. There is a unit test for exactly this.
+- **Two or more, as CLAUDE.md 7.4 words it.** One clickable child inside a clickable container is
+  O-03's defect; the actions menu is the answer specifically when there are several actions and
+  TalkBack has no way to offer them all.
+- **`Card`, `Surface` and `Row` only**, the three CLAUDE.md names. A clickable `Box` or `Column`
+  with two buttons is the same defect, and O-02 already treats `Box`, `Column` and `ListItem` as
+  containers, so the sets differ between the two rules. Widening O-07 is a taxonomy change, so it
+  is an open question for Sedra rather than something done quietly, the same way O-06's scope was
+  handled.
+- **Only the presence of `customActions` is checked, not what is in it.** The rule does not try to
+  match the actions against the children it found. A list with one action and three buttons is
+  accepted. Checking that would mean reading the labels and guessing which child each belongs to,
+  which is a Layer 3 judgement, and it is why the rule is STATIC_LLM rather than STATIC.
+
+### O-07 and O-03 both report on the same card, deliberately
+
+DECISIONS recorded on 2026-10-03, when O-03 was built, that this overlap would be settled once
+O-07 existed. It now does, and the two rules report on **different nodes**: O-03 on each nested
+button, O-07 on the container. CLAUDE.md 7.1 asks for one issue per node, which is satisfied.
+
+They also say different things. O-03 says the nesting itself is wrong, and its explanation text
+already recommends "keep the outer click and offer the inner action through
+`semantics { customActions = ... }`" — which is precisely what O-07 reports as missing. So O-07
+is the constructive half of the same finding, and silencing either one would lose information.
+
+The cost is three warnings for one card: two O-03 errors and one O-07 warning. The sample
+`O03BadScreen.kt` now carries markers for both, which makes the arithmetic visible.
+**Question for Sedra:** is that acceptable, or should O-03 be suppressed on the children of a
+container that O-07 already reports? That would be a change to O-03, a Critical rule whose
+precision has already been measured on the development apps, which is why it was not done here.
+
 ### Two UAST shapes that O-06 exposed, both of general interest
 
 1. **`IF_TO_WHEN` rewrites every `if` into a `when`.** Lint's test mode does this to prove a

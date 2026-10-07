@@ -25,8 +25,9 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
     val icon = painterResource(R.drawable.ic_launcher_foreground)
 
     Column {
-        // A clickable card with two icon buttons inside.
-        Card(onClick = onOpen) {
+        // A clickable card with two icon buttons inside. Two clickable children with no
+        // customActions is also O-07, reported on the card itself.
+        Card(onClick = onOpen) { // EXPECT: ComposeMissingCustomActions
             Text("Compose accessibility")
             Row {
                 IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable

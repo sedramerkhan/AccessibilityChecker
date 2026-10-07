@@ -463,3 +463,47 @@ Row(Modifier.clickable { formComplete.takeIf { it } ?: return@clickable; onSubmi
 
 `combinedClickable`, `toggleable` and `selectable` have the same `enabled` parameter and the same
 defect, but the rule follows CLAUDE.md 7.4 and matches `clickable` only.
+
+## O-07 ComposeMissingCustomActions
+
+### Children emitted by another composable are not counted
+
+The content lambda is read, so buttons that a helper composable emits are invisible and the
+container is not reported:
+
+```kotlin
+@Composable fun RowActions(onFavorite: () -> Unit, onShare: () -> Unit) {
+    Row { IconButton(onClick = onFavorite) { ... }; IconButton(onClick = onShare) { ... } }
+}
+
+Card(onClick = onOpen) {
+    Text("Shipping forecast")
+    RowActions(onFavorite, onShare) // two clickable children the rule cannot see
+}
+```
+
+This is the shared limitation recorded for O-05 and O-03, in its counting form: here it causes a
+missed defect rather than a false positive.
+
+### What is inside `customActions` is not checked
+
+Any `customActions` assignment silences the rule, even an empty list or one action next to three
+buttons:
+
+```kotlin
+Card(onClick = onOpen, modifier = Modifier.semantics { customActions = emptyList() }) { ... }
+```
+
+Matching the actions against the children means reading the labels and guessing which button each
+one stands for, which is a Layer 3 judgement.
+
+### `Box` and `Column` are not containers for this rule
+
+A clickable `Box` or `Column` with two buttons has the same defect and is not reported, because
+CLAUDE.md 7.4 names `Card`, `Surface` and `Row`. Note that O-02 does treat `Box` and `Column` as
+containers, so the two rules use different sets.
+
+### Actions provided somewhere other than the container's own modifier
+
+Only the container's own modifier chain is read. `customActions` set on a wrapper around the
+container, or in a modifier passed in from the caller, is not seen.

@@ -39,13 +39,13 @@ fun P01GoodScreen(onAction: () -> Unit) {
         // The label is set in semantics on the clickable parent.
         IconButton(
             onClick = onAction,
-            modifier = Modifier.semantics { contentDescription = "Open" },
+            modifier = Modifier.semantics { contentDescription = "Open" }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Icon(icon, contentDescription = null)
         }
 
         // A clickable Row whose Text names it.
-        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() }) { // EXPECT: ComposeHardcodedA11yText
             Icon(icon, contentDescription = null)
             Text("Open")
         }

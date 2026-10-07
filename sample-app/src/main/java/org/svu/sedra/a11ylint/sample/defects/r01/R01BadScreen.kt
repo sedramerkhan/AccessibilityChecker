@@ -24,25 +24,25 @@ fun R01BadScreen(onOpen: () -> Unit, onMenu: () -> Unit) {
 
     Column {
         // A clickable box that holds only an icon.
-        Box(modifier = Modifier.clickable(onClickLabel = "Open gallery") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole
-            Icon(icon, contentDescription = "Open gallery")
+        Box(modifier = Modifier.clickable(onClickLabel = "Open gallery") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole, ComposeHardcodedA11yText
+            Icon(icon, contentDescription = "Open gallery") // EXPECT: ComposeHardcodedA11yText
         }
 
         // A clickable row with rich content.
-        Row(modifier = Modifier.clickable(onClickLabel = "Open profile") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole
+        Row(modifier = Modifier.clickable(onClickLabel = "Open profile") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole, ComposeHardcodedA11yText
             Text("Sedra Merkhan")
             Text("Last seen today")
         }
 
         // A Card made clickable with a modifier instead of onClick.
-        Card(modifier = Modifier.clickable(onClickLabel = "Open order") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole
+        Card(modifier = Modifier.clickable(onClickLabel = "Open order") { onOpen() }) { // EXPECT: ComposeClickableWithoutRole, ComposeHardcodedA11yText
             Text("Order #1024")
         }
 
         // An image with click and long click.
         Image(
             painter = icon,
-            contentDescription = "Profile photo",
+            contentDescription = "Profile photo", // EXPECT: ComposeHardcodedA11yText
             modifier = Modifier.combinedClickable(onLongClick = onMenu) { onOpen() }, // EXPECT: ComposeClickableWithoutRole
         )
     }

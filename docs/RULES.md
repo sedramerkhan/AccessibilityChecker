@@ -18,6 +18,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
+| U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
@@ -561,6 +562,60 @@ Children emitted by another composable function are not counted, and the rule do
 
 - `O07MissingCustomActionsDetectorTest`: 5 positive and 4 negative cases.
 - Sample: `sample-app/.../defects/o07/O07BadScreen.kt` and `O07GoodScreen.kt`.
+
+---
+
+## U-07 · ComposeHardcodedA11yText
+
+- **Taxonomy:** Understandable, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** none. This is a localization defect, as CLAUDE.md 7.4 says.
+- **Detector:** `detectors/understandable/U07HardcodedA11yTextDetector.kt`
+- **Message:** `[U-07] <contentDescription> is set to the hardcoded string "<text>", so this text is never translated and screen reader users of other languages hear English`.
+
+### What it flags
+
+A non-empty string literal used as accessibility text. Two shapes are read:
+
+- an argument of a call: `contentDescription` and `onClickLabel`, so `Icon(icon, contentDescription = "Delete draft")` and `Modifier.clickable(onClickLabel = "Open details")`;
+- a property set inside a semantics block: `contentDescription`, `stateDescription` and `paneTitle`, plus the `error("...")` function and the label of `CustomAccessibilityAction("...")`.
+
+Visible text is translated because somebody sees it is wrong; text only a screen reader hears is easy to forget, so it stays in the original language for every other locale.
+
+### What it ignores
+
+- `stringResource(...)` and `pluralStringResource(...)`, and in fact any expression that is not a literal: a variable, a constant or a function call is never reported, because its value is not known here.
+- `null` and `""`. A decorative image passes `null` deliberately, and `""` is P-01's defect, not this one.
+- Code inside a `@Preview` function.
+- Test sources.
+- An unrelated local variable that happens to be named `contentDescription`: the assignment target must resolve to a real `SemanticsPropertyReceiver` member.
+
+### Example
+
+Bad:
+
+```kotlin
+Icon(icon, contentDescription = "Delete draft")
+```
+
+Good:
+
+```kotlin
+Icon(icon, contentDescription = stringResource(R.string.delete_draft))
+```
+
+### Known limitations
+
+`onLongClickLabel` is not read, a string built by concatenation or a template is not reported, and text held in a constant is not followed (see `docs/LIMITATIONS.md`).
+
+### Effect on the sample app
+
+This rule fires far more widely than any other: **94 lines** across the sample corpus, roughly half of them on screens that are the *good* example for their own rule. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md`.
+
+### Tests and sample
+
+- `U07HardcodedA11yTextDetectorTest`: 5 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/u07/U07BadScreen.kt` and `U07GoodScreen.kt`.
 
 ---
 

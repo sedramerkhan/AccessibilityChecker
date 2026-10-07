@@ -24,14 +24,14 @@ fun O05BadScreen(onAction: () -> Unit) {
         Box( // EXPECT: ComposeEmptyClickable
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         )
 
         // The content is only spacing, so there is still nothing to announce.
         Box( // EXPECT: ComposeEmptyClickable
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Spacer(Modifier.size(8.dp))
         }
@@ -40,7 +40,7 @@ fun O05BadScreen(onAction: () -> Unit) {
         Spacer( // EXPECT: ComposeEmptyClickable
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Dismiss", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Dismiss", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         )
 
         // An icon button that never got its icon.
@@ -51,7 +51,7 @@ fun O05BadScreen(onAction: () -> Unit) {
         Canvas( // EXPECT: ComposeEmptyClickable
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Pick a colour", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Pick a colour", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
         }
     }

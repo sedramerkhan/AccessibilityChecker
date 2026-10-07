@@ -9,6 +9,6 @@ import org.svu.sedra.a11ylint.sample.R
 @Composable
 fun P02BadScreen() {
     val icon = painterResource(R.drawable.ic_launcher_foreground)
-    Icon(painter = icon, contentDescription = "Delete") // EXPECT: ComposeDecorativeImageLabeled
+    Icon(painter = icon, contentDescription = "Delete") // EXPECT: ComposeDecorativeImageLabeled, ComposeHardcodedA11yText
     Text("Delete")
 }

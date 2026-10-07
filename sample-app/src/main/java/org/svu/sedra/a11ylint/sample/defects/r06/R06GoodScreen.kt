@@ -28,7 +28,7 @@ fun GoodColourSwatch(onPick: () -> Unit) {
         modifier = Modifier
             .size(48.dp)
             .pointerInput(Unit) { detectTapGestures(onTap = { onPick() }) }
-            .semantics { contentDescription = "Pick the colour red" },
+            .semantics { contentDescription = "Pick the colour red" }, // EXPECT: ComposeHardcodedA11yText
     )
 }
 
@@ -40,7 +40,7 @@ fun GoodVolumeSlider(state: DraggableState, volume: Int) {
             .size(48.dp)
             .draggable(state, Orientation.Horizontal)
             .semantics {
-                contentDescription = "Volume"
+                contentDescription = "Volume" // EXPECT: ComposeHardcodedA11yText
                 stateDescription = "$volume percent"
             },
     )
@@ -52,7 +52,7 @@ fun GoodTapTarget(onPick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(48.dp)
-            .clickable(onClickLabel = "Pick the colour red", role = Role.Button) { onPick() }
-            .semantics { contentDescription = "Pick the colour red" },
+            .clickable(onClickLabel = "Pick the colour red", role = Role.Button) { onPick() } // EXPECT: ComposeHardcodedA11yText
+            .semantics { contentDescription = "Pick the colour red" }, // EXPECT: ComposeHardcodedA11yText
     )
 }

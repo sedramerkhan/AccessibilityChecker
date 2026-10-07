@@ -176,7 +176,12 @@ object ModifierChain {
         return !property.isVar
     }
 
-    private fun assignedName(target: UExpression): String? {
+    /**
+     * Returns the property name an assignment target refers to, so the left side of
+     * `contentDescription = "..."` gives `contentDescription`. Getter and setter names are
+     * turned back into property names (see [Literals.propertyName]).
+     */
+    fun assignedName(target: UExpression): String? {
         val reference = when (val value = Literals.unwrap(target)) {
             is USimpleNameReferenceExpression -> value
             is UQualifiedReferenceExpression -> value.selector as? USimpleNameReferenceExpression
@@ -189,10 +194,18 @@ object ModifierChain {
         }
     }
 
-    private fun isSemanticsFunction(call: UCallExpression): Boolean {
-        val method = call.resolve() ?: return false
+    /**
+     * Returns true when [method] is a member or an extension of `SemanticsPropertyReceiver`, so
+     * both `heading()` and the setter of the `contentDescription` extension property count.
+     * Semantics properties are declared as top-level extensions, so the containing class is the
+     * file facade and the receiver appears as the first parameter.
+     */
+    fun isSemanticsDeclaration(method: PsiMethod): Boolean {
         if (method.containingClass?.qualifiedName == SEMANTICS_RECEIVER) return true
         val receiverType = method.parameterList.parameters.firstOrNull()?.type?.canonicalText
         return receiverType == SEMANTICS_RECEIVER
     }
+
+    private fun isSemanticsFunction(call: UCallExpression): Boolean =
+        call.resolve()?.let(::isSemanticsDeclaration) == true
 }

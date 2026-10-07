@@ -23,18 +23,18 @@ fun O04BadScreen(onAction: () -> Unit) {
 
     Column {
         // A row whose only content is its label.
-        Row(modifier = Modifier.clickable(onClickLabel = "Buy now") { onAction() }) { // EXPECT: ComposeClickableContainer
+        Row(modifier = Modifier.clickable(onClickLabel = "Buy now") { onAction() }) { // EXPECT: ComposeClickableContainer, ComposeHardcodedA11yText
             Text("Buy now")
         }
 
         // An icon and a label: still a button.
-        Box(modifier = Modifier.clickable(onClickLabel = "Delete draft") { onAction() }) { // EXPECT: ComposeClickableContainer
+        Box(modifier = Modifier.clickable(onClickLabel = "Delete draft") { onAction() }) { // EXPECT: ComposeClickableContainer, ComposeHardcodedA11yText
             Icon(icon, contentDescription = null)
             Text("Delete draft")
         }
 
         // Spacers between the parts do not change what this is.
-        Column(modifier = Modifier.clickable(onClickLabel = "Read more") { onAction() }) { // EXPECT: ComposeClickableContainer
+        Column(modifier = Modifier.clickable(onClickLabel = "Read more") { onAction() }) { // EXPECT: ComposeClickableContainer, ComposeHardcodedA11yText
             Spacer(Modifier)
             Text("Read more")
         }

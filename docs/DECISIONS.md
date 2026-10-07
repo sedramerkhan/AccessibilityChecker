@@ -357,6 +357,60 @@ would have lost a true positive.
   accepted. Checking that would mean reading the labels and guessing which child each belongs to,
   which is a Layer 3 judgement, and it is why the rule is STATIC_LLM rather than STATIC.
 
+### U-07 ComposeHardcodedA11yText
+
+- **Only literals are reported.** A variable, a constant or any call other than a literal is left
+  alone, which is the same rule the whole project follows (see `Literals`): a value that is not
+  written in the source is not known here. This means `stringResource(...)` needs no special case,
+  it simply is not a literal. It also means a constant holding hardcoded text is missed, recorded
+  in LIMITATIONS.
+- **`null` and `""` are not text.** A decorative image passes `null` on purpose, and `""` is
+  P-01's defect. Reporting either here would duplicate P-01 and punish the correct decorative
+  pattern.
+- **The assignment must resolve to a real semantics property.** A local variable named
+  `contentDescription` is not reported. This needed `ModifierChain.isSemanticsDeclaration`, which
+  was extracted from the private `isSemanticsFunction` that `blockAssignments` already used, so
+  the two now share one definition of "this belongs to `SemanticsPropertyReceiver`".
+- **A cheap pre-check before resolving.** The detector visits every call expression in the file,
+  and resolving each one twice to ask for `contentDescription` and `onClickLabel` would be waste.
+  A call with no string literal argument at all cannot be reported, so that is tested first, with
+  no resolution. This is the only rule so far whose cost had to be thought about, because it is
+  the only one that applies to every call rather than to a named set.
+- **`onLongClickLabel` is not included.** `combinedClickable` takes it and it is the same defect,
+  but CLAUDE.md 7.4 lists `onClickLabel`. Same reasoning as O-06 and O-07: widening is a taxonomy
+  change, so it is a question for Sedra.
+- **No WCAG criterion.** CLAUDE.md 7.4 says so explicitly, so the taxonomy entry carries an empty
+  `wcag` list rather than a stretched criterion. It is the only entry of the 23 with an empty
+  list, which Phase 3 and the thesis tables need to tolerate.
+
+### U-07 fires on 94 lines of the sample app, and the markers were added rather than the code changed
+
+This is the widest-reaching rule in the set. On its first run it reported **94 lines across 28
+sample screens**, 47 on bad screens and 47 on good ones, against 84 markers for the other 22 rules
+put together. Three ways to handle that were considered.
+
+1. **Rewrite the other screens to use `stringResource(...)`.** Rejected, and this is the important
+   one: several rules *need* the literals. P-02 compares a literal `contentDescription` with a
+   sibling literal `Text`, U-04 reads the literal label of a button, P-01 distinguishes `null`
+   from `""`. Converting the corpus to resources would have silently disabled parts of three
+   rules while appearing to tidy the code up.
+2. **Exclude the other screens through `lint.xml`.** Rejected: the sample app is the evidence that
+   the rules work, and configuring a rule off over most of that evidence makes the expectation
+   check mean less.
+3. **Mark every reported line.** Chosen. The markers were added mechanically from the Lint report,
+   merging with any marker already on the line, and the check is exact again: 23 issue IDs, 171
+   expected, 171 reported, 0 missing, 0 unexpected.
+
+The consequence worth stating plainly is that **a "good" screen is now only good with respect to
+its own rule**. That was already how the screens describe themselves ("O-06 must report nothing
+here"), but until U-07 every good screen happened to be clean for every rule, and that is no
+longer true.
+
+For the thesis this is a result, not an inconvenience. A corpus written deliberately and
+carefully for an accessibility study still had hardcoded accessibility text on 94 lines, which
+says something about how easily this defect survives review: nobody sees it, because it is the
+text that is never drawn.
+
 ### O-07 and O-03 both report on the same card, deliberately
 
 DECISIONS recorded on 2026-10-03, when O-03 was built, that this overlap would be settled once

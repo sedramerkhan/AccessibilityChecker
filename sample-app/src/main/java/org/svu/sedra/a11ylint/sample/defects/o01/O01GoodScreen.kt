@@ -25,13 +25,13 @@ fun O01GoodScreen(onAction: () -> Unit) {
     Column {
         // IconButton keeps a 48dp touch target even when the icon is small.
         IconButton(onClick = onAction) {
-            Icon(icon, contentDescription = "Close", modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = "Close", modifier = Modifier.size(24.dp)) // EXPECT: ComposeHardcodedA11yText
         }
 
         // A small icon with minimumInteractiveComponentSize().
         Icon(
             painter = icon,
-            contentDescription = "Open",
+            contentDescription = "Open", // EXPECT: ComposeHardcodedA11yText
             modifier = Modifier
                 .minimumInteractiveComponentSize()
                 .size(24.dp)
@@ -41,11 +41,11 @@ fun O01GoodScreen(onAction: () -> Unit) {
         // Padding inside the clickable area makes it 48dp around a 20dp icon.
         Box(
             modifier = Modifier
-                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() }
+                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() } // EXPECT: ComposeHardcodedA11yText
                 .padding(14.dp)
                 .size(20.dp),
         ) {
-            Icon(icon, contentDescription = "Share")
+            Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
         }
 
         // A full-width row of 56dp.
@@ -53,9 +53,9 @@ fun O01GoodScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clickable(onClickLabel = "Settings", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Settings", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
-            Icon(icon, contentDescription = "Settings")
+            Icon(icon, contentDescription = "Settings") // EXPECT: ComposeHardcodedA11yText
         }
     }
 }

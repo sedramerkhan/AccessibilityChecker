@@ -34,7 +34,7 @@ fun O01BadScreen(onAction: () -> Unit) {
         // A 24dp clickable icon.
         Icon(
             painter = icon,
-            contentDescription = "Close",
+            contentDescription = "Close", // EXPECT: ComposeHardcodedA11yText
             modifier = Modifier
                 .size(24.dp) // EXPECT: ComposeSmallTouchTarget
                 .clickable(role = Role.Button) { onAction() },
@@ -43,10 +43,10 @@ fun O01BadScreen(onAction: () -> Unit) {
         // The size is set after the clickable, which still limits its bounds.
         Box(
             modifier = Modifier
-                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onAction() } // EXPECT: ComposeHardcodedA11yText
                 .size(32.dp), // EXPECT: ComposeSmallTouchTarget
         ) {
-            Icon(icon, contentDescription = "Open")
+            Icon(icon, contentDescription = "Open") // EXPECT: ComposeHardcodedA11yText
         }
 
         // Padding inside a 48dp box makes the clickable area only 32dp.
@@ -54,15 +54,15 @@ fun O01BadScreen(onAction: () -> Unit) {
             modifier = Modifier
                 .size(48.dp) // EXPECT: ComposeSmallTouchTarget
                 .padding(8.dp)
-                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() },
+                .clickable(onClickLabel = "Share", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
-            Icon(icon, contentDescription = "Share")
+            Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
         }
 
         // Only the width is too small.
         Icon(
             painter = icon,
-            contentDescription = "Like",
+            contentDescription = "Like", // EXPECT: ComposeHardcodedA11yText
             modifier = Modifier
                 .toggleable(value = liked, onValueChange = { liked = it })
                 .width(40.dp) // EXPECT: ComposeSmallTouchTarget
@@ -71,8 +71,8 @@ fun O01BadScreen(onAction: () -> Unit) {
 
         // The size comes from a local value.
         val small = Modifier.requiredSize(20.dp) // EXPECT: ComposeSmallTouchTarget
-        Box(modifier = small.clickable(onClickLabel = "More", role = Role.Button) { onAction() }) {
-            Icon(icon, contentDescription = "More")
+        Box(modifier = small.clickable(onClickLabel = "More", role = Role.Button) { onAction() }) { // EXPECT: ComposeHardcodedA11yText
+            Icon(icon, contentDescription = "More") // EXPECT: ComposeHardcodedA11yText
         }
     }
 }

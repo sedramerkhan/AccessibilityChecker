@@ -17,7 +17,7 @@ fun O06BadScreen(formComplete: Boolean, onSubmit: () -> Unit) {
     Column {
         // The guard stops the action, but TalkBack still offers the row.
         Row(
-            modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) { // EXPECT: ComposeDisabledButClickable
+            modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) { // EXPECT: ComposeDisabledButClickable, ComposeHardcodedA11yText
                 if (!formComplete) return@clickable
                 onSubmit()
             }
@@ -27,7 +27,7 @@ fun O06BadScreen(formComplete: Boolean, onSubmit: () -> Unit) {
 
         // The same thing written as a wrapper around the whole handler.
         Row(
-            modifier = Modifier.clickable(onClickLabel = "Save draft", role = Role.Button) { // EXPECT: ComposeDisabledButClickable
+            modifier = Modifier.clickable(onClickLabel = "Save draft", role = Role.Button) { // EXPECT: ComposeDisabledButClickable, ComposeHardcodedA11yText
                 if (formComplete) {
                     onSubmit()
                 }

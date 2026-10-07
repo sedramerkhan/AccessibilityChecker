@@ -28,7 +28,7 @@ fun R02BadScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: (
         // The state is replaced, but the name is gone.
         Row(
             modifier = Modifier.clearAndSetSemantics { // EXPECT: ComposeClearAndSetSemanticsLoss
-                stateDescription = "In stock"
+                stateDescription = "In stock" // EXPECT: ComposeHardcodedA11yText
             },
         ) {
             Text("Running shoes")
@@ -37,9 +37,9 @@ fun R02BadScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: (
         // The name is replaced, but the row is still clickable and no longer says so.
         Row(
             modifier = Modifier
-                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() } // EXPECT: ComposeHardcodedA11yText
                 .clearAndSetSemantics { // EXPECT: ComposeClearAndSetSemanticsLoss
-                    contentDescription = "Running shoes, 42 euro"
+                    contentDescription = "Running shoes, 42 euro" // EXPECT: ComposeHardcodedA11yText
                 },
         ) {
             Text("Running shoes")
@@ -48,7 +48,7 @@ fun R02BadScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: (
         // The checkbox state disappears behind a name-only replacement.
         Row(
             modifier = Modifier.clearAndSetSemantics { // EXPECT: ComposeClearAndSetSemanticsLoss
-                contentDescription = "Subscribe to the newsletter"
+                contentDescription = "Subscribe to the newsletter" // EXPECT: ComposeHardcodedA11yText
             },
         ) {
             Checkbox(checked = checked, onCheckedChange = onCheckedChange)

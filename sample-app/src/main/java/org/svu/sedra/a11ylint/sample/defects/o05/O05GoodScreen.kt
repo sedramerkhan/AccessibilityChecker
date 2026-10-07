@@ -26,29 +26,29 @@ fun O05GoodScreen(onAction: () -> Unit) {
     Column {
         // A visible label.
         Box(
-            modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() },
+            modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Open")
         }
 
         // A labelled icon.
         Box(
-            modifier = Modifier.clickable(onClickLabel = "Delete", role = Role.Button) { onAction() },
+            modifier = Modifier.clickable(onClickLabel = "Delete", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
-            Icon(icon, contentDescription = "Delete draft")
+            Icon(icon, contentDescription = "Delete draft") // EXPECT: ComposeHardcodedA11yText
         }
 
         // Nothing visible, but the name is set in semantics.
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Dismiss", role = Role.Button) { onAction() }
-                .semantics { contentDescription = "Dismiss the dialog" },
+                .clickable(onClickLabel = "Dismiss", role = Role.Button) { onAction() } // EXPECT: ComposeHardcodedA11yText
+                .semantics { contentDescription = "Dismiss the dialog" }, // EXPECT: ComposeHardcodedA11yText
         )
 
         // A Material icon button with a labelled icon.
         IconButton(onClick = onAction) {
-            Icon(icon, contentDescription = "Share")
+            Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
         }
     }
 }

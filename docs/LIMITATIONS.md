@@ -507,3 +507,40 @@ containers, so the two rules use different sets.
 
 Only the container's own modifier chain is read. `customActions` set on a wrapper around the
 container, or in a modifier passed in from the caller, is not seen.
+
+## U-07 ComposeHardcodedA11yText
+
+### Text held in a constant or a variable
+
+Only literals written at the place the text is used are read, so moving the same hardcoded string
+one line up hides it:
+
+```kotlin
+private const val DELETE = "Delete draft"
+
+Icon(icon, contentDescription = DELETE) // not reported
+```
+
+Following constants would mean deciding which values are "really" literal, which the project
+deliberately does not do anywhere (see `Literals`).
+
+### Concatenated and templated strings
+
+A string built from parts is not a single literal, so it is not reported even when every part is
+hardcoded:
+
+```kotlin
+Icon(icon, contentDescription = "Delete " + item.name) // not reported
+Icon(icon, contentDescription = "Delete ${'$'}{item.name}") // not reported
+```
+
+### `onLongClickLabel` is not read
+
+`combinedClickable(onLongClickLabel = "Open menu")` is the same defect, but CLAUDE.md 7.4 names
+`onClickLabel`.
+
+### A resource string can still be the wrong language
+
+The rule checks only that the text comes from a resource, not that a translation exists. A
+`stringResource` with no entry in any other locale is just as untranslated at run time, which no
+source-level check can see.

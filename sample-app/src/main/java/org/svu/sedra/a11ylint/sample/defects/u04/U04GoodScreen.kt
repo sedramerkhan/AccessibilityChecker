@@ -27,7 +27,7 @@ fun U04GoodScreen(onConfirm: () -> Unit, onOpen: () -> Unit, onSend: () -> Unit)
         // The visible label stays short, but screen readers get the full action.
         OutlinedButton(
             onClick = onSend,
-            modifier = Modifier.semantics { contentDescription = "Send the order" },
+            modifier = Modifier.semantics { contentDescription = "Send the order" }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Submit")
         }

@@ -25,7 +25,7 @@ fun U02BadScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit) {
         // An expandable section. The role is set, but the open or closed state is not.
         Row(
             modifier = Modifier.clickable( // EXPECT: ComposeMissingStateDescription
-                onClickLabel = "Toggle details",
+                onClickLabel = "Toggle details", // EXPECT: ComposeHardcodedA11yText
                 role = Role.Button,
             ) { expanded = !expanded },
         ) {
@@ -35,7 +35,7 @@ fun U02BadScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit) {
         // A custom checkbox row backed by MutableState.
         Row(
             modifier = Modifier.clickable( // EXPECT: ComposeMissingStateDescription
-                onClickLabel = "Toggle subscription",
+                onClickLabel = "Toggle subscription", // EXPECT: ComposeHardcodedA11yText
                 role = Role.Checkbox,
             ) { subscribed.value = !subscribed.value },
         ) {
@@ -45,7 +45,7 @@ fun U02BadScreen(darkMode: Boolean, onDarkModeChange: (Boolean) -> Unit) {
         // A custom switch row that reports the change to its caller.
         Row(
             modifier = Modifier.clickable( // EXPECT: ComposeMissingStateDescription
-                onClickLabel = "Toggle dark mode",
+                onClickLabel = "Toggle dark mode", // EXPECT: ComposeHardcodedA11yText
                 role = Role.Switch,
             ) { onDarkModeChange(!darkMode) },
         ) {

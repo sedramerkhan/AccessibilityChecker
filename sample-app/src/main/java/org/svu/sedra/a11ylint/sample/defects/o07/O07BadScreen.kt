@@ -28,24 +28,24 @@ fun O07BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
             Text("Shipping forecast")
             Row {
                 IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable
-                    Icon(icon, contentDescription = "Add to favourites")
+                    Icon(icon, contentDescription = "Add to favourites") // EXPECT: ComposeHardcodedA11yText
                 }
                 IconButton(onClick = onShare) { // EXPECT: ComposeNestedClickable
-                    Icon(icon, contentDescription = "Share")
+                    Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
                 }
             }
         }
 
         // The same defect on a clickable Row. The onClickLabel and role keep O-02 and R-01 quiet.
         Row( // EXPECT: ComposeMissingCustomActions
-            modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() },
+            modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Running shoes")
             IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable
-                Icon(icon, contentDescription = "Add to favourites")
+                Icon(icon, contentDescription = "Add to favourites") // EXPECT: ComposeHardcodedA11yText
             }
             IconButton(onClick = onShare) { // EXPECT: ComposeNestedClickable
-                Icon(icon, contentDescription = "Share")
+                Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
             }
         }
     }

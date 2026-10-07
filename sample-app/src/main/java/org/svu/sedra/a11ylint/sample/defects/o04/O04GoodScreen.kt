@@ -22,12 +22,12 @@ fun O04GoodScreen(onAction: () -> Unit) {
         }
 
         // A container that keeps its layout but says what it is.
-        Row(modifier = Modifier.clickable(onClickLabel = "Buy now", role = Role.Button) { onAction() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Buy now", role = Role.Button) { onAction() }) { // EXPECT: ComposeHardcodedA11yText
             Text("Buy now")
         }
 
         // Rich content is a list row, not a button, and it says so.
-        Row(modifier = Modifier.clickable(onClickLabel = "Open chat", role = Role.Tab) { onAction() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open chat", role = Role.Tab) { onAction() }) { // EXPECT: ComposeHardcodedA11yText
             Text("Sedra Merkhan")
             Text("Last seen today")
         }

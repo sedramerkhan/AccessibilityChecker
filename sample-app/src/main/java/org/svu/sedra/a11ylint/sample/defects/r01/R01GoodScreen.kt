@@ -23,14 +23,14 @@ fun R01GoodScreen(onOpen: () -> Unit) {
 
     Column {
         // The role is passed to clickable.
-        Box(modifier = Modifier.clickable(onClickLabel = "Open gallery", role = Role.Button) { onOpen() }) {
-            Icon(icon, contentDescription = "Open gallery")
+        Box(modifier = Modifier.clickable(onClickLabel = "Open gallery", role = Role.Button) { onOpen() }) { // EXPECT: ComposeHardcodedA11yText
+            Icon(icon, contentDescription = "Open gallery") // EXPECT: ComposeHardcodedA11yText
         }
 
         // The role is set in semantics.
         Row(
             modifier = Modifier
-                .clickable(onClickLabel = "Open messages") { onOpen() }
+                .clickable(onClickLabel = "Open messages") { onOpen() } // EXPECT: ComposeHardcodedA11yText
                 .semantics { role = Role.Tab },
         ) {
             Text("Messages")
@@ -45,7 +45,7 @@ fun R01GoodScreen(onOpen: () -> Unit) {
         // An image that acts as a button.
         Image(
             painter = icon,
-            contentDescription = "Profile photo",
+            contentDescription = "Profile photo", // EXPECT: ComposeHardcodedA11yText
             modifier = Modifier.clickable(role = Role.Image) { onOpen() },
         )
     }

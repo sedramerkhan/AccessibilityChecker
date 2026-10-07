@@ -29,7 +29,7 @@ fun O03GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
             Row {
                 Button(onClick = onOpen) { Text("Read") }
                 IconButton(onClick = onFavorite) {
-                    Icon(icon, contentDescription = "Favorite")
+                    Icon(icon, contentDescription = "Favorite") // EXPECT: ComposeHardcodedA11yText
                 }
             }
         }
@@ -37,10 +37,10 @@ fun O03GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
         // One clickable row; the secondary action is a custom accessibility action.
         Row(
             modifier = Modifier
-                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() } // EXPECT: ComposeHardcodedA11yText
                 .semantics {
                     customActions = listOf(
-                        CustomAccessibilityAction("Share") {
+                        CustomAccessibilityAction("Share") { // EXPECT: ComposeHardcodedA11yText
                             onShare()
                             true
                         },

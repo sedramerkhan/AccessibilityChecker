@@ -28,7 +28,7 @@ fun R02GoodScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: 
         // Two texts become one sentence, which is the point of clearing them.
         Row(
             modifier = Modifier.clearAndSetSemantics {
-                contentDescription = "Running shoes, 42 euro"
+                contentDescription = "Running shoes, 42 euro" // EXPECT: ComposeHardcodedA11yText
             },
         ) {
             Text("Running shoes")
@@ -38,9 +38,9 @@ fun R02GoodScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: 
         // The name and the role are both put back.
         Row(
             modifier = Modifier
-                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }
+                .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() } // EXPECT: ComposeHardcodedA11yText
                 .clearAndSetSemantics {
-                    contentDescription = "Running shoes, 42 euro"
+                    contentDescription = "Running shoes, 42 euro" // EXPECT: ComposeHardcodedA11yText
                     role = Role.Button
                 },
         ) {
@@ -50,7 +50,7 @@ fun R02GoodScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: 
         // The checkbox state is described in words.
         Row(
             modifier = Modifier.clearAndSetSemantics {
-                contentDescription = "Subscribe to the newsletter"
+                contentDescription = "Subscribe to the newsletter" // EXPECT: ComposeHardcodedA11yText
                 stateDescription = if (checked) "Subscribed" else "Not subscribed"
             },
         ) {
@@ -61,7 +61,7 @@ fun R02GoodScreen(checked: Boolean, onCheckedChange: (Boolean) -> Unit, onOpen: 
         // Decorative stars carried no name of their own, and the block adds one.
         Row(
             modifier = Modifier.clearAndSetSemantics {
-                contentDescription = "Rated 2 out of 5"
+                contentDescription = "Rated 2 out of 5" // EXPECT: ComposeHardcodedA11yText
             },
         ) {
             Icon(icon, contentDescription = null)

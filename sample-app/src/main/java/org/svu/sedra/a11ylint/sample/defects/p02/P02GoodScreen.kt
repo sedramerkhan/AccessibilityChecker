@@ -11,7 +11,7 @@ import org.svu.sedra.a11ylint.sample.R
 @Composable
 fun P02GoodScreen() {
     val icon = painterResource(R.drawable.ic_launcher_foreground)
-    Icon(painter = icon, contentDescription = "Trash can illustration", modifier = Modifier)
+    Icon(painter = icon, contentDescription = "Trash can illustration", modifier = Modifier) // EXPECT: ComposeHardcodedA11yText
     Text("Delete draft")
     Image(painter = icon, contentDescription = null, modifier = Modifier)
 }

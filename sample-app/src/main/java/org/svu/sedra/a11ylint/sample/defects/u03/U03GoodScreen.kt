@@ -37,7 +37,7 @@ fun U03GoodScreen(
         OutlinedTextField(
             value = password,
             onValueChange = onPasswordChange,
-            modifier = Modifier.semantics { error("Use at least 8 characters") },
+            modifier = Modifier.semantics { error("Use at least 8 characters") }, // EXPECT: ComposeHardcodedA11yText
             label = { Text("Password") },
             isError = hasPasswordError,
         )

@@ -23,6 +23,7 @@ import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptio
 import org.svu.sedra.a11ylint.detectors.understandable.U03MissingSemanticErrorDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U04VagueButtonLabelDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U05TextFieldWithoutLabelDetector
+import org.svu.sedra.a11ylint.detectors.understandable.U07HardcodedA11yTextDetector
 
 enum class Pour {
     PERCEIVABLE,
@@ -205,6 +206,15 @@ object Taxonomy {
             wcag = listOf("1.3.1", "3.3.2"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = U07HardcodedA11yTextDetector.TAXONOMY_ID,
+            issue = U07HardcodedA11yTextDetector.ISSUE,
+            pour = Pour.UNDERSTANDABLE,
+            // Localization defect: no direct WCAG success criterion (CLAUDE.md 7.4).
+            wcag = emptyList(),
+            detection = DetectionType.STATIC,
+            priority = Priority.MINOR,
         ),
         TaxonomyEntry(
             id = R01ClickableWithoutRoleDetector.TAXONOMY_ID,

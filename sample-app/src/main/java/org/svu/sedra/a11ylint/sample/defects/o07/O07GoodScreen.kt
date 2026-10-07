@@ -29,8 +29,8 @@ fun O07GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
             onClick = onOpen,
             modifier = Modifier.semantics {
                 customActions = listOf(
-                    CustomAccessibilityAction("Add to favourites") { onFavorite(); true },
-                    CustomAccessibilityAction("Share") { onShare(); true },
+                    CustomAccessibilityAction("Add to favourites") { onFavorite(); true }, // EXPECT: ComposeHardcodedA11yText
+                    CustomAccessibilityAction("Share") { onShare(); true }, // EXPECT: ComposeHardcodedA11yText
                 )
             },
         ) {
@@ -42,10 +42,10 @@ fun O07GoodScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Uni
             Text("Running shoes")
             Row {
                 IconButton(onClick = onFavorite) {
-                    Icon(icon, contentDescription = "Add to favourites")
+                    Icon(icon, contentDescription = "Add to favourites") // EXPECT: ComposeHardcodedA11yText
                 }
                 IconButton(onClick = onShare) {
-                    Icon(icon, contentDescription = "Share")
+                    Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
                 }
             }
         }

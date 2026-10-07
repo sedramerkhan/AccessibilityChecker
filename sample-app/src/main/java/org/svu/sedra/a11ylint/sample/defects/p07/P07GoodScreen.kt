@@ -21,7 +21,7 @@ import androidx.compose.ui.window.Popup
 fun P07GoodScreen(onDismiss: () -> Unit) {
     // The custom popup names itself.
     Popup(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.semantics { paneTitle = "Sort options" }) {
+        Column(modifier = Modifier.semantics { paneTitle = "Sort options" }) { // EXPECT: ComposeHardcodedA11yText
             Text("Sort by date")
             Text("Sort by name")
         }
@@ -30,7 +30,7 @@ fun P07GoodScreen(onDismiss: () -> Unit) {
     // The title may sit deeper inside the overlay.
     Dialog(onDismissRequest = onDismiss) {
         Box {
-            Column(modifier = Modifier.semantics { paneTitle = "Delete draft" }) {
+            Column(modifier = Modifier.semantics { paneTitle = "Delete draft" }) { // EXPECT: ComposeHardcodedA11yText
                 Text("Delete this draft?")
             }
         }

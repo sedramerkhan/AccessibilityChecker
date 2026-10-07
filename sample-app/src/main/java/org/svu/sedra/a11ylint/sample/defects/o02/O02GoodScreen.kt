@@ -19,19 +19,19 @@ import androidx.compose.ui.semantics.Role
 fun O02GoodScreen(onAction: () -> Unit) {
     Column {
         Row(
-            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() },
+            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Open")
         }
 
         Box(
-            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() },
+            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Open")
         }
 
         Card(
-            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() },
+            modifier = Modifier.clickable(onClickLabel = "Open details", role = Role.Button) { onAction() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Open")
         }

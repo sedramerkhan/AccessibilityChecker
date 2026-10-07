@@ -20,7 +20,7 @@ fun O06GoodScreen(formComplete: Boolean, onSubmit: () -> Unit) {
         Row(
             modifier = Modifier.clickable(
                 enabled = formComplete,
-                onClickLabel = "Send",
+                onClickLabel = "Send", // EXPECT: ComposeHardcodedA11yText
                 role = Role.Button,
                 onClick = onSubmit
             )

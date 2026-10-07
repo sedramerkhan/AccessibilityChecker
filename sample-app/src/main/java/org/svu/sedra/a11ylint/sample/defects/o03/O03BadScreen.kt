@@ -31,16 +31,16 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
             Text("Compose accessibility")
             Row {
                 IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable
-                    Icon(icon, contentDescription = "Favorite")
+                    Icon(icon, contentDescription = "Favorite") // EXPECT: ComposeHardcodedA11yText
                 }
                 IconButton(onClick = onShare) { // EXPECT: ComposeNestedClickable
-                    Icon(icon, contentDescription = "Share")
+                    Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
                 }
             }
         }
 
         // A clickable row that contains a button.
-        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
+        Row(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) { // EXPECT: ComposeHardcodedA11yText
             Text("Running shoes")
             Button(onClick = onShare) { // EXPECT: ComposeNestedClickable
                 Text("Buy")
@@ -49,7 +49,7 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
 
         // A clickable surface with a clickable box inside.
         Surface(onClick = onOpen) {
-            Box(modifier = Modifier.clickable(onClickLabel = "More options", role = Role.Button) { onShare() }) { // EXPECT: ComposeNestedClickable
+            Box(modifier = Modifier.clickable(onClickLabel = "More options", role = Role.Button) { onShare() }) { // EXPECT: ComposeNestedClickable, ComposeHardcodedA11yText
                 Text("More options")
             }
         }

@@ -17,6 +17,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P06MissingLiveRegionDetector
 import org.svu.sedra.a11ylint.detectors.perceivable.P07MissingPaneTitleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
+import org.svu.sedra.a11ylint.detectors.robust.R04MissingCollectionInfoDetector
 import org.svu.sedra.a11ylint.detectors.robust.R06ComposableWithoutSemanticsDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
@@ -233,6 +234,14 @@ object Taxonomy {
             priority = Priority.MAJOR,
         ),
         // R-03 is deliberately absent: the defect it describes cannot occur in Compose (see DECISIONS).
+        TaxonomyEntry(
+            id = R04MissingCollectionInfoDetector.TAXONOMY_ID,
+            issue = R04MissingCollectionInfoDetector.ISSUE,
+            pour = Pour.ROBUST,
+            wcag = listOf("1.3.1"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MINOR,
+        ),
         TaxonomyEntry(
             id = R06ComposableWithoutSemanticsDetector.TAXONOMY_ID,
             issue = R06ComposableWithoutSemanticsDetector.ISSUE,

@@ -383,6 +383,33 @@ would have lost a true positive.
   `wcag` list rather than a stretched criterion. It is the only entry of the 23 with an empty
   list, which Phase 3 and the thesis tables need to tolerate.
 
+### R-04 ComposeMissingCollectionInfo
+
+- **The loop must emit UI.** The body of the `forEach` or `for` has to contain a call to a
+  `@Composable` function. Without this test the rule reports any `Column` that happens to add
+  numbers up in a loop, which is not a list at all. This is the first rule to use
+  `ComposeCalls.isComposableCall` as a filter rather than as a definition.
+- **Either collection property is enough to stay quiet.** Done properly, a hand-built list sets
+  `collectionInfo` on the container *and* `collectionItemInfo` on each item. The rule accepts
+  either, anywhere inside the container, because the defect it reports is a list that nobody
+  thought about; a half-finished one is a different and much rarer problem. Being strict here
+  would report code that is clearly already trying.
+- **Only the innermost container is reported**, the same device as O-07: the walk stops at a
+  nested layout, so the loop belongs to the closest `Column` or `Row` around it. This also makes
+  the lazy-list exclusion fall out for free, because the lazy lists are in the same stop set: a
+  `Column` wrapped around a `LazyColumn` is not reported for the lazy list's items.
+- **`verticalScroll` is not required.** CLAUDE.md 7.4 says "often with verticalScroll", not
+  "only with". A short list is still a list, and requiring the scroll modifier would miss the
+  common case of a list that happens to fit on screen. The cost is that a two-item loop is
+  reported like a hundred-item one, recorded in LIMITATIONS.
+- **`Box` is not a container for this rule.** A `Box` stacks its children on top of each other,
+  so a loop inside one is not a list in the reading order sense. CLAUDE.md names `Column` and
+  `Row`.
+- **`forEach` and `forEachIndexed` are matched by declared name**, through
+  `ComposeCalls.name`, which resolves the method first, so an import alias still gives `forEach`.
+  Matching the fully qualified `kotlin.collections.forEach` would have been more precise but
+  breaks on the many receiver types (`Array`, `Map`, `Sequence`) that each declare their own.
+
 ### U-07 fires on 94 lines of the sample app, and the markers were added rather than the code changed
 
 This is the widest-reaching rule in the set. On its first run it reported **94 lines across 28

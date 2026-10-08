@@ -544,3 +544,39 @@ Icon(icon, contentDescription = "Delete ${'$'}{item.name}") // not reported
 The rule checks only that the text comes from a resource, not that a translation exists. A
 `stringResource` with no entry in any other locale is just as untranslated at run time, which no
 source-level check can see.
+
+## R-04 ComposeMissingCollectionInfo
+
+### Items emitted by a helper composable
+
+The loop has to be written inside the container. A helper that loops internally hides it, so the
+container is not reported:
+
+```kotlin
+@Composable fun OrderList(orders: List<String>) { orders.forEach { Text(it) } }
+
+Column { OrderList(orders) } // not reported
+```
+
+### List length is not considered
+
+Two items and two hundred are treated the same, because the size is almost never a literal. A
+`Column` that loops over a two-element list is reported even though a screen reader user loses
+very little there.
+
+```kotlin
+Column { listOf("Yes", "No").forEach { Text(it) } } // reported
+```
+
+### Only `forEach`, `forEachIndexed` and `for`
+
+Other ways to repeat UI are not matched: `map`, `repeat(n) { }`, `flatMap`, or recursion.
+
+```kotlin
+Column { repeat(orders.size) { index -> Text(orders[index]) } } // not reported
+```
+
+### Collection semantics set anywhere inside count, even on the wrong element
+
+The search for `collectionInfo` and `collectionItemInfo` covers the whole container, so a nested
+list that sets them silences the outer container too.

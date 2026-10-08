@@ -8,13 +8,13 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | In progress: P-05, P-07, O-06, O-07 and U-07 done. Left: U-06, R-04, R-05. |
+| 4 Minor rules (8) | In progress: P-05, P-07, O-06, O-07, U-07 and R-04 done. Left: U-06, R-05. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-23 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 23 issue IDs, 171 expected,
-171 reported, 0 missing, 0 unexpected. The jump from 77 to 171 is U-07 alone, which is explained
-in the Milestone 4 notes.
+24 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 24 issue IDs, 173 expected,
+173 reported, 0 missing, 0 unexpected. The jump from 77 to 171 of those is U-07 alone, which is
+explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
 Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
@@ -23,7 +23,7 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 
 ### What is left, in order
 
-1. **Milestone 4**: three minor rules left, U-06, R-04 and R-05. U-06 is the one
+1. **Milestone 4**: two minor rules left, U-06 and R-05. U-06 is the one
    that needs more than a detector: it is project-wide and needs Lint partial analysis.
 2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
@@ -52,7 +52,6 @@ belongs to.
    announced when the dialog opens, but that is not the same as marking the title Text with
    `heading()`. So U-01 reporting a dialog title as a possible heading is not wrong, it is a
    judgement about whether a heading adds anything once the pane is already announced.
-
 7. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
    take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
    `clickable` only, so widening it is a taxonomy change.
@@ -67,6 +66,11 @@ belongs to.
 11. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
     ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
     See the Milestone 4 notes and DECISIONS before deciding.
+12. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
+    looping over two hundred. The size is almost never a literal, so it cannot be used as a
+    threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
+    would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
+    verticalScroll", not "only with", so the rule does not require it today.
 
 **Answered:** R-02's empty-block question. The development app run showed Google's own code using
 an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
@@ -206,6 +210,7 @@ In progress.
 | O-06 `ComposeDisabledButClickable` | Done | 4 | 5 | 2, all matched |
 | O-07 `ComposeMissingCustomActions` | Done | 5 | 4 | 3, all matched |
 | U-07 `ComposeHardcodedA11yText` | Done | 5 | 5 | 94, all matched |
+| R-04 `ComposeMissingCollectionInfo` | Done | 4 | 6 | 2, all matched |
 
 Notes:
 - P-07 began with the check CLAUDE.md asks for, and all three named Material overlays already set a `paneTitle`: `AlertDialog`, `ModalBottomSheet` and the modal drawers (so do `DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail`). All are excluded. The real gap is one level down, in `androidx.compose.ui.window.Popup` and `Dialog`, which set none at all; those are what the rule reports. See DECISIONS for the source references.
@@ -217,4 +222,5 @@ Notes:
 - **U-07 is the widest-reaching rule in the set, by a long way.** It reported **94 lines across 28 sample screens** on its first run, against 84 markers for the other 22 rules put together, and about half of those lines are on screens that are the *good* example for their own rule. Every one of them is a genuine hardcoded `contentDescription`, `onClickLabel`, `stateDescription`, `paneTitle`, error message or custom action label. The markers were added rather than the code rewritten, because several rules need those literals to work at all: P-02 compares a literal description with a sibling literal Text, U-04 reads a button's literal label, and P-01 distinguishes `null` from `""`. Converting the corpus to `stringResource` would have quietly disabled parts of three rules while looking like a tidy-up. The reasoning and the two rejected alternatives are in DECISIONS. The check is exact again: 23 issue IDs, 171 expected, 171 reported, 0 missing, 0 unexpected.
 - **What that changes about the corpus:** a good screen is now good *with respect to its own rule* only. The screens already describe themselves that way ("O-06 must report nothing here"), but until U-07 every good screen happened to be clean for every rule, and that is no longer true. Worth stating in the thesis, because the sample app is presented as the rule corpus.
 - **A finding worth a sentence in the thesis:** a corpus written deliberately and carefully for an accessibility study still carried hardcoded accessibility text on 94 lines. Nobody notices this defect in review because it is the text that is never drawn on screen.
+- R-04 passed its unit tests and the sample app on the first run. It is the first rule that reasons about a **loop** rather than about a call's arguments or its modifier chain, and the guard that makes it precise is requiring the loop body to contain a `@Composable` call: without that, any `Column` that happens to add numbers up in a loop is reported as a list. Reusing O-07's "stop at a nested layout" walk gave the lazy-list exclusion for free, since the lazy lists sit in the same stop set, so a `Column` wrapped around a `LazyColumn` is not reported for the lazy list's items. The full expectations check is now 24 issue IDs, 173 expected, 173 reported, 0 missing, 0 unexpected.
 - **Question for Sedra on O-06's scope:** `combinedClickable`, `toggleable` and `selectable` take the same `enabled` parameter and have exactly the same defect, but CLAUDE.md 7.4 names `clickable`, so the rule matches only that. Widening it would be a taxonomy change, which is why it was not done quietly.

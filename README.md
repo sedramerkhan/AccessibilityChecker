@@ -20,7 +20,7 @@ its own: it is fully deterministic, works offline, and contains no LLM, network 
 
 ## What it finds
 
-23 rules are implemented, organised by the POUR principles and each mapped to a WCAG 2.2 success
+24 rules are implemented, organised by the POUR principles and each mapped to a WCAG 2.2 success
 criterion, except U-07, which is a localization defect with no criterion of its own. Some
 examples:
 
@@ -77,7 +77,7 @@ rule that fires somewhere it should not are both caught:
 python3 scripts/check_sample_expectations.py
 ```
 
-Current state: 18 issue IDs, 64 expected, 64 reported, 0 missing, 0 unexpected.
+Current state: 24 issue IDs, 173 expected, 173 reported, 0 missing, 0 unexpected.
 
 ## Using the rules in another project
 
@@ -138,8 +138,8 @@ will use it to map results back to taxonomy IDs.
 |---|---|
 | JDK | 17 or newer |
 | Gradle | 9.6.0 (wrapper included) |
-| AGP | 8.8.2 |
-| Lint | 31.8.2 (AGP + 23) |
+| AGP | 9.4.1 |
+| Lint | 32.4.1 (AGP + 23) |
 | Kotlin | 2.2.10 |
 | Compose | BOM 2026.02.01 (Compose 1.10.4, Material3 1.4.0) |
 
@@ -156,7 +156,7 @@ because the compiled libraries behave differently from the source stubs (see
 | [docs/DECISIONS.md](docs/DECISIONS.md) | every design choice and heuristic, dated, with the evidence |
 | [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | what static analysis cannot catch, with examples |
 | [docs/PROGRESS.md](docs/PROGRESS.md) | status, what is left, open questions, thesis text to update |
-| [docs/DEV_APP_RESULTS.md](docs/DEV_APP_RESULTS.md) | findings on the development apps (pending) |
+| [docs/DEV_APP_RESULTS.md](docs/DEV_APP_RESULTS.md) | findings on JetNews and Jetchat, and the two rules they corrected |
 
 **Start with [docs/PROGRESS.md](docs/PROGRESS.md)**: it opens with where the project stands, what
 is left in order, and the questions waiting on a decision.
@@ -169,7 +169,7 @@ is left in order, and the questions waiting on a decision.
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run on JetNews and Jetchat |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable |
-| 4 Minor rules (8) | In progress: P-05, P-07, O-06, O-07 and U-07 done; U-06, R-04 and R-05 left |
+| 4 Minor rules (8) | In progress: P-05, P-07, O-06, O-07, U-07 and R-04 done; U-06 and R-05 left |
 | 5 Packaging and reporting | Publishing works; scripts and the final docs pass are open |
 
 One rule, **R-03**, was dropped after checking the framework: Compose does not hide interactive

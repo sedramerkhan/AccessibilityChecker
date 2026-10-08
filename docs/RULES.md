@@ -19,6 +19,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
 | U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
+| R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
@@ -616,6 +617,66 @@ This rule fires far more widely than any other: **94 lines** across the sample c
 
 - `U07HardcodedA11yTextDetectorTest`: 5 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/u07/U07BadScreen.kt` and `U07GoodScreen.kt`.
+
+---
+
+## R-04 · ComposeMissingCollectionInfo
+
+- **Taxonomy:** Robust, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships.
+- **Detector:** `detectors/robust/R04MissingCollectionInfoDetector.kt`
+- **Message:** `[R-04] <Column> builds a list with a loop but sets no collectionInfo, so screen readers cannot say how many items there are or which one is focused`.
+
+### What it flags
+
+A `Column` or `Row` whose content repeats UI with `forEach`, `forEachIndexed` or a `for` loop, where neither `collectionInfo` nor `collectionItemInfo` is set anywhere inside. A `LazyColumn` announces "list, 5 items" and then "item 2 of 5"; a `Column` with a loop looks identical on screen and announces neither, so the user cannot tell how long the list is or where they are in it.
+
+The loop must emit UI: its body has to contain a call to a `@Composable` function. A loop that only adds numbers up is not a list.
+
+Only the innermost container is reported. The walk stops at a nested layout, so in a `Column` holding a `Column` holding the loop, the inner one is reported.
+
+### What it ignores
+
+- `LazyColumn`, `LazyRow` and the lazy grids, which provide collection semantics themselves. They are also treated as nested containers, so a `Column` wrapped around a lazy list is not reported for the lazy list's items.
+- A container where `collectionInfo` or `collectionItemInfo` is set, whether on the container or on the items. Either one means the developer has thought about the collection.
+- A loop that emits no UI.
+- `Box`. A stack of overlapping children is not a list, and CLAUDE.md 7.4 names `Column` and `Row`.
+
+### Example
+
+Bad:
+
+```kotlin
+Column(Modifier.verticalScroll(rememberScrollState())) {
+    orders.forEach { order -> Text(order) }
+}
+```
+
+Good:
+
+```kotlin
+LazyColumn { items(orders) { order -> Text(order) } }
+```
+
+or, keeping the `Column`:
+
+```kotlin
+Column(Modifier.semantics { collectionInfo = CollectionInfo(orders.size, 1) }) {
+    orders.forEachIndexed { index, order ->
+        Text(order, Modifier.semantics { collectionItemInfo = CollectionItemInfo(index, 1, 0, 1) })
+    }
+}
+```
+
+### Known limitations
+
+`verticalScroll` is not required, so a two-item loop is reported like a hundred-item one; items emitted by a helper composable that loops internally are not seen; and `map`/`repeat` are not treated as loops (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `R04MissingCollectionInfoDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/r04/R04BadScreen.kt` and `R04GoodScreen.kt`.
 
 ---
 

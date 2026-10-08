@@ -1,6 +1,6 @@
 # Progress
 
-## Where the project stands (2026-10-05)
+## Where the project stands (2026-10-08)
 
 | Milestone | Status |
 |---|---|
@@ -8,12 +8,12 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | In progress: P-05, P-07, O-06, O-07, U-07 and R-04 done. Left: U-06, R-05. |
+| 4 Minor rules (8) | In progress: seven of eight done. Left: U-06 only. |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-24 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 24 issue IDs, 173 expected,
-173 reported, 0 missing, 0 unexpected. The jump from 77 to 171 of those is U-07 alone, which is
+25 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
+by a bad and a good sample screen. Across the whole sample app: 25 issue IDs, 175 expected,
+175 reported, 0 missing, 0 unexpected. The jump from 77 to 171 of those is U-07 alone, which is
 explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
@@ -23,8 +23,8 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 
 ### What is left, in order
 
-1. **Milestone 4**: two minor rules left, U-06 and R-05. U-06 is the one
-   that needs more than a detector: it is project-wide and needs Lint partial analysis.
+1. **Milestone 4**: one minor rule left, U-06. It is the one that needs more than a detector:
+   it is project-wide and needs Lint partial analysis.
 2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
    already done and verified.
@@ -71,6 +71,9 @@ belongs to.
     threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
     would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
     verticalScroll", not "only with", so the rule does not require it today.
+13. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+    progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
+    accept missing sliders? This is the rule's most likely false positive.
 
 **Answered:** R-02's empty-block question. The development app run showed Google's own code using
 an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
@@ -211,6 +214,7 @@ In progress.
 | O-07 `ComposeMissingCustomActions` | Done | 5 | 4 | 3, all matched |
 | U-07 `ComposeHardcodedA11yText` | Done | 5 | 5 | 94, all matched |
 | R-04 `ComposeMissingCollectionInfo` | Done | 4 | 6 | 2, all matched |
+| R-05 `ComposeMissingProgressRange` | Done | 4 | 6 | 2, all matched |
 
 Notes:
 - P-07 began with the check CLAUDE.md asks for, and all three named Material overlays already set a `paneTitle`: `AlertDialog`, `ModalBottomSheet` and the modal drawers (so do `DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail`). All are excluded. The real gap is one level down, in `androidx.compose.ui.window.Popup` and `Dialog`, which set none at all; those are what the rule reports. See DECISIONS for the source references.
@@ -223,4 +227,5 @@ Notes:
 - **What that changes about the corpus:** a good screen is now good *with respect to its own rule* only. The screens already describe themselves that way ("O-06 must report nothing here"), but until U-07 every good screen happened to be clean for every rule, and that is no longer true. Worth stating in the thesis, because the sample app is presented as the rule corpus.
 - **A finding worth a sentence in the thesis:** a corpus written deliberately and carefully for an accessibility study still carried hardcoded accessibility text on 94 lines. Nobody notices this defect in review because it is the text that is never drawn on screen.
 - R-04 passed its unit tests and the sample app on the first run. It is the first rule that reasons about a **loop** rather than about a call's arguments or its modifier chain, and the guard that makes it precise is requiring the loop body to contain a `@Composable` call: without that, any `Column` that happens to add numbers up in a loop is reported as a list. Reusing O-07's "stop at a nested layout" walk gave the lazy-list exclusion for free, since the lazy lists sit in the same stop set, so a `Column` wrapped around a `LazyColumn` is not reported for the lazy list's items. The full expectations check is now 24 issue IDs, 173 expected, 173 reported, 0 missing, 0 unexpected.
+- R-05 passed its unit tests and the sample app on the first run. It reports on the **function declaration**, like R-06, because the range has to come from the parameter the function receives, so the function is the unit that is wrong. It needs all three signals together (a `Float` progress parameter, hand drawing with `Canvas` or `drawBehind`, and no `progressBarRangeInfo`), since any two of them describe ordinary code. This is the one rule whose precision rests on **naming**: there is no type and no annotation that says a `Float` is a progress value. While adding the Material indicator stubs I confirmed something worth knowing: in Material3 1.4.0 `LinearProgressIndicator` takes `progress` as a `() -> Float` lambda, not a `Float`, so Material's own parameter would not match this rule's test even if it were in source. The full expectations check is now 25 issue IDs, 175 expected, 175 reported, 0 missing, 0 unexpected.
 - **Question for Sedra on O-06's scope:** `combinedClickable`, `toggleable` and `selectable` take the same `enabled` parameter and have exactly the same defect, but CLAUDE.md 7.4 names `clickable`, so the rule matches only that. Widening it would be a taxonomy change, which is why it was not done quietly.

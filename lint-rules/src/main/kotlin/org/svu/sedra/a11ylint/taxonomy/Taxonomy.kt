@@ -18,6 +18,7 @@ import org.svu.sedra.a11ylint.detectors.perceivable.P07MissingPaneTitleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R01ClickableWithoutRoleDetector
 import org.svu.sedra.a11ylint.detectors.robust.R02ClearAndSetSemanticsLossDetector
 import org.svu.sedra.a11ylint.detectors.robust.R04MissingCollectionInfoDetector
+import org.svu.sedra.a11ylint.detectors.robust.R05MissingProgressRangeDetector
 import org.svu.sedra.a11ylint.detectors.robust.R06ComposableWithoutSemanticsDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U01MissingHeadingDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptionDetector
@@ -239,6 +240,14 @@ object Taxonomy {
             issue = R04MissingCollectionInfoDetector.ISSUE,
             pour = Pour.ROBUST,
             wcag = listOf("1.3.1"),
+            detection = DetectionType.STATIC,
+            priority = Priority.MINOR,
+        ),
+        TaxonomyEntry(
+            id = R05MissingProgressRangeDetector.TAXONOMY_ID,
+            issue = R05MissingProgressRangeDetector.ISSUE,
+            pour = Pour.ROBUST,
+            wcag = listOf("4.1.2"),
             detection = DetectionType.STATIC,
             priority = Priority.MINOR,
         ),

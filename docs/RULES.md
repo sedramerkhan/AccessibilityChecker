@@ -20,6 +20,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
 | U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
 | R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
+| R-05 | `ComposeMissingProgressRange` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
@@ -677,6 +678,71 @@ Column(Modifier.semantics { collectionInfo = CollectionInfo(orders.size, 1) }) {
 
 - `R04MissingCollectionInfoDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/r04/R04BadScreen.kt` and `R04GoodScreen.kt`.
+
+---
+
+## R-05 · ComposeMissingProgressRange
+
+- **Taxonomy:** Robust, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R05MissingProgressRangeDetector.kt`
+- **Message:** `[R-05] <ProgressBar> draws its own progress from <progress> but sets no progressBarRangeInfo, so screen readers announce no value`.
+
+### What it flags
+
+Reported **on the function declaration**, like R-06. A `@Composable` function that has all three of:
+
+- a `Float` parameter whose name contains `progress`, `percent`, `fraction` or `value`, so `downloadPercent` and `scrollFraction` count;
+- a call to `Canvas` or `Modifier.drawBehind`, meaning the indicator is drawn by hand;
+- no `progressBarRangeInfo` set anywhere in the body.
+
+The shape of the drawing is the only thing that says how far along the task is, and none of it reaches accessibility services. TalkBack announces the element with no value at all, so the user cannot tell a download at 5% from one at 95%, and never hears it change.
+
+### What it ignores
+
+- A function that composes a Material `LinearProgressIndicator` or `CircularProgressIndicator`. Those set the range themselves, which is the exclusion CLAUDE.md 7.4 asks for.
+- A function that sets `progressBarRangeInfo`.
+- Drawing with no progress-like parameter: a divider or a chart is not a progress indicator.
+- A progress parameter with no hand drawing. Whatever renders it is somebody else's node.
+- A parameter that is not a `Float`, and any function that is not `@Composable`.
+
+### Example
+
+Bad:
+
+```kotlin
+@Composable
+fun ProgressBar(progress: Float) {
+    Canvas(Modifier.fillMaxWidth().height(8.dp)) {
+        drawRect(color = Blue, size = Size(size.width * progress, size.height))
+    }
+}
+```
+
+Good:
+
+```kotlin
+@Composable
+fun ProgressBar(progress: Float) {
+    Canvas(
+        Modifier.fillMaxWidth().height(8.dp).semantics {
+            progressBarRangeInfo = ProgressBarRangeInfo(current = progress, range = 0f..1f)
+        }
+    ) {
+        drawRect(color = Blue, size = Size(size.width * progress, size.height))
+    }
+}
+```
+
+### Known limitations
+
+The parameter name is the only signal that a `Float` is a progress value, so an indicator driven by a differently named parameter or by state read inside the function is missed, and `value` is broad enough to catch an unrelated drawing (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `R05MissingProgressRangeDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/r05/R05BadScreen.kt` and `R05GoodScreen.kt`.
 
 ---
 

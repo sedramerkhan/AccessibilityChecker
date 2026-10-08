@@ -580,3 +580,40 @@ Column { repeat(orders.size) { index -> Text(orders[index]) } } // not reported
 
 The search for `collectionInfo` and `collectionItemInfo` covers the whole container, so a nested
 list that sets them silences the outer container too.
+
+## R-05 ComposeMissingProgressRange
+
+### Progress that does not arrive as a named parameter
+
+The `Float` parameter is the only evidence the rule has. An indicator driven by state read inside
+the function, or by a parameter named something else, is not reported:
+
+```kotlin
+@Composable fun Ring(state: DownloadState) {   // not reported
+    Canvas(Modifier) { drawArc(sweepAngle = state.done * 360f, ...) }
+}
+
+@Composable fun Ring(ratio: Float) {           // not reported: "ratio" is not in the name list
+    Canvas(Modifier) { ... }
+}
+```
+
+### `value` is a broad word
+
+The name list comes from CLAUDE.md and includes `value`, so a composable with an unrelated
+`value: Float` that happens to draw something can be reported. The drawing requirement keeps this
+rare, but it is the rule's most likely false positive.
+
+### Only `Canvas` and `drawBehind` count as hand drawing
+
+`Modifier.drawWithContent` and `Modifier.drawWithCache` render the same indicator and are not
+matched.
+
+### The range is not checked for correctness
+
+Any `progressBarRangeInfo` assignment silences the rule, even one whose current value or range is
+wrong or constant:
+
+```kotlin
+Modifier.semantics { progressBarRangeInfo = ProgressBarRangeInfo(0f, 0f..1f) } // accepted
+```

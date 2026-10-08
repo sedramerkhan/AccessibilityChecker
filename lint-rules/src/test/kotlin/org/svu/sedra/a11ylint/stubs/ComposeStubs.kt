@@ -721,6 +721,13 @@ private val material3Stubs = kotlin(
         content: @Composable () -> Unit,
     ) {}
 
+    // Material3 1.4.0 takes the progress as a lambda, not a Float.
+    @Composable
+    fun LinearProgressIndicator(progress: () -> Float, modifier: Modifier = Modifier) {}
+
+    @Composable
+    fun CircularProgressIndicator(progress: () -> Float, modifier: Modifier = Modifier) {}
+
     @Composable
     fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {}
 

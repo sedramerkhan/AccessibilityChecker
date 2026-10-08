@@ -410,6 +410,30 @@ would have lost a true positive.
   Matching the fully qualified `kotlin.collections.forEach` would have been more precise but
   breaks on the many receiver types (`Array`, `Map`, `Sequence`) that each declare their own.
 
+### R-05 ComposeMissingProgressRange
+
+- **All three signals are required**: a `Float` progress parameter, hand drawing, and no range.
+  Any two of them describe ordinary code. A `Float` called `value` with no drawing is any
+  composable at all; drawing with no progress parameter is a divider or a chart. Only the
+  combination is a progress indicator that announces nothing.
+- **The parameter name is the only evidence that a `Float` means progress.** There is no type to
+  check and no annotation, so this is the one rule whose precision rests on naming. The match is
+  a lowercase "contains", so `downloadPercent` and `scrollFraction` count. `value` is the loose
+  one and comes straight from CLAUDE.md 7.4; it is kept because a slider-like control is exactly
+  the case the rule is for, and the drawing requirement keeps it from firing on much.
+- **Reported on the function declaration**, like R-06, not on the `Canvas` call. The fix belongs
+  to the component as a whole: the range has to come from the parameter the function receives, so
+  the function is the unit that is wrong.
+- **`Canvas` and `drawBehind` only.** CLAUDE.md 7.4 names those two. `drawWithContent` and
+  `drawWithCache` can draw the same thing and are not matched, which is recorded in LIMITATIONS
+  rather than fixed, since adding them is a taxonomy widening.
+- **Material indicators are excluded by looking for the call**, not by excluding a package. A
+  wrapper that composes `LinearProgressIndicator` gets the range from it, so the wrapper is not
+  reported even if it also draws something of its own. The stubs gained both indicators with
+  their real Material3 1.4.0 signature, where `progress` is a `() -> Float` lambda rather than a
+  `Float`, which is worth knowing because it means the Material parameter does **not** match this
+  rule's own `Float` test.
+
 ### U-07 fires on 94 lines of the sample app, and the markers were added rather than the code changed
 
 This is the widest-reaching rule in the set. On its first run it reported **94 lines across 28

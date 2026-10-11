@@ -20,7 +20,8 @@ its own: it is fully deterministic, works offline, and contains no LLM, network 
 
 ## What it finds
 
-25 rules are implemented, organised by the POUR principles and each mapped to a WCAG 2.2 success
+All 26 rules of the taxonomy are implemented (27 minus R-03, which was dropped as not
+applicable). They are organised by the POUR principles and each mapped to a WCAG 2.2 success
 criterion, except U-07, which is a localization defect with no criterion of its own. Some
 examples:
 
@@ -77,7 +78,7 @@ rule that fires somewhere it should not are both caught:
 python3 scripts/check_sample_expectations.py
 ```
 
-Current state: 25 issue IDs, 175 expected, 175 reported, 0 missing, 0 unexpected.
+Current state: 26 issue IDs, 193 expected, 193 reported, 0 missing, 0 unexpected.
 
 ## Using the rules in another project
 
@@ -169,7 +170,7 @@ is left in order, and the questions waiting on a decision.
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run on JetNews and Jetchat |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable |
-| 4 Minor rules (8) | In progress: seven of eight done; U-06 left |
+| 4 Minor rules (8) | Done |
 | 5 Packaging and reporting | Publishing works; scripts and the final docs pass are open |
 
 One rule, **R-03**, was dropped after checking the framework: Compose does not hide interactive

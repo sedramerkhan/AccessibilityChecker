@@ -8,13 +8,14 @@
 | 1 Infrastructure | Done |
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
-| 4 Minor rules (8) | In progress: seven of eight done. Left: U-06 only. |
+| 4 Minor rules (8) | Done (2026-10-08). |
 | 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
 
-25 detectors implemented, each registered in `Taxonomy.kt`, documented in `RULES.md` and covered
-by a bad and a good sample screen. Across the whole sample app: 25 issue IDs, 175 expected,
-175 reported, 0 missing, 0 unexpected. The jump from 77 to 171 of those is U-07 alone, which is
-explained in the Milestone 4 notes.
+**Every rule in the taxonomy is now implemented.** 26 detectors, which is all 27 minus R-03,
+dropped as not applicable. Each is registered in `Taxonomy.kt`, documented in `RULES.md` and
+covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 193
+expected, 193 reported, 0 missing, 0 unexpected. U-07 alone accounts for 94 of those markers,
+which is explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write: **33 findings across JetNews and
 Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
@@ -23,9 +24,7 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 
 ### What is left, in order
 
-1. **Milestone 4**: one minor rule left, U-06. It is the one that needs more than a detector:
-   it is project-wide and needs Lint partial analysis.
-2. **Milestone 5**: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
+1. **Milestone 5**, the only milestone left: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
    Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
    already done and verified.
 
@@ -95,6 +94,12 @@ These are not questions, they are edits the taxonomy chapter needs.
 2. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
    semantics" to custom gestures only, which is what the rule detects and what the real defect
    is. CLAUDE.md anticipated this change.
+3. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
+   sourced, which now includes a drawable read at the call site and any property returning an
+   `ImageVector` or `Painter`. The reason is worth a sentence of its own in the thesis: a search
+   of all 364 Kotlin files in `compose-samples` found 123 `Icon(...)` calls and **zero** uses of
+   `Icons.X.Y`, so the rule as originally worded could not have fired on either development app.
+   Agreed with Sedra on 2026-10-08. See `DECISIONS.md`.
 
 ### Known gap in the checks
 
@@ -215,6 +220,7 @@ In progress.
 | U-07 `ComposeHardcodedA11yText` | Done | 5 | 5 | 94, all matched |
 | R-04 `ComposeMissingCollectionInfo` | Done | 4 | 6 | 2, all matched |
 | R-05 `ComposeMissingProgressRange` | Done | 4 | 6 | 2, all matched |
+| U-06 `ComposeInconsistentLabels` | Done | 5 | 6 | 6, all matched |
 
 Notes:
 - P-07 began with the check CLAUDE.md asks for, and all three named Material overlays already set a `paneTitle`: `AlertDialog`, `ModalBottomSheet` and the modal drawers (so do `DatePicker`, `SnackbarHost`, `BasicTooltip` and `WideNavigationRail`). All are excluded. The real gap is one level down, in `androidx.compose.ui.window.Popup` and `Dialog`, which set none at all; those are what the rule reports. See DECISIONS for the source references.
@@ -228,4 +234,7 @@ Notes:
 - **A finding worth a sentence in the thesis:** a corpus written deliberately and carefully for an accessibility study still carried hardcoded accessibility text on 94 lines. Nobody notices this defect in review because it is the text that is never drawn on screen.
 - R-04 passed its unit tests and the sample app on the first run. It is the first rule that reasons about a **loop** rather than about a call's arguments or its modifier chain, and the guard that makes it precise is requiring the loop body to contain a `@Composable` call: without that, any `Column` that happens to add numbers up in a loop is reported as a list. Reusing O-07's "stop at a nested layout" walk gave the lazy-list exclusion for free, since the lazy lists sit in the same stop set, so a `Column` wrapped around a `LazyColumn` is not reported for the lazy list's items. The full expectations check is now 24 issue IDs, 173 expected, 173 reported, 0 missing, 0 unexpected.
 - R-05 passed its unit tests and the sample app on the first run. It reports on the **function declaration**, like R-06, because the range has to come from the parameter the function receives, so the function is the unit that is wrong. It needs all three signals together (a `Float` progress parameter, hand drawing with `Canvas` or `drawBehind`, and no `progressBarRangeInfo`), since any two of them describe ordinary code. This is the one rule whose precision rests on **naming**: there is no type and no annotation that says a `Float` is a progress value. While adding the Material indicator stubs I confirmed something worth knowing: in Material3 1.4.0 `LinearProgressIndicator` takes `progress` as a `() -> Float` lambda, not a `Float`, so Material's own parameter would not match this rule's test even if it were in source. The full expectations check is now 25 issue IDs, 175 expected, 175 reported, 0 missing, 0 unexpected.
+- U-06 closes Milestone 4 and is the only rule that differs in kind from the other 25: nothing in one file is wrong, so it uses **Lint partial analysis**. Each file writes what it saw (icon, label, location) into the module's `LintMap`, and the comparison runs once in `checkPartialResults`; `afterCheckRootProject` runs the same function in global analysis, where Lint does not call that hook. The per-module fallback CLAUDE.md allows was not needed. Every disagreeing occurrence is reported rather than one of them, because nothing says which wording is correct.
+- **Two findings while building it, one of which changed the rule.** `androidx.compose.material.icons` turned out not to be on the sample app's classpath at all: unpacking `androidx.compose.material:material:1.10.4` from the Gradle cache shows zero `icons/` classes, because they live in the separate `material-icons-core` artifact. That led to the bigger one: searching all **364 Kotlin files** of `compose-samples` found **123 `Icon(...)` calls, 217 `contentDescription`s and zero uses of `Icons.X.Y`**. Keyed only on `Icons.X.Y`, as CLAUDE.md 7.4 words it, U-06 would have reported nothing on either development app and probably little on the evaluation corpus. Sedra chose on 2026-10-08 to **widen the key and add the dependency**: an icon is now identified by a drawable read at the call site or by any property returning `ImageVector`/`Painter`, and `material-icons-core` was added to `sample-app` only (it resolves through the existing Compose BOM, no pinned version) so the sample still shows the `Icons.X.Y` shape. The taxonomy text needs the widened wording, listed above.
+- **One decision keeps the rule usable:** an icon held in a **local variable** is not followed. The sample app uses one placeholder drawable through a local `val icon` on many screens, standing in for a bin, a share arrow and a heart; following locals would have compared all those labels and reported the whole corpus. Modifiers *are* followed through locals, because a modifier chain is the same chain, but an icon variable is not the same icon. There is a unit test pinning this.
 - **Question for Sedra on O-06's scope:** `combinedClickable`, `toggleable` and `selectable` take the same `enabled` parameter and have exactly the same defect, but CLAUDE.md 7.4 names `clickable`, so the rule matches only that. Widening it would be a taxonomy change, which is why it was not done quietly.

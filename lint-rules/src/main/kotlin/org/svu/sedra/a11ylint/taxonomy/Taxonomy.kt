@@ -25,6 +25,7 @@ import org.svu.sedra.a11ylint.detectors.understandable.U02MissingStateDescriptio
 import org.svu.sedra.a11ylint.detectors.understandable.U03MissingSemanticErrorDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U04VagueButtonLabelDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U05TextFieldWithoutLabelDetector
+import org.svu.sedra.a11ylint.detectors.understandable.U06InconsistentLabelsDetector
 import org.svu.sedra.a11ylint.detectors.understandable.U07HardcodedA11yTextDetector
 
 enum class Pour {
@@ -208,6 +209,14 @@ object Taxonomy {
             wcag = listOf("1.3.1", "3.3.2"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
+        ),
+        TaxonomyEntry(
+            id = U06InconsistentLabelsDetector.TAXONOMY_ID,
+            issue = U06InconsistentLabelsDetector.ISSUE,
+            pour = Pour.UNDERSTANDABLE,
+            wcag = listOf("3.2.4"),
+            detection = DetectionType.STATIC_LLM,
+            priority = Priority.MINOR,
         ),
         TaxonomyEntry(
             id = U07HardcodedA11yTextDetector.TAXONOMY_ID,

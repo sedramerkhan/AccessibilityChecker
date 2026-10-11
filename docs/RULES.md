@@ -18,6 +18,7 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
+| U-06 | `ComposeInconsistentLabels` | Warning (Minor) | STATIC_LLM | 3.2.4 | Done |
 | U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
 | R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
 | R-05 | `ComposeMissingProgressRange` | Warning (Minor) | STATIC | 4.1.2 | Done |
@@ -743,6 +744,62 @@ The parameter name is the only signal that a `Float` is a progress value, so an 
 
 - `R05MissingProgressRangeDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/r05/R05BadScreen.kt` and `R05GoodScreen.kt`.
+
+---
+
+## U-06 · ComposeInconsistentLabels
+
+- **Taxonomy:** Understandable, Minor, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 3.2.4 Consistent Identification.
+- **Detector:** `detectors/understandable/U06InconsistentLabelsDetector.kt`
+- **Message:** `[U-06] Possible inconsistent label: <Icons.Filled.Delete> is described as "<Delete>" here but as "<Remove item>" elsewhere, so the same icon is announced in different words`.
+
+### What makes this rule different
+
+It is the only **project-wide** rule: nothing in a single file is wrong, so no file can be judged on its own. Each file contributes what it saw to a `LintMap` through Lint's partial analysis, and the comparison runs once in `checkPartialResults`, after every file has been read. In global analysis nothing calls that hook, so `afterCheckRootProject` runs the same comparison itself.
+
+Every occurrence of a disagreeing icon is reported, not just one, because there is no way to tell which wording is the right one. The message names the other wordings.
+
+### What it flags
+
+An icon used with two or more different literal `contentDescription` strings anywhere in the project. An icon is identified by where it comes from:
+
+- a drawable read at the call site, `painterResource(R.drawable.ic_bin)`, identified as `@drawable/ic_bin`;
+- a property holding an `ImageVector` or a `Painter`, identified by its fully qualified name, so `Icons.Default.Delete` is `androidx.compose.material.icons.filled.Delete`.
+
+Resolving rather than reading source text means `Icons.Default.Delete` and `Icons.Filled.Delete` are correctly treated as the same icon, since `Default` is an alias for `Filled`.
+
+### What it ignores
+
+- An icon used with one label, or always the same label.
+- Different icons, however similar their labels.
+- A `contentDescription` that is not a literal, such as `stringResource(...)`, and `null`.
+- An icon held in a **local variable**. One local often stands in for several different icons, so following it would compare labels that were never meant to describe the same thing (see `docs/DECISIONS.md`).
+
+### Example
+
+```kotlin
+// ProfileScreen.kt
+Icon(Icons.Default.Delete, contentDescription = "Delete")       // reported
+// SettingsScreen.kt
+Icon(Icons.Default.Delete, contentDescription = "Remove item")  // reported
+```
+
+Both lines are flagged: agree on one wording and keep it in a string resource.
+
+### Scope widened beyond CLAUDE.md 7.4
+
+CLAUDE.md specifies "the same `Icons.X.Y`". Searching all 364 Kotlin files of `compose-samples` found **123 `Icon(...)` calls and zero uses of `Icons.X.Y`** — Google's samples pass their own drawables. Keyed only on `Icons.X.Y`, the rule would report nothing on either development app. Agreed with Sedra on 2026-10-08 to key on any icon source. **The thesis taxonomy text for U-06 needs this widening.**
+
+### Known limitations
+
+Labels are compared exactly, so "Delete" and "delete " are different; an icon behind a local variable or passed in as a parameter is not identified; and only literal descriptions can be compared, so a project that correctly uses `stringResource` everywhere is invisible to this rule (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `U06InconsistentLabelsDetectorTest`: 5 positive and 6 negative cases, several using two source files.
+- Sample: `sample-app/.../defects/u06/U06BadScreen.kt` and `U06GoodScreen.kt`, each holding two screens so the comparison has something to cross.
 
 ---
 

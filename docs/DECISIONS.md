@@ -410,6 +410,57 @@ would have lost a true positive.
   Matching the fully qualified `kotlin.collections.forEach` would have been more precise but
   breaks on the many receiver types (`Array`, `Map`, `Sequence`) that each declare their own.
 
+### U-06 ComposeInconsistentLabels, the one project-wide rule
+
+- **Partial analysis, as CLAUDE.md 7.4 asks.** Each file writes what it saw into the module's
+  `LintMap` (icon name, label, location) during `visitMethodCall`, and the comparison runs once in
+  `checkPartialResults`. Lint only calls that hook in partial mode, so `afterCheckRootProject`
+  runs the same comparison when `context.isGlobalAnalysis()` is true. The two paths share one
+  function, so there is no second implementation to keep in step. The fallback to "per module
+  first" that CLAUDE.md allows was not needed.
+- **Occurrence keys are `map.size`.** Each occurrence is stored under the current size of the map,
+  which is unique and needs no counter field on the detector. A detector instance is not
+  guaranteed to live across files, so a field would have been the fragile choice.
+- **Every occurrence is reported, not one of them.** Nothing says which wording is correct, so
+  singling one out would be a guess. The message names the other wordings instead, which makes
+  each warning readable on its own.
+- **The icon property name keeps its case.** `Literals.propertyName` turns `getDelete` into
+  `delete`, which is right for ordinary Kotlin properties but wrong here: icon properties are
+  capitalised. The detector has its own small helper that strips `get` without touching the case,
+  found because the first test run printed `Icons.Filled.delete`.
+- **A local variable is deliberately not followed.** This is the decision that keeps the rule
+  usable. The sample app uses one placeholder drawable through a local `val icon` on many screens,
+  standing in for a bin, a share arrow and a heart. Following locals would have compared all those
+  labels and reported the whole corpus. Modifiers are followed through locals (`ModifierChain`)
+  because a modifier chain is the same chain; an icon variable is not the same icon.
+
+### U-06's key had to be widened, and the reason is a finding in itself
+
+CLAUDE.md 7.4 specifies "the same `Icons.X.Y`". Before writing the sample screens, two things
+turned up:
+
+1. `androidx.compose.material.icons` is not on the sample app's classpath at all. Unpacking
+   `androidx.compose.material:material:1.10.4` from the Gradle cache shows **zero** `icons/`
+   classes: they live in the separate `material-icons-core` artifact.
+2. More important: searching all **364 Kotlin files** of `compose-samples` found **123 `Icon(...)`
+   calls, 217 `contentDescription`s, and zero uses of `Icons.X.Y`**. Google's own samples pass
+   their own drawables and `ImageVector`s.
+
+So the rule as specified would have reported nothing on either development app, and probably
+little on the evaluation corpus, which is where the thesis measures precision. A rule that cannot
+fire cannot be evaluated.
+
+**Decision (Sedra, 2026-10-08): widen the key and add the dependency.** An icon is now identified
+by a drawable read at the call site (`@drawable/ic_bin`, through `ResourceEvaluator`) or by the
+fully qualified name of a property returning `ImageVector` or `Painter`. `material-icons-core` was
+added to `sample-app` only, so the sample can still show the `Icons.X.Y` shape alongside the
+drawable shape; it resolves through the existing Compose BOM with no pinned version. **The thesis
+taxonomy text for U-06 needs the widened wording.**
+
+The alternatives considered were keeping the rule exactly as written and accepting zero findings
+on real code, and widening without the dependency, which would have left the `Icons.X.Y` shape
+untested in the sample app.
+
 ### R-05 ComposeMissingProgressRange
 
 - **All three signals are required**: a `Float` progress parameter, hand drawing, and no range.

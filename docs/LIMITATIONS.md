@@ -581,6 +581,37 @@ Column { repeat(orders.size) { index -> Text(orders[index]) } } // not reported
 The search for `collectionInfo` and `collectionItemInfo` covers the whole container, so a nested
 list that sets them silences the outer container too.
 
+## U-06 ComposeInconsistentLabels
+
+### An icon behind a local variable or a parameter is not identified
+
+Only an icon written at the call site is keyed. This is deliberate (see DECISIONS), but it means a
+real inconsistency can hide behind one indirection:
+
+```kotlin
+val icon = painterResource(R.drawable.ic_bin)
+Icon(icon, contentDescription = "Delete")       // not compared
+Icon(icon, contentDescription = "Remove item")  // not compared
+```
+
+### Labels are compared exactly
+
+"Delete", "delete" and "Delete " are three different labels, so a difference in case or spacing is
+reported as an inconsistency, while two genuinely different words that mean the same thing
+("Bin", "Trash") are reported as one too. Judging whether two wordings mean the same is exactly
+what Layer 3 is for, which is why the rule is STATIC_LLM.
+
+### A project that does the right thing is invisible to it
+
+Only literal descriptions can be compared. An app that correctly keeps every label in
+`strings.xml` gives this rule nothing to work with, even if two resources hold different words for
+the same icon. Comparing resource *values* would need the resource merger, not UAST.
+
+### Different icons meaning the same action are not compared
+
+A filled bin and an outlined bin are different properties, so labelling
+`Icons.Filled.Delete` "Delete" and `Icons.Outlined.Delete` "Remove" is not reported.
+
 ## R-05 ComposeMissingProgressRange
 
 ### Progress that does not arrive as a named parameter

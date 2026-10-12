@@ -17,9 +17,9 @@
 
 ### Build and Lint versions
 
-- **Registry `minApi = 14`.** Lint API 14 is AGP 8.0 (`CURRENT_API` is 16, which is AGP 8.7 and newer). The development apps and the evaluation apps may use an older AGP than this project, so the rules should still load there. Lint older than AGP 8.0 is not supported. Loading on older Lint is not tested yet; if a rule fails there, raise `minApi`. Alternative considered: `minApi = CURRENT_API`, which is safer but refuses to load on AGP 8.0 to 8.6.
+- **Registry `minApi = 14`.** Lint API 14 is AGP 8.0 (`CURRENT_API` is 16, which is AGP 8.7 and newer). The development apps and the evaluation apps may use an older AGP than this project, so the rules should still load there. Lint older than AGP 8.0 is not supported. Alternative considered: `minApi = CURRENT_API`, which is safer but refuses to load on AGP 8.0 to 8.6. **Confirmed and kept on 2026-10-11**; the reasoning, and the change from "untested" to a stated scope limit, are in the entry of that date.
 - **Kotlin version.** The project uses Kotlin 2.2.10. Lint 32.4.1 depends on `kotlin-stdlib` and `kotlin-reflect` 2.2.10 and bundles a matching compiler, so the versions match and `apiVersion`/`languageVersion` do not need to be set in `lint-rules`.
-- **Gradle daemon JVM.** `gradle/gradle-daemon-jvm.properties` (written by Android Studio, not tracked in git) asks for JDK 25 for the Gradle daemon, and Gradle downloads it on the first run. The `lint-rules` module still compiles with a JDK 17 toolchain.
+- **Gradle daemon JVM.** `gradle/gradle-daemon-jvm.properties` (written by Android Studio, not tracked in git) asked for JDK 25 for the Gradle daemon, and Gradle downloaded it on the first run. The `lint-rules` module still compiles with a JDK 17 toolchain. **Resolved on 2026-10-11**: the file was deleted so the daemon runs on the JDK 17 already on the machine. See the entry of that date.
 
 ### Test infrastructure
 
@@ -642,3 +642,96 @@ This is the wrong-overload problem recorded for `Card(onClick = ...)` above, in 
 **Fix:** `argument` now tries `namedArgumentInSource` *before* the mapping. When the source writes `name = ...`, the Kotlin compiler has already matched that name against the overload that really applies, so the source name is the more trustworthy of the two. Positional arguments are unchanged and still go through the mapping (with the `kotlinNames` fallback for value class parameters).
 
 This is a shared utility every rule uses, so it was checked with the full unit suite and the full sample app expectation check, which stayed at 0 missing and 0 unexpected. It also silently fixes any rule that reads a named argument from a mis-resolved overload; U-05 was reading `label` from the same shifted mapping and only happened to reach the right verdict.
+
+## 2026-10-11
+
+### `minApi = 14` kept, and stated as a scope limit rather than an untested risk
+
+Sedra asked on 2026-10-11 what `minApi = 14` actually constrains, and whether it shuts out
+older projects. Decision: **keep `minApi = 14`** and stop describing it as untested. It is a
+supported-version boundary, and the thesis states it as one.
+
+**What the number is.** `minApi` is the **Lint API version**, the version of Lint's own plugin
+interface that the rules jar declares. It is not `minSdk`, it says nothing about the Android
+version an analysed app runs on, and it does not directly limit how old the analysed source is.
+It limits one thing: the AGP version of the project being analysed. Lint API 14 is AGP 8.0.
+`CURRENT_API`, which `api` is set to, was re-checked against the `lint-api` 32.4.1 sources on
+this date and is still **16** (AGP 8.7 and newer), the same value recorded on 2026-10-03, so
+`minApi = 14` widens support by exactly two Lint API levels, AGP 8.0 to 8.6.
+
+**What happens below the boundary.** Lint does not crash. It refuses to load the rules and
+prints a message saying the checks were built for a newer Lint. The build succeeds and reports
+no accessibility warnings. For an evaluation run that is a visible, diagnosable outcome.
+
+**Why the boundary is not a real limit for this thesis.** Jetpack Compose 1.0 shipped in July
+2021, so there is no Compose source older than that to analyse, and the age of a project is the
+wrong way to think about the question. The only case that matters is a corpus app still built
+with AGP 7.x, which AGP 8.0 (April 2023) post-dates. That case is already handled by how the
+evaluation has to work anyway: 15 to 30 unmaintained open source apps cannot each be built with
+their original toolchain (old Gradle, old JDK requirements, dead repositories), so the
+evaluation standardises the build. Once AGP is standardised the question disappears.
+
+**Why not lower it further.** Lowering `minApi` changes the failure mode for the worse. Instead
+of a clean refusal to load, a rule that calls an API an older Lint lacks throws during analysis,
+part way through a corpus run. A clean refusal is the better outcome for a measurement study.
+
+**Where the residual risk sits.** Twenty-five of the twenty-six detectors use ordinary
+`visitMethodCall` and `UElementHandler` APIs that have been stable across these Lint versions.
+Only U-06 uses partial analysis (`LintMap`, `checkPartialResults`), so it is the one rule most
+likely to behave differently on Lint API 14 or 15. If an AGP 8.0 to 8.6 run is ever needed, U-06
+is what to check first.
+
+**How to close it for certain, if wanted later.** Pin a throwaway project to AGP 8.0, consume
+`org.svu.sedra:a11ylint:0.1.0` from `mavenLocal()`, and confirm two things: that the rules load
+at all, and that U-06 still reports. That turns the stated limit into a measured fact. Not done
+now, because the evaluation standardises AGP regardless.
+
+### The Gradle daemon runs on JDK 17, and the daemon JVM file is gone
+
+`gradle/gradle-daemon-jvm.properties` was generated by Android Studio's `updateDaemonJvm` task.
+It pinned `toolchainVersion=25` and carried ten `toolchainUrl.*` foojay redirects, one per
+operating system and architecture. It has been deleted. Gradle now runs the daemon on the
+launcher JVM, which is the JDK 17 already installed here.
+
+**What it was actually costing.** This machine has exactly one JDK installed,
+`jdk-17.0.18.8-hotspot`. There is no JDK 25 in `Program Files`. Gradle had therefore followed
+the foojay redirect and provisioned one itself: `~/.gradle/jdks/` holds a 135 MB download
+unpacked to 291 MB under `eclipse_adoptium-25-amd64-windows.2`. So every Lint result and every
+test run in Milestones 0 to 4 was produced on a JDK that was never deliberately installed and
+that the project documentation never mentions.
+
+**Why deleting beats pinning to 17.** The first instinct was to regenerate the file with
+`--jvm-version=17`. That is weaker than it looks, because Android Studio now bundles a JBR 25
+(`JAVA_VERSION="25.0.3"` in its `jbr/release`). A current Android machine may well have 25 and
+no 17, so pinning to 17 does not remove the download, it only changes which JDK gets downloaded.
+Deleting the file removes the download in every case: the build runs on whatever JDK the person
+already uses, and Gradle 9.6 with AGP 9.4.1 is content on 17, 21 or 25.
+
+**Why this never affected anyone else.** The file is listed in `.gitignore` (line 4) and
+`git ls-files` confirms it was never tracked, so nobody cloning the repository ever received it.
+They already got the post-deletion behaviour. The only machine the file affected was this one.
+That is why the decision is not about reproducibility for a reader, which was never at risk, but
+about this machine matching the environment the thesis describes.
+
+**Why the timing is the real reason.** `scripts/measure_lint_time.sh` (Milestone 5) has not been
+written or run. The build overhead figure it produces goes into the thesis, and it will be
+measured here. Had the file stayed, that figure would have been measured on an undocumented
+JDK 25 while the thesis stated JDK 17. Changing the daemon JVM after taking the measurement
+would have invalidated it; changing it before costs nothing.
+
+**No build file changed.** `lint-rules` pins its own Java toolchain to 17 already
+(`lint-rules/build.gradle.kts`), so the rule classes were Java 17 bytecode whichever JVM the
+daemon used. The jar, the AAR and the sample app are unaffected. Only the JVM that runs Gradle
+and Lint changed.
+
+**Verified on the JDK 17 daemon, not assumed.** `./gradlew -version` reports
+`Daemon JVM: C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot (no Daemon JVM specified, using
+current Java home)`. `./gradlew :lint-rules:test --rerun-tasks` ran 277 tests in 32 classes with
+0 failures and 0 errors, genuinely executed rather than up to date.
+`./gradlew :sample-app:lintDebug --rerun` succeeded and wrote a fresh report (timestamp checked
+against the previous one, which was the P-07 stale-report trap). The expectation check is
+unchanged from the JDK 25 run: 26 issue ids, 193 expected, 193 reported, 0 missing, 0
+unexpected. The rules behave identically on both JVMs.
+
+**What can undo it.** Running `updateDaemonJvm` again, or an Android Studio action that calls
+it, will recreate the file. If a 135 MB JDK download reappears on a clean machine, this is why.

@@ -33,46 +33,58 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **`minApi = 14`** (Milestone 1) lets the rules load on AGP 8.0 and newer, untested on older
-   AGP. Acceptable?
-2. **Gradle daemon on JDK 25** (Milestone 1), written by Android Studio into
-   `gradle-daemon-jvm.properties`. The rules still compile with JDK 17. Keep it?
-3. **O-03**: should `Checkbox`, `Switch` or `RadioButton` with a callback inside a clickable row
+1. **O-03**: should `Checkbox`, `Switch` or `RadioButton` with a callback inside a clickable row
    count as a nested clickable? Currently they do not.
-4. **U-01**: Material3 top app bars do not mark their title as a heading. The rule ignores them,
+2. **U-01**: Material3 top app bars do not mark their title as a heading. The rule ignores them,
    as CLAUDE.md says. Keep ignoring, or report them, since the title is usually the screen's
    main heading?
-5. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
+3. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
    that pattern deliberately and our rule still reports the icon, consistently with its recorded
    decision that an action label is not a name. Left as it is; a good candidate for Phase 3 to
    judge rather than for tuning the static rule. See `DEV_APP_RESULTS.md`.
-6. **U-01**: should a dialog title be marked as a heading? The P-07 check found that
+4. **U-01**: should a dialog title be marked as a heading? The P-07 check found that
    `AlertDialog` sets a `paneTitle` on the dialog container (`AlertDialog.kt:171`), which is
    announced when the dialog opens, but that is not the same as marking the title Text with
    `heading()`. So U-01 reporting a dialog title as a possible heading is not wrong, it is a
    judgement about whether a heading adds anything once the pane is already announced.
-7. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
+5. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
    take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
    `clickable` only, so widening it is a taxonomy change.
-8. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
+6. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
    defect, and O-02 already treats them as containers, but CLAUDE.md 7.4 names `Card`, `Surface`
    and `Row` for this rule.
-9. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
+7. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
    the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
    container O-07 already reports? See the Milestone 4 notes.
-10. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
-    the same defect, but CLAUDE.md 7.4 names `onClickLabel`.
-11. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
+8. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
+   the same defect, but CLAUDE.md 7.4 names `onClickLabel`.
+9. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
     ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
     See the Milestone 4 notes and DECISIONS before deciding.
-12. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
+10. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
     looping over two hundred. The size is almost never a literal, so it cannot be used as a
     threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
     would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
     verticalScroll", not "only with", so the rule does not require it today.
-13. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+11. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
     progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
     accept missing sliders? This is the rule's most likely false positive.
+
+**Answered:** `minApi = 14` (question 1 until 2026-10-11). Kept, and the thesis now states AGP
+8.0 or newer as a supported-version boundary rather than calling it untested. `minApi` is the
+Lint API version, not `minSdk`, so it limits the AGP of the analysed project, not the app's age
+or its `minSdk`; Compose itself only dates from 2021, and the evaluation standardises AGP across
+the corpus anyway, so the boundary costs nothing (2026-10-11, see DECISIONS).
+
+**Answered:** the Gradle daemon JVM (question 1 until 2026-10-11). The
+`gradle/gradle-daemon-jvm.properties` file that Android Studio generated was deleted, so the
+daemon now runs on the JDK 17 already installed here instead of provisioning a JDK 25. The file
+was gitignored and never tracked, so no other machine was ever affected; what it did affect was
+this one, which is where the Milestone 5 build overhead figure will be measured. Deleting it was
+preferred over pinning the file to 17, because Android Studio now bundles a JBR 25, so pinning
+would only change which JDK gets downloaded rather than avoid the download. Verified on the new
+daemon: 277 tests in 32 classes passing, and the sample app check unchanged at 26 issue IDs, 193
+expected, 193 reported, 0 missing, 0 unexpected (2026-10-11, see DECISIONS).
 
 **Answered:** R-02's empty-block question. The development app run showed Google's own code using
 an empty `clearAndSetSemantics { }` deliberately, so the rule was narrowed to report an empty
@@ -94,7 +106,7 @@ These are not questions, they are edits the taxonomy chapter needs.
 2. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
    semantics" to custom gestures only, which is what the rule detects and what the real defect
    is. CLAUDE.md anticipated this change.
-3. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
+2. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
    sourced, which now includes a drawable read at the call site and any property returning an
    `ImageVector` or `Painter`. The reason is worth a sentence of its own in the thesis: a search
    of all 364 Kotlin files in `compose-samples` found 123 `Icon(...)` calls and **zero** uses of
@@ -140,7 +152,7 @@ Tests: 23 passing, 0 failing (`ModifierChainTest` 7, `LiteralsTest` 5, `ComposeC
 
 Open questions for Sedra:
 - `minApi = 14` lets the rules load on AGP 8.0 and newer, but this is untested on older AGP. Is that acceptable?
-- The Gradle daemon now uses JDK 25, because Android Studio wrote `gradle-daemon-jvm.properties`. The rules still compile with JDK 17. Keep it this way?
+- The Gradle daemon now uses JDK 25, because Android Studio wrote `gradle-daemon-jvm.properties`. The rules still compile with JDK 17. Keep it this way? **Answered on 2026-10-11: no.** The file was deleted and the daemon runs on JDK 17. See the answered block above and DECISIONS.
 
 ## Milestone 2: Critical rules
 

@@ -945,13 +945,16 @@ A clickable element inside the content lambda of another clickable element in th
 
 Each inner clickable is reported once, against its nearest clickable ancestor. With three levels, the middle and the inner element are both reported.
 
+A Material selection control (`Checkbox`, `TriStateCheckbox`, `Switch`, `RadioButton`) counts as a nested clickable when its callback is anything other than a `null` literal, because each one installs its own toggle modifier only in that case. A control is only ever the inner element, since it takes no content lambda. The message differs for this case, because the defect is two touch targets for one choice rather than a focus order problem.
+
 ### What it ignores
 
 - Sibling clickables.
 - Clickables inside non-clickable containers (`Card` or `Surface` without `onClick`, a list, a plain `Row`).
 - The content of a Material button (`Icon` and `Text` are not clickable).
 - Clickables inside a separate composable called from the content (not followed in Phase 2).
-- `Checkbox`, `Switch` and `RadioButton` are not counted as clickable elements (see DECISIONS).
+- A `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` whose callback is a `null` literal: that is the documented way to let a surrounding toggleable row own the interaction (see DECISIONS).
+- Selection controls that are not inside another clickable element at all.
 
 ### Example
 
@@ -987,8 +990,8 @@ Card(
 
 ### Tests and sample
 
-- `O03NestedClickableDetectorTest`: 5 positive tests (8 reports) and 5 negative tests.
-- Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (4 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports).
+- `O03NestedClickableDetectorTest`: 9 positive tests (12 reports) and 9 negative tests. Four of each cover the selection controls, including the `null` callback that must stay clean.
+- Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (5 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports). The last pair is a toggleable row holding a `Checkbox`, interactive in the bad screen and `onCheckedChange = null` in the good one.
 
 ---
 

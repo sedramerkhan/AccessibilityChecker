@@ -735,3 +735,47 @@ unexpected. The rules behave identically on both JVMs.
 
 **What can undo it.** Running `updateDaemonJvm` again, or an Android Studio action that calls
 it, will recreate the file. If a 135 MB JDK download reappears on a clean machine, this is why.
+
+## 2026-10-12
+
+### O-03 now reports Material selection controls that keep their own callback
+
+This answers the question PROGRESS carried since the development app run: should a `Checkbox`,
+`Switch` or `RadioButton` with a callback, inside a clickable row, count as a nested clickable?
+Sedra decided on 2026-10-12 that it should.
+
+**Why it is the same defect.** Each of these controls installs its click modifier **only when
+its callback is non-null**: `Checkbox` adds `Modifier.triStateToggleable` (Material3 1.4.0
+`Checkbox.kt:277`), `RadioButton` adds `Modifier.selectable` (`RadioButton.kt:90`) and `Switch`
+adds `Modifier.toggleable` (`Switch.kt:105`). So a toggleable row holding a live `Checkbox` is
+literally two toggle modifiers for one choice. TalkBack gives the user two stops, the label on
+one and the checked state on the other, which is the defect O-03 exists to catch. Passing `null`
+is the pattern Google's own documentation recommends, and it is what the good sample screen now
+shows.
+
+**The callback is the signal, not the component.** A control with a `null` literal callback is
+clean, a control with any other callback (including a variable) is reported. A variable counts
+as interactive for the same reason `isLabeledImage` treats a variable `contentDescription` as a
+real value: the rules never guess at a value they cannot see.
+
+**Deliberately not added to `isClickableElement`.** Nine rules share that predicate, and a
+selection control has no content lambda and no text of its own, so widening it would make O-05
+report every labelled `Row { Checkbox(...); Text(...) }` as an empty clickable, and would change
+O-07's counting as well. Only O-03 asks this question, so the new
+`Clickables.isInteractiveSelectionControl` is a separate predicate that only O-03 calls.
+Alternative considered and rejected: widening `isClickableElement` and adding exclusions to the
+other eight rules, which would have spread one rule's decision across the whole utility layer.
+
+**A second message.** The nesting message talks about focus order and about two elements being
+announced as one. That is the wrong description here, where the problem is the opposite: the row
+and the control become separate targets. The control case therefore reports its own wording, and
+the shared explanation gained the `null` callback as a third suggested fix.
+
+**Scope.** `TriStateCheckbox` is included, because it has the same signature shape and the same
+behaviour. Material 2 versions of all four are included, as elsewhere in `Clickables`. A new
+`TriStateCheckbox` stub was added for the tests.
+
+**Verified.** 9 positive and 9 negative tests on the detector, and the sample app check moved
+from 193 to 194 expected and reported, 0 missing, 0 unexpected, on the first run. The new sample
+pair uses `Modifier.toggleable` rather than `Modifier.clickable`, which keeps O-02, O-04 and R-01
+out of it: all three match only `clickable` and `combinedClickable`.

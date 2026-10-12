@@ -50,6 +50,53 @@ object Clickables {
         "$M2.Card", "$M2.Surface",
     )
 
+    /**
+     * Material selection controls, mapped to the Kotlin parameter names of their signature up
+     * to and including the callback that decides whether the control is interactive.
+     *
+     * Each of these installs its click modifier only when that callback is non-null:
+     * `Checkbox` adds `Modifier.triStateToggleable` (Material3 1.4.0 `Checkbox.kt:277`),
+     * `RadioButton` adds `Modifier.selectable` (`RadioButton.kt:90`) and `Switch` adds
+     * `Modifier.toggleable` (`Switch.kt:105`). Passing `null` is the documented way to let a
+     * surrounding toggleable row own the interaction, so the callback is what separates a
+     * second touch target from the correct pattern.
+     *
+     * The name list is the positional fallback for [ComposeCalls.argument]: the compiled
+     * Material3 signatures can lose their parameter names the same way `Dp` and `Color`
+     * parameters do.
+     */
+    private val selectionControlCallbacks: Map<String, List<String>> = buildMap {
+        for (pkg in listOf(M3, M2)) {
+            put("$pkg.Checkbox", listOf("checked", "onCheckedChange"))
+            put("$pkg.Switch", listOf("checked", "onCheckedChange"))
+            put("$pkg.RadioButton", listOf("selected", "onClick"))
+            put("$pkg.TriStateCheckbox", listOf("state", "onClick"))
+        }
+    }
+
+    /** Material selection controls: `Checkbox`, `TriStateCheckbox`, `Switch` and `RadioButton`. */
+    val selectionControls: Set<String> = selectionControlCallbacks.keys
+
+    /**
+     * Returns true when [call] is a Material selection control that is a touch target in its
+     * own right, that is, one whose callback is anything other than a `null` literal.
+     *
+     * This is deliberately **not** part of [isClickableElement]. Nine rules share that
+     * predicate, and a selection control has no content lambda and no name of its own, so
+     * widening it would make O-05 report every labelled `Row { Checkbox(...); Text(...) }` as
+     * an empty clickable. Only O-03 asks this question.
+     *
+     * A callback that is a variable counts as interactive, matching [isLabeledImage], which
+     * treats a variable `contentDescription` as a real value rather than guessing.
+     */
+    fun isInteractiveSelectionControl(context: JavaContext, call: UCallExpression): Boolean {
+        val method = call.resolve() ?: return false
+        val names = ComposeCalls.qualifiedNames(method)
+            .firstNotNullOfOrNull { selectionControlCallbacks[it] } ?: return false
+        val callback = ComposeCalls.argument(context, call, names.last(), names) ?: return false
+        return !Literals.isNullLiteral(callback)
+    }
+
     /** Composables that show text. */
     val textCalls = setOf("$M3.Text", "$M2.Text", "$FOUNDATION.text.BasicText")
 

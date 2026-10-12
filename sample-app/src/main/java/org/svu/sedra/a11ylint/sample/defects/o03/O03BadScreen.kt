@@ -4,13 +4,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -23,6 +29,7 @@ import org.svu.sedra.a11ylint.sample.R
 @Composable
 fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit) {
     val icon = painterResource(R.drawable.ic_launcher_foreground)
+    var subscribed by remember { mutableStateOf(false) }
 
     Column {
         // A clickable card with two icon buttons inside. Two clickable children with no
@@ -52,6 +59,20 @@ fun O03BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
             Box(modifier = Modifier.clickable(onClickLabel = "More options", role = Role.Button) { onShare() }) { // EXPECT: ComposeNestedClickable, ComposeHardcodedA11yText
                 Text("More options")
             }
+        }
+
+        // A toggleable row whose Checkbox still handles its own clicks. The row and the box
+        // are two separate touch targets for one choice, and TalkBack announces the label and
+        // the checked state as different elements.
+        Row(
+            modifier = Modifier.toggleable(
+                value = subscribed,
+                role = Role.Checkbox,
+                onValueChange = { subscribed = it },
+            ),
+        ) {
+            Checkbox(checked = subscribed, onCheckedChange = { subscribed = it }) // EXPECT: ComposeNestedClickable
+            Text("Subscribe to updates")
         }
     }
 }

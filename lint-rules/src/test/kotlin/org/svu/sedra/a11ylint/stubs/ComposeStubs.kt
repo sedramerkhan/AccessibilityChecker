@@ -801,6 +801,13 @@ private val material3Stubs = kotlin(
     fun RadioButton(selected: Boolean, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {}
 
     @Composable
+    fun TriStateCheckbox(
+        state: androidx.compose.ui.state.ToggleableState,
+        onClick: (() -> Unit)?,
+        modifier: Modifier = Modifier,
+    ) {}
+
+    @Composable
     fun ListItem(
         headlineContent: @Composable () -> Unit,
         modifier: Modifier = Modifier,

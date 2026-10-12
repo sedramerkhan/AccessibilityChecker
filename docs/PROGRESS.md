@@ -33,40 +33,41 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **U-01**: Material3 top app bars do not mark their title as a heading. The rule ignores them,
-   as CLAUDE.md says. Keep ignoring, or report them, since the title is usually the screen's
-   main heading?
-2. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
+1. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
    that pattern deliberately and our rule still reports the icon, consistently with its recorded
    decision that an action label is not a name. Left as it is; a good candidate for Phase 3 to
    judge rather than for tuning the static rule. See `DEV_APP_RESULTS.md`.
-3. **U-01**: should a dialog title be marked as a heading? The P-07 check found that
-   `AlertDialog` sets a `paneTitle` on the dialog container (`AlertDialog.kt:171`), which is
-   announced when the dialog opens, but that is not the same as marking the title Text with
-   `heading()`. So U-01 reporting a dialog title as a possible heading is not wrong, it is a
-   judgement about whether a heading adds anything once the pane is already announced.
-4. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
+2. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
    take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
    `clickable` only, so widening it is a taxonomy change.
-5. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
+3. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
    defect, and O-02 already treats them as containers, but CLAUDE.md 7.4 names `Card`, `Surface`
    and `Row` for this rule.
-6. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
+4. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
    the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
    container O-07 already reports? See the Milestone 4 notes.
-7. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
+5. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
    the same defect, but CLAUDE.md 7.4 names `onClickLabel`.
-8. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
+6. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
    ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
    See the Milestone 4 notes and DECISIONS before deciding.
-9. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
+7. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
    looping over two hundred. The size is almost never a literal, so it cannot be used as a
    threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
    would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
    verticalScroll", not "only with", so the rule does not require it today.
-10. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
-    progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
-    accept missing sliders? This is the rule's most likely false positive.
+8. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+   progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
+   accept missing sliders? This is the rule's most likely false positive.
+
+**Answered:** both U-01 title questions (questions 1 and 3 until 2026-10-12). Neither behaviour
+changed: top app bar titles stay ignored, dialog titles stay reported. The reason found while
+answering them is the useful part. Material gives both title slots their style internally through
+`ProvideContentColorTextStyle`, so U-01, which reads the call site, never sees an idiomatic
+`TopAppBar(title = { Text("Settings") })` at all and can only ever report a title the developer
+restyled by hand. That is now recorded in LIMITATIONS as a blind spot no ignore list can fix
+(2026-10-12, see DECISIONS). This also closes the `AlertDialog` check that DEV_APP_RESULTS asked
+for.
 
 **Answered:** O-03 and the Material selection controls (question 1 until 2026-10-12). A
 `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` whose callback is not a `null` literal
@@ -100,33 +101,35 @@ block only when the content had a name or an interaction to lose (2026-10-06, se
 
 These are not questions, they are edits the taxonomy chapter needs.
 
-0. **R-02's wording narrows.** The taxonomy says an empty `clearAndSetSemantics { }` is flagged
+1. **R-02's wording narrows.** The taxonomy says an empty `clearAndSetSemantics { }` is flagged
    without qualification. The rule now reports an empty block only when it hides a name or an
    interaction, because flagging it unconditionally reported a correct, deliberate pattern on
    JetNews. See `DEV_APP_RESULTS.md`.
 
-1. **R-03 `ComposeMergeHidesInteractive` is void.** The defect cannot occur in Compose 1.10.4:
+2. **R-03 `ComposeMergeHidesInteractive` is void.** The defect cannot occur in Compose 1.10.4:
    merging stops at any child that is itself a merging root, and every clickable modifier sets
    `shouldMergeDescendantSemantics = true`. No detector exists. The taxonomy becomes 26 rules
    plus R-03 recorded as not applicable. Evidence in `DECISIONS.md`.
-2. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
+3. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
    semantics" to custom gestures only, which is what the rule detects and what the real defect
    is. CLAUDE.md anticipated this change.
-2. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
+4. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
    sourced, which now includes a drawable read at the call site and any property returning an
    `ImageVector` or `Painter`. The reason is worth a sentence of its own in the thesis: a search
    of all 364 Kotlin files in `compose-samples` found 123 `Icon(...)` calls and **zero** uses of
    `Icons.X.Y`, so the rule as originally worded could not have fired on either development app.
    Agreed with Sedra on 2026-10-08. See `DECISIONS.md`.
 
-### Known gap in the checks
+### The Python check is verified (2026-10-12)
 
-`scripts/check_sample_expectations.py` has not been run on this machine: Python is not
-installed here, although CLAUDE.md section 12 lists it as a standard command. Every sample app
-figure in this file was produced by an equivalent check written in PowerShell, which compares
-the same two things in both directions (every `// EXPECT:` marker against the Lint XML report).
-The Python script itself is therefore still unverified and should be run once on a machine that
-has Python.
+`scripts/check_sample_expectations.py` was believed unrunnable here because neither `python` nor
+`python3` works on this machine: Windows intercepts both names with a Microsoft Store alias that
+only offers to install Python. Python 3.14.4 is in fact installed, and the launcher `py` reaches
+it, so the script runs. The 194 expected / 194 reported figure above came from the Python script
+itself, which agrees with the PowerShell check that produced the earlier figures.
+
+On this machine, run it as `py scripts/check_sample_expectations.py`, not `python3 ...` as
+CLAUDE.md section 12 writes it.
 
 ## Milestone 0: Setup
 

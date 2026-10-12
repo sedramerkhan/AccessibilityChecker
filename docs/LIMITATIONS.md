@@ -171,6 +171,27 @@ Text("Settings", style = titleStyle) // not reported
 Text("Settings", style = AppTheme.typography.screenTitle) // not reported
 ```
 
+### A text style supplied by the container is invisible
+
+This is the widest of U-01's blind spots, and it is not an exclusion list that could be changed:
+it is a consequence of reading the call site.
+
+Material components give their text slots a style internally, through
+`ProvideContentColorTextStyle`, so nothing appears in the developer's source. `TopAppBar` and the
+other app bars apply `titleTextStyle` from tokens (Material3 1.4.0 `AppBar.kt:229, 353, 522,
+766`), and `AlertDialog` does the same for its title (`AlertDialog.kt:325-361`). `ListItem` and
+the buttons follow the same pattern.
+
+```kotlin
+TopAppBar(title = { Text("Settings") })        // styled titleLarge by the bar, not reported
+AlertDialog(title = { Text("Delete draft?") }) // styled headlineSmall by the dialog, not reported
+```
+
+U-01 therefore sees only titles the developer restyled explicitly, which is the minority. A
+screen title written the idiomatic way is missed whatever the rule's ignore list says. Judging
+whether such a title is a heading needs the surrounding structure rather than the call site,
+which is Phase 3's job.
+
 ### Heading-styled text that is not a heading
 
 Big numbers and promotional text often use display or headline styles. They are reported as possible headings, and only a judgement about intent (Phase 3) can rule them out.

@@ -95,7 +95,7 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 
 ### U-01 ComposeMissingHeading
 
-- **Material3 top app bars do not mark their title as a heading.** Checked in the Material3 1.4.0 sources (`AppBar.kt`): the title slot gets `isTraversalGroup` and is hidden from accessibility while the bar collapses, but `heading()` is never set anywhere in Material3. CLAUDE.md asks to ignore `TopAppBar` titles, so the rule ignores Text inside any top app bar, but this means a real heading is not reported there. Question for Sedra: keep ignoring them, or report them (the title is usually the main heading of the screen)?
+- **Material3 top app bars do not mark their title as a heading.** Checked in the Material3 1.4.0 sources (`AppBar.kt`): the title slot gets `isTraversalGroup` and is hidden from accessibility while the bar collapses, but `heading()` is never set anywhere in Material3. CLAUDE.md asks to ignore `TopAppBar` titles, so the rule ignores Text inside any top app bar, but this means a real heading is not reported there. **Confirmed and kept on 2026-10-12**, together with the dialog title question; see the entry of that date.
 - **Heading styles.** The Material 3 styles from CLAUDE.md (`display*`, `headline*`, `titleLarge`). Material 2 `h1` to `h6` are added because they are the Material 2 equivalents. `titleMedium` and `titleSmall` are not included: Material uses them for list item titles and card titles, which are usually not headings.
 - **Bold.** "Bold" means a weight of 700 or more, the CSS and WCAG meaning. `SemiBold` (600) does not count.
 - **20sp threshold.** As in CLAUDE.md. Kept as the constant `MIN_HEADING_SP`.
@@ -779,3 +779,41 @@ behaviour. Material 2 versions of all four are included, as elsewhere in `Clicka
 from 193 to 194 expected and reported, 0 missing, 0 unexpected, on the first run. The new sample
 pair uses `Modifier.toggleable` rather than `Modifier.clickable`, which keeps O-02, O-04 and R-01
 out of it: all three match only `clickable` and `combinedClickable`.
+
+### U-01 keeps ignoring app bar titles and keeps reporting dialog titles
+
+Two of the open questions were about U-01 and the titles of Material containers: should a top app
+bar title be reported as a possible heading, and should a dialog title? Sedra decided on
+2026-10-12 to **change neither behaviour**. The reason is a fact about Material that was found
+while answering them, and it matters more than either answer.
+
+**Material supplies the title style, so U-01 never sees it.** Both containers give their title
+slot a text style internally through `ProvideContentColorTextStyle`: the app bars apply
+`titleTextStyle` from tokens (Material3 1.4.0 `AppBar.kt:229, 353, 522, 766`) and `AlertDialog`
+does the same at `AlertDialog.kt:325-361`. U-01 reads the `style` and `fontSize` written at the
+call site, so idiomatic code such as `TopAppBar(title = { Text("Settings") })` carries no style
+argument and is invisible to the rule whatever its ignore list says. The rule can only ever see a
+title the developer restyled by hand, which is what JetNews did at `PostCards.kt:169`, the one
+dialog title finding of the development app run.
+
+**Top app bars: keep ignoring.** Dropping the exclusion would not start reporting app bar titles
+in general. It would report only the minority of developers who restyle the title and stay silent
+for everyone using the Material default, which is an arbitrary split between two identical screen
+structures. Neither bar sets `heading()` anywhere in Material3; the bar gets `isTraversalGroup`
+instead, and the title sits at the top of the screen where heading navigation adds least.
+
+**Dialog titles: keep reporting.** This completes the check DEV_APP_RESULTS asked for.
+`AlertDialog.kt:171` sets `paneTitle` on the dialog container, which is announced when the dialog
+opens, but that is not the same as marking the title as a heading, and the dialog is a separate
+pane whose structure a user may navigate. U-01 is STATIC_LLM, so by CLAUDE.md 5.2 it reports
+candidates and must not hide a warning on guesswork; this is exactly the judgement Phase 3
+exists to make. It also costs almost nothing: one finding in two complete apps.
+
+**The asymmetry is deliberate** and rests on where each title sits, not on which rule is easier.
+Alternative considered and rejected: excluding `AlertDialog` as well, for symmetry with the app
+bars. That would have traded a documented judgement for a silent one, in a rule whose whole
+design is to hand uncertain cases to the next layer.
+
+**Recorded as a limitation, not a gap.** The container-supplied style is now in LIMITATIONS.md as
+a blind spot no ignore list can fix, which is the RQ1-relevant part: it is a class of defect that
+reading the call site structurally cannot reach.

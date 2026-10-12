@@ -75,10 +75,10 @@ rule that fires somewhere it should not are both caught:
 
 ```bash
 ./gradlew :sample-app:lintDebug
-python3 scripts/check_sample_expectations.py
+python3 scripts/check_sample_expectations.py   # on Windows: py scripts/check_sample_expectations.py
 ```
 
-Current state: 26 issue IDs, 193 expected, 193 reported, 0 missing, 0 unexpected.
+Current state: 26 issue IDs, 194 expected, 194 reported, 0 missing, 0 unexpected.
 
 ## Using the rules in another project
 

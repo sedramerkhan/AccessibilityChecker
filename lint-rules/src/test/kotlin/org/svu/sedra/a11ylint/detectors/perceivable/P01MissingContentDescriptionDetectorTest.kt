@@ -42,6 +42,25 @@ import androidx.compose.ui.semantics.semantics
 """ + body.trimIndent(),
     )
 
+    /** A screen file for the action label tests. [body] starts at line 14. */
+    private fun actionLabelScreen(body: String): TestFile = kotlin(
+        "src/test/pkg/Screen.kt",
+        """
+package test.pkg
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+
+
+""" + body.trimIndent(),
+    )
+
     // Positive tests: must be flagged.
 
     fun testNullDescriptionInsideIconButton() {
@@ -175,6 +194,41 @@ import androidx.compose.ui.semantics.semantics
                 fun DeleteFab(onDelete: () -> Unit) {
                     FloatingActionButton(onClick = onDelete) {
                         Icon(Icons.Filled.Delete, contentDescription = null)
+                    }
+                }
+                """,
+            ),
+        )
+    }
+
+    /**
+     * An action label is not a name. JetNews writes exactly this, with a comment saying the icon
+     * is "handled by click label of parent", but `onClick(label = ...)` writes
+     * `SemanticsActions.OnClick` (`SemanticsProperties.kt:1251`) and never touches
+     * `ContentDescription`, so the button still has no name. This test pins that decision: see
+     * DECISIONS.md, 2026-10-13. `Modifier.clickable(onClickLabel = ...)` is the same property by
+     * the same code path (`Clickable.kt:1597`), so accepting one would mean accepting both.
+     */
+    fun testActionLabelOnTheParentIsNotAName() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:23: Error: [P-01] Interactive Icon has no contentDescription, so screen readers announce it without a name [ComposeMissingContentDescription]
+                    Icon(Icons.Filled.Favorite, contentDescription = null)
+                                                                     ~~~~
+            1 errors, 0 warnings
+            """,
+            actionLabelScreen(
+                """
+                @Composable
+                fun BookmarkButton(isBookmarked: Boolean, onClick: () -> Unit, clickLabel: String) {
+                    IconToggleButton(
+                        checked = isBookmarked,
+                        onCheckedChange = { onClick() },
+                        modifier = Modifier.semantics {
+                            this.onClick(label = clickLabel, action = null)
+                        },
+                    ) {
+                        Icon(Icons.Filled.Favorite, contentDescription = null)
                     }
                 }
                 """,

@@ -33,32 +33,36 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **P-01**: should a parent's `semantics { onClick(label = ...) }` count as a name? JetNews uses
-   that pattern deliberately and our rule still reports the icon, consistently with its recorded
-   decision that an action label is not a name. Left as it is; a good candidate for Phase 3 to
-   judge rather than for tuning the static rule. See `DEV_APP_RESULTS.md`.
-2. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
+1. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
    take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
    `clickable` only, so widening it is a taxonomy change.
-3. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
+2. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
    defect, and O-02 already treats them as containers, but CLAUDE.md 7.4 names `Card`, `Surface`
    and `Row` for this rule.
-4. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
+3. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
    the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
    container O-07 already reports? See the Milestone 4 notes.
-5. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
+4. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
    the same defect, but CLAUDE.md 7.4 names `onClickLabel`.
-6. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
+5. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
    ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
    See the Milestone 4 notes and DECISIONS before deciding.
-7. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
+6. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
    looping over two hundred. The size is almost never a literal, so it cannot be used as a
    threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
    would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
    verticalScroll", not "only with", so the rule does not require it today.
-8. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+7. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
    progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
    accept missing sliders? This is the rule's most likely false positive.
+
+**Answered:** P-01 and the parent's action label (question 1 until 2026-10-13). The rule is
+unchanged: the JetNews `semantics { onClick(label = ...) }` pattern stays reported, and the
+finding is a true positive. `onClick(label, action)` writes `SemanticsActions.OnClick`
+(`SemanticsProperties.kt:1251`) and never touches `ContentDescription`, so the button has no
+name, and `Modifier.clickable(onClickLabel = ...)` is the same property by the same code path
+(`Clickable.kt:1597`), so an exception could not have been contained to this one pattern. A new
+test, `testActionLabelOnTheParentIsNotAName`, pins it (2026-10-13, see DECISIONS).
 
 **Answered:** both U-01 title questions (questions 1 and 3 until 2026-10-12). Neither behaviour
 changed: top app bar titles stay ignored, dialog titles stay reported. The reason found while
@@ -171,7 +175,7 @@ milestone was deferred in favour of Milestone 3 and was carried out on 2026-10-0
 
 | Rule | Status | Positive tests | Negative tests | Sample EXPECT lines |
 |---|---|---|---|---|
-| P-01 `ComposeMissingContentDescription` | Done | 6 (7 reports) | 6 | 6, all matched |
+| P-01 `ComposeMissingContentDescription` | Done | 7 (8 reports) | 6 | 6, all matched |
 | O-01 `ComposeSmallTouchTarget` | Done | 5 | 5 (13 cases) | 5, all matched |
 | O-03 `ComposeNestedClickable` | Done | 9 (12 reports) | 9 | 5, all matched |
 | U-01 `ComposeMissingHeading` | Done | 5 (6 reports) | 5 | 4, all matched |

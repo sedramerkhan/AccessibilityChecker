@@ -64,7 +64,7 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 
 - **What counts as the clickable parent.** The detector walks up from the Icon or Image through the enclosing lambdas until it reaches the enclosing function. The first call whose content lambda contains the icon and that is a clickable element (Material button, icon button, FAB, `Card`/`Surface` with `onClick` or `onCheckedChange`, or any composable with a click or toggle modifier) is the parent. Layout calls such as `Row` and `Box` in between are passed through.
 - **What counts as another name.** A `Text` (Material3, Material or `BasicText`) whose text is not `""`, another `Icon`/`Image` whose `contentDescription` is not `null` or `""` (a variable counts), or `contentDescription`/`text` set in semantics on the parent or on any element inside it. The whole content of the parent is searched, including nested layouts.
-- **Own clickable modifier.** An Icon with a click or toggle modifier is always reported when unlabelled, because it is its own clickable element. `onClickLabel` does not count as a name: it describes the action ("Activate to ..."), not the element.
+- **Own clickable modifier.** An Icon with a click or toggle modifier is always reported when unlabelled, because it is its own clickable element. `onClickLabel` does not count as a name: it describes the action ("Activate to ..."), not the element. **Confirmed on 2026-10-13** against the Compose sources, and extended to `semantics { onClick(label = ...) }`, which is the same property; see the entry of that date.
 - **Report location.** The rule reports at the `contentDescription` argument, so the underline is on `null` or `""`. Phase 3 can slice the code around this line.
 - **Several unlabelled icons in one clickable.** Each one is reported, because each is a possible label.
 - **Overlap with O-05.** CLAUDE.md says "a clickable with no readable content at all is O-05; an Icon or Image inside a clickable with a missing label is P-01". So when a clickable contains an unlabelled Icon or Image, P-01 reports it, and O-05 must skip that clickable. O-05 will only report clickables that contain no Icon or Image at all and no Text.
@@ -89,7 +89,7 @@ The P-01 unit tests passed, but the first run on the sample app reported nothing
 - **Direction of the search.** The detector visits every clickable element and looks upwards for the nearest clickable element whose content lambda contains it. Searching upwards gives one report per inner element and handles any depth of layout nesting.
 - **Reported element.** The inner element is reported, not the outer one: the inner element is the one that is hard to reach. A card with two icon buttons gives two warnings.
 - **Same definition of "clickable" as P-01** (`Clickables.isClickableElement`), so the rules stay consistent.
-- **Selection controls are not included.** CLAUDE.md lists `Modifier.clickable`, `Button`, `IconButton` and `Card(onClick)`. A `Checkbox` or `Switch` with a callback inside a clickable `Row` is a closely related defect (the usual fix is `Modifier.toggleable` on the row and `onCheckedChange = null` on the checkbox), but it is not in the spec and adding it could raise the false positive rate. Left out for now. Question for Sedra.
+- **Selection controls were not included at first.** CLAUDE.md lists `Modifier.clickable`, `Button`, `IconButton` and `Card(onClick)`, so a `Checkbox` or `Switch` with a callback inside a clickable `Row` was left out of the first version. **Changed on 2026-10-12**: they are now reported when their callback is not a `null` literal, through the separate predicate `Clickables.isInteractiveSelectionControl`. See the entry of that date.
 - **Overlap with O-07.** O-07 (Minor, Milestone 4) will report a clickable container that has two or more clickable children and no `customActions`. That warning is on the container, while O-03 warns on each child, so they are different nodes. If this gives too many warnings for one card, the precedence will be decided with Sedra when O-07 is built.
 - **Element without a modifier argument.** A clickable modifier in a local `val` that is passed to a container (`Box(clickableModifier)`) is followed through `ModifierChain`, so the container is still recognised as clickable.
 
@@ -817,3 +817,53 @@ design is to hand uncertain cases to the next layer.
 **Recorded as a limitation, not a gap.** The container-supplied style is now in LIMITATIONS.md as
 a blind spot no ignore list can fix, which is the RQ1-relevant part: it is a class of defect that
 reading the call site structurally cannot reach.
+
+## 2026-10-13
+
+### P-01 keeps reporting an icon whose only label is an action label
+
+The development app run left one open question: JetNews writes an `IconToggleButton` whose
+`Icon` has `contentDescription = null`, and gives the button a `semantics { onClick(label =
+clickLabel, action = null) }`, with the comment "handled by click label of parent". P-01 reports
+that icon. Should the parent's action label count as a name? Sedra decided on 2026-10-13 that it
+should not, and the rule is unchanged.
+
+**This is not a judgement call. The sources settle it.** `onClick(label, action)` is defined in
+Compose ui 1.10.4 at `SemanticsProperties.kt:1251` as
+
+```kotlin
+fun SemanticsPropertyReceiver.onClick(label: String? = null, action: (() -> Boolean)?) {
+    this[SemanticsActions.OnClick] = AccessibilityAction(label, action)
+}
+```
+
+It writes `SemanticsActions.OnClick` and never touches `SemanticsProperties.ContentDescription`.
+The label changes how the **action** is announced; the node still has no name. The comment in
+JetNews states the opposite of what the API does, so this is a true positive, and the sample has
+a real defect.
+
+**Accepting it could not have been contained to this pattern.** `Modifier.clickable(onClickLabel
+= ...)` ends at `Clickable.kt:1597` in foundation 1.10.4 calling the same `onClick(label = ...)`.
+The two are the same property by the same code path. P-01 already records that `onClickLabel` is
+not a name, so accepting the semantics block form would reverse that for every clickable in the
+corpus, and would undercut O-02, whose whole premise is that `onClickLabel` is something a
+container needs **in addition to** a name.
+
+**Cost.** One finding across two complete apps.
+
+**Pinned by a test.** `testActionLabelOnTheParentIsNotAName` reproduces the JetNews shape exactly
+and asserts the report, so the decision is enforced by the build rather than only by this file.
+It carries both source references in its KDoc. New stubs were needed: the semantics `onClick`
+function and Material3 `IconToggleButton`, both checked against the real signatures
+(`IconButton.kt:236`). The test uses its own screen helper rather than the shared one, because
+adding imports to the shared helper would shift the asserted line numbers of every other test in
+the class.
+
+**For the evaluation.** This pattern must be classified by the WCAG criterion, not by the
+author's stated intent. If a manual rater counts it as a false positive, that disagreement is
+itself worth reporting rather than quietly folding into the precision figure.
+
+**For the thesis.** It belongs with the U-07 finding as evidence of the same kind: code written
+deliberately and reviewed by experts, in Google's own Compose sample, leaves a control without an
+accessible name, and the comment above it shows the author believed otherwise. That is the gap
+between intent and semantics that the framework exists to surface.

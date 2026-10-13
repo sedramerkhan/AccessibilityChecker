@@ -163,14 +163,19 @@ activating the control does, not what the control is, so the element still has n
 this is arguably a true positive, but developers will read it as a false positive, and it comes
 from an expert-written sample.
 
-**Question for Sedra:** should a `semantics { onClick(label = ...) }` on the parent count as a
-name for P-01, or stay as it is? This is a good candidate for the Phase 3 layer to judge rather
-than for tuning the static rule.
+**Answered on 2026-10-13: it stays as it is, and this is a true positive.** `onClick(label, action)`
+writes `SemanticsActions.OnClick` (`SemanticsProperties.kt:1251`) and never touches
+`ContentDescription`, so the button has no name; the label only changes how the action is
+announced. `Modifier.clickable(onClickLabel = ...)` is the same property by the same code path
+(`Clickable.kt:1597`), so an exception here would have reversed P-01's recorded decision for
+every clickable. A test now pins the behaviour. See `DECISIONS.md`.
 
 **U-01, `PostCards.kt:169`** (JetNews) reports the `title` slot of an `AlertDialog` as a possible
-heading. Dialog titles may already be announced through the dialog's own pane semantics. U-01 is
-a STATIC_LLM rule and reports candidates, so this is within its design, but it is worth checking
-whether Material3 already handles dialog titles, the same check that was done for top app bars.
+heading. **Checked on 2026-10-12:** `AlertDialog.kt:171` sets a `paneTitle` on the dialog
+container, which is announced when the dialog opens, but nothing marks the title as a heading.
+U-01 is a STATIC_LLM rule and reports candidates, so the finding stays. The check also uncovered
+why this finding exists at all: Material supplies the title style internally, so U-01 sees only
+titles a developer restyled by hand. See `DECISIONS.md` and `LIMITATIONS.md`.
 
 ## What this changed
 
@@ -204,13 +209,15 @@ were also checked against the unit tests, each with a new regression test writte
 code above, and against the sample app, which stayed at 64 expected and 64 reported with
 0 missing and 0 unexpected.
 
-### Still open
+### Both follow-ups are now closed
 
-1. **P-01**: does a parent's `semantics { onClick(label = ...) }` count as a name? Left as it is
-   for now, since the rule is behaving per its recorded decision and this is a good candidate for
-   the Phase 3 layer to judge rather than for tuning a static rule.
-2. **U-01**: check whether Material3 gives `AlertDialog` titles their own semantics, the same
-   check that was done for top app bars.
+1. **P-01** and the parent's `semantics { onClick(label = ...) }`: the rule is unchanged and the
+   finding is a true positive, settled against the Compose sources and pinned by a test
+   (2026-10-13).
+2. **U-01** and `AlertDialog` titles: Material3 sets a `paneTitle` on the dialog container but
+   never a heading, so the candidate stays (2026-10-12).
+
+Both are recorded in `DECISIONS.md` with the source references.
 
 ## A note for the evaluation
 

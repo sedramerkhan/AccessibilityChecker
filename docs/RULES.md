@@ -864,7 +864,7 @@ O-05 (`ComposeEmptyClickable`) covers clickables with no readable content at all
 
 ### Tests and sample
 
-- `P01MissingContentDescriptionDetectorTest`: 6 positive tests (7 reported icons) and 6 negative tests.
+- `P01MissingContentDescriptionDetectorTest`: 7 positive tests (8 reported icons) and 6 negative tests. One of them, `testActionLabelOnTheParentIsNotAName`, pins the decision that a parent's `semantics { onClick(label = ...) }` is not a name (see DECISIONS, 2026-10-13).
 - Sample: `sample-app/.../defects/p01/P01BadScreen.kt` (6 `// EXPECT` lines) and `P01GoodScreen.kt` (no reports).
 
 ---

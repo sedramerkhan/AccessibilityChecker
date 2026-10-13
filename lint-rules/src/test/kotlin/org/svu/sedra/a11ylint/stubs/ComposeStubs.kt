@@ -179,6 +179,7 @@ private val semanticsStubs = kotlin(
 
     fun SemanticsPropertyReceiver.heading() {}
     fun SemanticsPropertyReceiver.error(description: String) {}
+    fun SemanticsPropertyReceiver.onClick(label: String? = null, action: (() -> Boolean)?) {}
     """,
 ).indented()
 
@@ -709,6 +710,15 @@ private val material3Stubs = kotlin(
     @Composable
     fun IconButton(
         onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        content: @Composable () -> Unit,
+    ) {}
+
+    @Composable
+    fun IconToggleButton(
+        checked: Boolean,
+        onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
         content: @Composable () -> Unit,

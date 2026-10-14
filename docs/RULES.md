@@ -460,11 +460,13 @@ Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a ful
 - **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
 - **WCAG 2.2:** 4.1.2 Name, Role, Value.
 - **Detector:** `detectors/operable/O06DisabledButClickableDetector.kt`
-- **Message:** `[O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled`.
+- **Message:** `[O-06] The handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled`. The modifier's own name is used, so a `toggleable` call says `toggleable`.
 
 ### What it flags
 
-A `Modifier.clickable { ... }` with no `enabled` argument whose handler decides for itself whether to act. Two shapes are recognised, the two CLAUDE.md names:
+A click or toggle modifier with no `enabled` argument whose handler decides for itself whether to act. Five modifiers are checked, because all five take the same `enabled: Boolean = true` parameter and have the same defect: `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` and `selectable`. The guard is looked for in the handler each one declares (`onValueChange` for `toggleable`, `onClick` for the rest). CLAUDE.md 7.4 named only `clickable`; the widening is recorded in DECISIONS, 2026-10-13, and the taxonomy text needs it.
+
+Two shapes are recognised, the two CLAUDE.md names:
 
 - an early return guard, `if (!enabled) return@clickable`, followed by the real work;
 - the whole handler wrapped in a condition, `if (enabled) { ... }` as the only statement in the lambda.
@@ -473,7 +475,7 @@ The element then keeps its clickable state in the semantics tree, so TalkBack st
 
 ### What it ignores
 
-- `Modifier.clickable(enabled = x) { ... }`. That is the correct form: it blocks the click and marks the element disabled.
+- Any of the five with `enabled = x` passed. That is the correct form: it blocks the interaction and marks the element disabled.
 - A handler with no condition in it.
 - A condition with an `else` branch. That is a choice between two actions, so the element is never disabled.
 - A handler with several statements where the condition does not return. Nothing is being stopped, so the element is still live.
@@ -499,8 +501,8 @@ The rule does not read what the condition tests. A guard on something that is no
 
 ### Tests and sample
 
-- `O06DisabledButClickableDetectorTest`: 4 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/o06/O06BadScreen.kt` and `O06GoodScreen.kt`.
+- `O06DisabledButClickableDetectorTest`: 8 positive and 8 negative cases. Four of each cover the modifiers beyond `clickable`.
+- Sample: `sample-app/.../defects/o06/O06BadScreen.kt` (4 `// EXPECT` lines) and `O06GoodScreen.kt` (no reports). Both screens show `clickable`, `toggleable` and `selectable`.
 
 ---
 
@@ -514,7 +516,7 @@ The rule does not read what the condition tests. A guard on something that is no
 
 ### What it flags
 
-A clickable `Card`, `Surface` or `Row` whose content holds two or more clickable elements and whose semantics set no `customActions`. The usual shape is a list row that opens a detail screen and also carries a favourite and a share button: a screen reader reaches the row as one element, is offered only the row's own action, and the inner buttons are skipped or can only be found by exploring the screen by touch.
+A clickable container whose content holds two or more clickable elements and whose semantics set no `customActions`. A container is a Material `Card` (including `ElevatedCard` and `OutlinedCard`) or `Surface`, or one of the three layouts `Row`, `Column` and `Box`. CLAUDE.md 7.4 named `Card`, `Surface` and `Row`; `Column` and `Box` were added on 2026-10-13 because the defect does not depend on which layout was used, and because O-02 already treated all three layouts as containers (see DECISIONS; the taxonomy text needs it). The usual shape is a list row that opens a detail screen and also carries a favourite and a share button: a screen reader reaches the row as one element, is offered only the row's own action, and the inner buttons are skipped or can only be found by exploring the screen by touch.
 
 Clickable **descendants** are counted, not only direct children, because the buttons are normally wrapped in an inner `Row` or `Column`. A clickable child is counted and then not searched any further, so only the nearest clickable container is reported: a clickable `Row` inside a clickable `Card` is reported on the `Row`, and the `Card` sees one child, not two.
 
@@ -523,7 +525,7 @@ Clickable **descendants** are counted, not only direct children, because the but
 - A container whose semantics set `customActions`.
 - A container that is not clickable itself. Each button is then its own element already.
 - A container with only one clickable child. That is O-03's defect, not a missing actions menu.
-- `Box`, `Column` and `ListItem`. CLAUDE.md 7.4 names `Card`, `Surface` and `Row` only (see the open question in `docs/PROGRESS.md`).
+- `ListItem`. It takes no click of its own, so a clickable `ListItem` is a clickable modifier on the call, and the container around it is what gets reported.
 
 ### Example
 
@@ -563,7 +565,7 @@ Children emitted by another composable function are not counted, and the rule do
 
 ### Tests and sample
 
-- `O07MissingCustomActionsDetectorTest`: 5 positive and 4 negative cases.
+- `O07MissingCustomActionsDetectorTest`: 7 positive and 5 negative cases. The clickable `Box` case was a negative test until the scope decision of 2026-10-13 and is now a positive one.
 - Sample: `sample-app/.../defects/o07/O07BadScreen.kt` and `O07GoodScreen.kt`.
 
 ---
@@ -580,8 +582,10 @@ Children emitted by another composable function are not counted, and the rule do
 
 A non-empty string literal used as accessibility text. Two shapes are read:
 
-- an argument of a call: `contentDescription` and `onClickLabel`, so `Icon(icon, contentDescription = "Delete draft")` and `Modifier.clickable(onClickLabel = "Open details")`;
-- a property set inside a semantics block: `contentDescription`, `stateDescription` and `paneTitle`, plus the `error("...")` function and the label of `CustomAccessibilityAction("...")`.
+- an argument of a call: `contentDescription`, `onClickLabel` and `onLongClickLabel`, so `Icon(icon, contentDescription = "Delete draft")`, `Modifier.clickable(onClickLabel = "Open details")` and `Modifier.combinedClickable(onLongClickLabel = "Show options")`;
+- a property set inside a semantics block: `contentDescription`, `stateDescription` and `paneTitle`, plus the `error("...")` function, the label of `CustomAccessibilityAction("...")`, and the labels of the `onClick(label = ...)` and `onLongClick(label = ...)` actions.
+
+The two action labels matter because `semantics { onClick(label = ...) }` is **the same semantics property** that `Modifier.clickable(onClickLabel = ...)` writes, by the same code path (`Clickable.kt:1597`). Reading one spelling and not the other would report the defect in one file and miss it in the next. CLAUDE.md 7.4 named `onClickLabel` only; the widening is recorded in DECISIONS, 2026-10-13, and the taxonomy text needs it.
 
 Visible text is translated because somebody sees it is wrong; text only a screen reader hears is easy to forget, so it stays in the original language for every other locale.
 
@@ -609,15 +613,15 @@ Icon(icon, contentDescription = stringResource(R.string.delete_draft))
 
 ### Known limitations
 
-`onLongClickLabel` is not read, a string built by concatenation or a template is not reported, and text held in a constant is not followed (see `docs/LIMITATIONS.md`).
+A string built by concatenation or a template is not reported, and text held in a constant is not followed (see `docs/LIMITATIONS.md`).
 
 ### Effect on the sample app
 
-This rule fires far more widely than any other: **94 lines** across the sample corpus, roughly half of them on screens that are the *good* example for their own rule. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md`.
+This rule fires far more widely than any other: **110 lines** across the sample corpus, measured from the Lint XML report on 2026-10-13. It was 94 when the rule was built; the corpus has grown since, and the action labels added on 2026-10-13 account for 4 of the difference. Roughly half of those lines are on screens that are the *good* example for their own rule. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md`.
 
 ### Tests and sample
 
-- `U07HardcodedA11yTextDetectorTest`: 5 positive and 5 negative cases.
+- `U07HardcodedA11yTextDetectorTest`: 8 positive and 6 negative cases. Three of the positives cover the action labels and `onLongClickLabel`.
 - Sample: `sample-app/.../defects/u07/U07BadScreen.kt` and `U07GoodScreen.kt`.
 
 ---

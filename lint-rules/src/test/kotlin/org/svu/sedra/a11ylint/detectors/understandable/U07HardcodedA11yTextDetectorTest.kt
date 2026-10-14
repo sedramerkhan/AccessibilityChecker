@@ -36,6 +36,26 @@ $body
         """,
     )
 
+    /** A screen for the action labels. [body] starts at line 14. */
+    private fun actionScreen(body: String) = kotlin(
+        "src/test/pkg/Screen.kt",
+        """
+package test.pkg
+
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.semantics
+
+$body
+        """,
+    )
+
     // Positive tests: must be flagged.
 
     fun testContentDescriptionArgument() {
@@ -144,6 +164,66 @@ src/test/pkg/Screen.kt:26: Warning: [U-07] customActions is set to the hardcoded
 
     // Negative tests: must not be flagged.
 
+    fun testSemanticsOnClickLabel() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [U-07] onClick label is set to the hardcoded string "Bookmark", so this text is never translated and screen reader users of other languages hear English [ComposeHardcodedA11yText]
+                        modifier = Modifier.semantics { onClick(label = "Bookmark", action = null) }
+                                                                        ~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            actionScreen("""
+                @Composable fun Screen(onAction: () -> Unit) {
+                    Row(
+                        modifier = Modifier.semantics { onClick(label = "Bookmark", action = null) }
+                    ) {
+                        Text("Compose accessibility")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testSemanticsOnLongClickLabel() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [U-07] onLongClick label is set to the hardcoded string "Show options", so this text is never translated and screen reader users of other languages hear English [ComposeHardcodedA11yText]
+                        modifier = Modifier.semantics { onLongClick(label = "Show options", action = null) }
+                                                                            ~~~~~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            actionScreen("""
+                @Composable fun Screen(onAction: () -> Unit) {
+                    Row(
+                        modifier = Modifier.semantics { onLongClick(label = "Show options", action = null) }
+                    ) {
+                        Text("Compose accessibility")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testOnLongClickLabelArgument() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [U-07] onLongClickLabel is set to the hardcoded string "Show options", so this text is never translated and screen reader users of other languages hear English [ComposeHardcodedA11yText]
+                        modifier = Modifier.combinedClickable(onLongClickLabel = "Show options", onLongClick = onAction, onClick = onAction)
+                                                                                 ~~~~~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            actionScreen("""
+                @Composable fun Screen(onAction: () -> Unit) {
+                    Row(
+                        modifier = Modifier.combinedClickable(onLongClickLabel = "Show options", onLongClick = onAction, onClick = onAction)
+                    ) {
+                        Text("Compose accessibility")
+                    }
+                }
+            """),
+        )
+    }
+
     fun testStringResourceIsClean() = expectClean(screen("""
         @Composable fun Screen() {
             Box(
@@ -188,6 +268,19 @@ src/test/pkg/Screen.kt:26: Warning: [U-07] customActions is set to the hardcoded
         @androidx.compose.ui.tooling.preview.Preview
         @Composable fun ScreenPreview() {
             Icon(painterResource(1), contentDescription = "Delete draft")
+        }
+    """))
+
+    fun testActionLabelsFromResourcesAreClean() = expectClean(actionScreen("""
+        @Composable fun Screen(onAction: () -> Unit) {
+            val label = stringResource(0)
+            Row(
+                modifier = Modifier
+                    .semantics { onClick(label = label, action = null) }
+                    .combinedClickable(onLongClickLabel = label, onLongClick = onAction, onClick = onAction)
+            ) {
+                Text("Compose accessibility")
+            }
         }
     """))
 }

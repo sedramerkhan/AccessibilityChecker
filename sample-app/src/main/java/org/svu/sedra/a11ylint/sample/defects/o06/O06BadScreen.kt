@@ -3,6 +3,8 @@ package org.svu.sedra.a11ylint.sample.defects.o06
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,7 +15,14 @@ import androidx.compose.ui.semantics.Role
  * still looks enabled to accessibility services. Every reported line carries an EXPECT marker.
  */
 @Composable
-fun O06BadScreen(formComplete: Boolean, onSubmit: () -> Unit) {
+fun O06BadScreen(
+    formComplete: Boolean,
+    onSubmit: () -> Unit,
+    notify: Boolean,
+    onNotifyChange: (Boolean) -> Unit,
+    express: Boolean,
+    onPickExpress: () -> Unit,
+) {
     Column {
         // The guard stops the action, but TalkBack still offers the row.
         Row(
@@ -34,6 +43,27 @@ fun O06BadScreen(formComplete: Boolean, onSubmit: () -> Unit) {
             }
         ) {
             Text("Save draft")
+        }
+
+        // The same defect on a toggle modifier. toggleable takes the same enabled parameter.
+        Row(
+            modifier = Modifier.toggleable(value = notify) { // EXPECT: ComposeDisabledButClickable
+                if (!formComplete) return@toggleable
+                onNotifyChange(it)
+            }
+        ) {
+            Text("Notify me when it ships")
+        }
+
+        // And on a selection modifier.
+        Row(
+            modifier = Modifier.selectable(selected = express) { // EXPECT: ComposeDisabledButClickable
+                if (formComplete) {
+                    onPickExpress()
+                }
+            }
+        ) {
+            Text("Express delivery")
         }
     }
 }

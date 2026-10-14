@@ -20,25 +20,30 @@ import org.svu.sedra.a11ylint.util.ComposeCalls
 import org.svu.sedra.a11ylint.util.Literals
 
 /**
- * O-06: a `Modifier.clickable { }` whose handler decides for itself whether it is enabled,
- * instead of telling `clickable` through its `enabled` parameter.
+ * O-06: a click or toggle modifier whose handler decides for itself whether it is enabled,
+ * instead of telling the modifier through its `enabled` parameter.
  *
  * Guarding inside the lambda stops the action but leaves the element enabled as far as
  * accessibility services are concerned, so a screen reader still offers it and nothing happens
  * when the user activates it. The two shapes CLAUDE.md names are recognised: an early return
  * (`if (!enabled) return@clickable`) and a body wrapped in a condition (`if (enabled) { ... }`).
+ *
+ * All five modifiers in [HANDLERS] are checked, not only `clickable`: each takes the same
+ * `enabled: Boolean = true` parameter and has the same defect (see DECISIONS, 2026-10-13).
  */
 class O06DisabledButClickableDetector : Detector(), SourceCodeScanner {
-    override fun getApplicableMethodNames(): List<String> = listOf("clickable")
+    override fun getApplicableMethodNames(): List<String> =
+        HANDLERS.keys.map { it.substringAfterLast('.') }
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-        if (!ComposeCalls.isCall(node, CLICKABLE)) return
+        val handlerName = ComposeCalls.qualifiedNames(method)
+            .firstNotNullOfOrNull { HANDLERS[it] } ?: return
         // The element already tells accessibility services whether it is enabled.
         if (ComposeCalls.argument(context, node, "enabled") != null) return
 
-        val onClick = Literals.unwrap(ComposeCalls.argument(context, node, "onClick")) as? ULambdaExpression
+        val handler = Literals.unwrap(ComposeCalls.argument(context, node, handlerName)) as? ULambdaExpression
             ?: return
-        if (!isGuarded(onClick)) return
+        if (!isGuarded(handler)) return
 
         context.report(
             ISSUE,
@@ -46,8 +51,9 @@ class O06DisabledButClickableDetector : Detector(), SourceCodeScanner {
             context.getCallLocation(node, includeReceiver = false, includeArguments = false),
             A11yIssues.message(
                 TAXONOMY_ID,
-                "The click handler checks whether it is enabled but enabled is not passed to " +
-                    "clickable, so screen readers still announce the element as enabled",
+                "The handler checks whether it is enabled but enabled is not passed to " +
+                    "${ComposeCalls.name(node) ?: "clickable"}, so screen readers still " +
+                    "announce the element as enabled",
             ),
         )
     }
@@ -105,7 +111,22 @@ class O06DisabledButClickableDetector : Detector(), SourceCodeScanner {
     companion object {
         const val TAXONOMY_ID = "O-06"
 
-        private const val CLICKABLE = "androidx.compose.foundation.clickable"
+        private const val FOUNDATION = "androidx.compose.foundation"
+        private const val SELECTION = "androidx.compose.foundation.selection"
+
+        /**
+         * The click and toggle modifiers that take `enabled`, mapped to the name of the handler
+         * the guard would be written in. Signatures checked against Compose 1.10.4:
+         * `Clickable.kt:327` (`combinedClickable`), `Toggleable.kt:71, 378` and
+         * `Selectable.kt:67`.
+         */
+        private val HANDLERS = mapOf(
+            "$FOUNDATION.clickable" to "onClick",
+            "$FOUNDATION.combinedClickable" to "onClick",
+            "$SELECTION.toggleable" to "onValueChange",
+            "$SELECTION.triStateToggleable" to "onClick",
+            "$SELECTION.selectable" to "onClick",
+        )
 
         @JvmField
         val ISSUE: Issue = A11yIssues.create(
@@ -118,7 +139,7 @@ class O06DisabledButClickableDetector : Detector(), SourceCodeScanner {
                 effect, with no explanation. This relates to WCAG 2.2 success criterion 4.1.2 \
                 (Name, Role, Value). Pass the state instead, as \
                 `Modifier.clickable(enabled = isEnabled) { ... }`, which both blocks the click \
-                and marks the element disabled.
+                and marks the element disabled. The same applies to `combinedClickable`, \n                `toggleable`, `triStateToggleable` and `selectable`, which all take \n                `enabled`.
             """,
             priority = Priority.MINOR,
             detector = O06DisabledButClickableDetector::class.java,

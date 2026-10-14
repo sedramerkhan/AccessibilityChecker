@@ -17,8 +17,12 @@ import org.svu.sedra.a11ylint.util.Literals
 import org.svu.sedra.a11ylint.util.ModifierChain
 
 /**
- * O-07: a clickable `Card`, `Surface` or `Row` that holds two or more clickable children and
- * offers no `customActions`.
+ * O-07: a clickable container that holds two or more clickable children and offers no
+ * `customActions`. A container is a Material `Card` or `Surface`, or a `Row`, `Column` or `Box`.
+ *
+ * CLAUDE.md 7.4 names `Card`, `Surface` and `Row`. `Column` and `Box` were added because the
+ * defect does not depend on which layout was used, and because O-02 already counted all three
+ * layouts as containers, so the two rules disagreed about the word (see DECISIONS, 2026-10-13).
  *
  * The usual shape is a list row that opens a detail screen and also carries a favourite and a
  * share button. A screen reader user reaches the row as one element and is offered only its own
@@ -83,6 +87,10 @@ class O07MissingCustomActionsDetector : Detector(), SourceCodeScanner {
         const val TAXONOMY_ID = "O-07"
 
         /** CLAUDE.md 7.4 names `Card`, `Surface` and `Row`. */
+        /**
+         * Material containers plus the three layouts. `Clickables.layoutContainers` is the same
+         * set O-02 and P-03 use, so "container" means one thing across the rules.
+         */
         private val CONTAINERS = setOf(
             "androidx.compose.material3.Card",
             "androidx.compose.material3.ElevatedCard",
@@ -90,8 +98,7 @@ class O07MissingCustomActionsDetector : Detector(), SourceCodeScanner {
             "androidx.compose.material3.Surface",
             "androidx.compose.material.Card",
             "androidx.compose.material.Surface",
-            "androidx.compose.foundation.layout.Row",
-        )
+        ) + Clickables.layoutContainers
 
         private const val CUSTOM_ACTIONS = "customActions"
 

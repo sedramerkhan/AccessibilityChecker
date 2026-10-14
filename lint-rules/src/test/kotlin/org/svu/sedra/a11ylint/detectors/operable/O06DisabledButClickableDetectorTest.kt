@@ -27,6 +27,26 @@ $body
         """,
     )
 
+    /** A screen for the other click and toggle modifiers. [body] starts at line 15. */
+    private fun selectionScreen(body: String) = kotlin(
+        "src/test/pkg/Screen.kt",
+        """
+package test.pkg
+
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.triStateToggleable
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.state.ToggleableState
+
+$body
+        """,
+    )
+
     // Positive tests: must be flagged.
     // No trailing comma before a trailing lambda: Lint's REORDER_ARGUMENTS test mode cannot
     // rewrite that shape (the same note as P-01 and O-04 in DECISIONS).
@@ -34,7 +54,7 @@ $body
     fun testGuardReturnsEarly() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+src/test/pkg/Screen.kt:16: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
                         modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) {
                                             ~~~~~~~~~
 0 errors, 1 warning
@@ -57,7 +77,7 @@ src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it i
     fun testWholeHandlerWrappedInACondition() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+src/test/pkg/Screen.kt:16: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
                         modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) {
                                             ~~~~~~~~~
 0 errors, 1 warning
@@ -81,7 +101,7 @@ src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it i
     fun testGuardWithBraces() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+src/test/pkg/Screen.kt:16: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
                         modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) {
                                             ~~~~~~~~~
 0 errors, 1 warning
@@ -107,7 +127,7 @@ src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it i
     fun testGuardAfterAnotherStatement() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+src/test/pkg/Screen.kt:16: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to clickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
                         modifier = Modifier.clickable(onClickLabel = "Send", role = Role.Button) {
                                             ~~~~~~~~~
 0 errors, 1 warning
@@ -122,6 +142,100 @@ src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it i
                         }
                     ) {
                         Text("Send")
+                    }
+                }
+            """),
+        )
+    }
+
+
+    fun testCombinedClickableIsCheckedToo() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to combinedClickable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+                        modifier = Modifier.combinedClickable(onLongClick = onAction) {
+                                            ~~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, onAction: () -> Unit) {
+                    Row(
+                        modifier = Modifier.combinedClickable(onLongClick = onAction) {
+                            if (!enabled) return@combinedClickable
+                            onAction()
+                        }
+                    ) {
+                        Text("Send")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testToggleableIsCheckedToo() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to toggleable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+                        modifier = Modifier.toggleable(value = checked) {
+                                            ~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, checked: Boolean, onChange: (Boolean) -> Unit) {
+                    Row(
+                        modifier = Modifier.toggleable(value = checked) {
+                            if (!enabled) return@toggleable
+                            onChange(it)
+                        }
+                    ) {
+                        Text("Notifications")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testSelectableIsCheckedToo() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to selectable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+                        modifier = Modifier.selectable(selected = chosen) {
+                                            ~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, chosen: Boolean, onPick: () -> Unit) {
+                    Row(
+                        modifier = Modifier.selectable(selected = chosen) {
+                            if (enabled) {
+                                onPick()
+                            }
+                        }
+                    ) {
+                        Text("Standard delivery")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testTriStateToggleableIsCheckedToo() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:17: Warning: [O-06] The handler checks whether it is enabled but enabled is not passed to triStateToggleable, so screen readers still announce the element as enabled [ComposeDisabledButClickable]
+                        modifier = Modifier.triStateToggleable(state = state) {
+                                            ~~~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, state: ToggleableState, onPick: () -> Unit) {
+                    Row(
+                        modifier = Modifier.triStateToggleable(state = state) {
+                            if (!enabled) return@triStateToggleable
+                            onPick()
+                        }
+                    ) {
+                        Text("Select all")
                     }
                 }
             """),
@@ -198,4 +312,61 @@ src/test/pkg/Screen.kt:16: Warning: [O-06] The click handler checks whether it i
             }
         }
     """))
+
+    fun testToggleableWithEnabledIsClean() {
+        expectClean(
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, checked: Boolean, onChange: (Boolean) -> Unit) {
+                    Row(
+                        modifier = Modifier.toggleable(value = checked, enabled = enabled) {
+                            onChange(it)
+                        }
+                    ) {
+                        Text("Notifications")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testSelectableWithEnabledIsClean() {
+        expectClean(
+            selectionScreen("""
+                @Composable fun Screen(enabled: Boolean, chosen: Boolean, onPick: () -> Unit) {
+                    Row(
+                        modifier = Modifier.selectable(selected = chosen, enabled = enabled) {
+                            if (enabled) {
+                                onPick()
+                            }
+                        }
+                    ) {
+                        Text("Standard delivery")
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testUnguardedSelectionModifiersAreClean() {
+        expectClean(
+            selectionScreen("""
+                @Composable fun Screen(checked: Boolean, onChange: (Boolean) -> Unit, onAction: () -> Unit) {
+                    Row(
+                        modifier = Modifier.toggleable(value = checked) {
+                            onChange(it)
+                        }
+                    ) {
+                        Text("Notifications")
+                    }
+                    Row(
+                        modifier = Modifier.combinedClickable(onLongClick = onAction) {
+                            onAction()
+                        }
+                    ) {
+                        Text("Send")
+                    }
+                }
+            """),
+        )
+    }
 }

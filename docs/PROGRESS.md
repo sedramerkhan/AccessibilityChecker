@@ -17,10 +17,13 @@ covered by a bad and a good sample screen. Across the whole sample app: 26 issue
 expected, 193 reported, 0 missing, 0 unexpected. U-07 alone accounts for 94 of those markers,
 which is explained in the Milestone 4 notes.
 
-The rules have now also been run on code we did not write: **33 findings across JetNews and
-Jetchat**, after fixing the two rule defects that first run exposed in O-05 and R-02. See
-[DEV_APP_RESULTS.md](DEV_APP_RESULTS.md). O-02, which CLAUDE.md expected to be noisy, produced
-8 findings across two complete apps, and O-03 produced one, on a genuine defect.
+The rules have now also been run on code we did not write, twice. The first run (2026-10-06, 18
+rules) gave **33 findings across JetNews and Jetchat** and exposed two rule defects, in O-05 and
+R-02, which were fixed. The second run (2026-10-14, all 26 rules) gives **40**, and its purpose
+was to measure the four scope changes agreed on 2026-10-12 and 2026-10-13: **all four produced
+no new findings at all**, and the +7 is entirely the two Milestone 4 rules that did not exist in
+the first run. See [DEV_APP_RESULTS.md](DEV_APP_RESULTS.md). O-02, which CLAUDE.md expected to be
+noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine defect.
 
 ### What is left, in order
 
@@ -33,28 +36,43 @@ Jetchat**, after fixing the two rule defects that first run exposed in O-05 and 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **O-06**: should the rule also cover `combinedClickable`, `toggleable` and `selectable`? They
-   take the same `enabled` parameter and have the same defect, but CLAUDE.md 7.4 names
-   `clickable` only, so widening it is a taxonomy change.
-2. **O-07 scope**: should a clickable `Box` or `Column` count as a container? It is the same
-   defect, and O-02 already treats them as containers, but CLAUDE.md 7.4 names `Card`, `Surface`
-   and `Row` for this rule.
-3. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
+1. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
    the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
    container O-07 already reports? See the Milestone 4 notes.
-4. **U-07 scope**: should `onLongClickLabel` be read too? `combinedClickable` takes it and it is
-   the same defect, but CLAUDE.md 7.4 names `onClickLabel`.
-5. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
+2. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
    ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
    See the Milestone 4 notes and DECISIONS before deciding.
-6. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
+3. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
    looping over two hundred. The size is almost never a literal, so it cannot be used as a
    threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
    would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
    verticalScroll", not "only with", so the rule does not require it today.
-7. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+4. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
    progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
    accept missing sliders? This is the rule's most likely false positive.
+
+**Answered:** O-07's scope (question 1 until 2026-10-13), the last of the three scope questions.
+A clickable `Box` or `Column` is now a container, so O-07 uses the same layout list O-02 and P-03
+already use. The deciding argument was internal: O-02 reported a missing label on a clickable
+`Box` while O-07 ignored the same `Box` holding two buttons. On the existing corpus the change
+reported nothing new, so it is behaviour-preserving there; 7 positive and 5 negative tests, and
+the sample check moved to 206 expected and reported with a new row written for it (2026-10-13,
+see DECISIONS).
+
+**Answered:** U-07's scope (question 3 until 2026-10-13), the second of the three scope
+questions. `onLongClickLabel` is now read, and so are the labels of `semantics { onClick(label =
+...) }` and `onLongClick(label = ...)`. The second part closes a hole that P-01's work the same
+day exposed: that semantics call is the identical property `Modifier.clickable(onClickLabel =
+...)` writes, so U-07 was reporting one spelling and missing the other, which is the same
+incoherence the P-01 decision refused. 8 positive and 6 negative tests; the sample check moved to
+200 expected and reported (2026-10-13, see DECISIONS).
+
+**Answered:** O-06's scope (question 1 until 2026-10-13), the first of three scope questions
+settled on one principle: a rule follows the defect, not CLAUDE.md's example list. O-06 now
+checks all five click and toggle modifiers that take `enabled` (`clickable`,
+`combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`), mapping each to the
+handler it declares. 8 positive and 8 negative tests; the sample check moved to 196 expected and
+reported (2026-10-13, see DECISIONS). The taxonomy text needs the widened wording, listed below.
 
 **Answered:** P-01 and the parent's action label (question 1 until 2026-10-13). The rule is
 unchanged: the JetNews `semantics { onClick(label = ...) }` pattern stays reported, and the
@@ -117,7 +135,18 @@ These are not questions, they are edits the taxonomy chapter needs.
 3. **R-06's wording must change** from "contains clickable or toggleable UI and sets no
    semantics" to custom gestures only, which is what the rule detects and what the real defect
    is. CLAUDE.md anticipated this change.
-4. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
+4. **O-06's wording must widen** from `Modifier.clickable` to every click and toggle modifier
+   that takes `enabled`: `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`
+   and `selectable`. All five have the identical defect. Agreed with Sedra on 2026-10-13. See
+   `DECISIONS.md`.
+5. **U-07's wording must widen** from `onClickLabel` to the accessibility text in every
+   spelling: `onLongClickLabel`, and the labels of the `onClick` and `onLongClick` semantics
+   actions, which are the same property `onClickLabel` writes. Agreed with Sedra on 2026-10-13.
+   See `DECISIONS.md`.
+6. **O-07's wording must widen** from `Card`, `Surface` and `Row` to any clickable container,
+   including `Column` and `Box`. The defect does not depend on the layout, and O-02 already
+   counted all three layouts. Agreed with Sedra on 2026-10-13. See `DECISIONS.md`.
+7. **U-06's wording must widen** from "the same `Icons.X.Y`" to the same icon however it is
    sourced, which now includes a drawable read at the call site and any property returning an
    `ImageVector` or `Painter`. The reason is worth a sentence of its own in the thesis: a search
    of all 364 Kotlin files in `compose-samples` found 123 `Icon(...)` calls and **zero** uses of
@@ -240,9 +269,9 @@ In progress.
 |---|---|---|---|---|
 | P-05 `ComposeTextOverImage` | Done | 2 | 5 | 2, all matched |
 | P-07 `ComposeMissingPaneTitle` | Done | 2 | 5 | 2, all matched |
-| O-06 `ComposeDisabledButClickable` | Done | 4 | 5 | 2, all matched |
-| O-07 `ComposeMissingCustomActions` | Done | 5 | 4 | 3, all matched |
-| U-07 `ComposeHardcodedA11yText` | Done | 5 | 5 | 94, all matched |
+| O-06 `ComposeDisabledButClickable` | Done | 8 | 8 | 4, all matched |
+| O-07 `ComposeMissingCustomActions` | Done | 7 | 5 | 4, all matched |
+| U-07 `ComposeHardcodedA11yText` | Done | 8 | 6 | 94 at the time, 110 now |
 | R-04 `ComposeMissingCollectionInfo` | Done | 4 | 6 | 2, all matched |
 | R-05 `ComposeMissingProgressRange` | Done | 4 | 6 | 2, all matched |
 | U-06 `ComposeInconsistentLabels` | Done | 5 | 6 | 6, all matched |

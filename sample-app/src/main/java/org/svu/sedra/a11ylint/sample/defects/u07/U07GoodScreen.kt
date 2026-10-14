@@ -1,6 +1,7 @@
 package org.svu.sedra.a11ylint.sample.defects.u07
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
@@ -14,6 +15,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -31,6 +34,8 @@ fun U07GoodScreen(onOpen: () -> Unit, onShare: () -> Unit) {
     val settings = stringResource(R.string.u07_settings)
     val emailError = stringResource(R.string.u07_email_error)
     val share = stringResource(R.string.u07_share)
+    val bookmark = stringResource(R.string.u07_bookmark)
+    val showOptions = stringResource(R.string.u07_show_options)
 
     Column {
         Icon(icon, contentDescription = stringResource(R.string.u07_delete_draft))
@@ -56,6 +61,28 @@ fun U07GoodScreen(onOpen: () -> Unit, onShare: () -> Unit) {
             },
         ) {
             Text(volume)
+        }
+
+        // Action labels read from resources, in both spellings.
+        Row(
+            modifier = Modifier.semantics {
+                onClick(label = bookmark, action = null)
+                onLongClick(label = showOptions, action = null)
+            },
+        ) {
+            Text(stringResource(R.string.u07_compose_accessibility))
+        }
+
+        Row(
+            modifier = Modifier.combinedClickable(
+                onClickLabel = stringResource(R.string.u07_open_details),
+                role = Role.Button,
+                onLongClickLabel = showOptions,
+                onLongClick = onShare,
+                onClick = onOpen,
+            ),
+        ) {
+            Text(stringResource(R.string.u07_running_shoes))
         }
     }
 }

@@ -225,3 +225,83 @@ These two apps are development apps, used precisely so that tuning does not touc
 corpus. The three false positives above were found and fixed here, which is what this run is for.
 The remaining 33 findings have not been individually verified beyond the 11 inspected, so they
 should not be quoted as a precision figure without a full manual pass.
+
+---
+
+# Second run: 2026-10-14, all 26 rules
+
+The first run was made on 2026-10-06 with the 18 rules that existed then. This second run was
+made after Milestone 4 completed the taxonomy and after four scope changes were agreed on
+2026-10-12 and 2026-10-13 (O-03's selection controls, and the widening of O-06, U-07 and O-07).
+Its purpose is to measure what those scope changes cost in precision, which is the reason the
+development apps exist.
+
+Same method as the first run, with the rules republished to `mavenLocal()` first.
+
+## What changed
+
+| Rule | 2026-10-06 | 2026-10-14 | Change |
+|---|---|---|---|
+| R-01 `ComposeClickableWithoutRole` | 11 | 11 | none |
+| O-02 `ComposeMissingOnClickLabel` | 8 | 8 | none |
+| U-01 `ComposeMissingHeading` | 6 | 6 | none |
+| P-01 `ComposeMissingContentDescription` | 2 | 2 | none |
+| O-03 `ComposeNestedClickable` | 1 | 1 | none |
+| U-05 `ComposeTextFieldWithoutLabel` | 1 | 1 | none |
+| O-01 `ComposeSmallTouchTarget` | 1 | 1 | none |
+| U-02 `ComposeMissingStateDescription` | 1 | 1 | none |
+| O-04 `ComposeClickableContainer` | 1 | 1 | none |
+| R-06 `ComposeComposableWithoutSemantics` | 1 | 1 | none |
+| R-04 `ComposeMissingCollectionInfo` | — | 4 | new rule |
+| U-07 `ComposeHardcodedA11yText` | — | 3 | new rule |
+| **Total** | **33** | **40** | **+7** |
+
+Per app: JetNews 13 to 17, Jetchat 20 to 23.
+
+## The result the run was made for
+
+**The four scope changes produced no new findings at all.** Every one of the +7 comes from two
+rules that did not exist in the first run, R-04 and U-07. Each rule that existed in both runs
+reports exactly the same number in both.
+
+Specifically:
+
+- **O-06** widened from `clickable` to all five modifiers that take `enabled`: **0 findings**, as
+  before.
+- **O-07** widened to clickable `Box` and `Column`, the change expected to carry the most risk:
+  **0 findings**, as before.
+- **U-07** widened to `onLongClickLabel` and the `onClick`/`onLongClick` action labels: its 3
+  findings are all plain `contentDescription` literals (`Conversation.kt:374, 383, 392`), so
+  **none** comes from the widened part.
+- **O-03** widened to Material selection controls with a live callback: still 1 finding, the same
+  one.
+
+So on this evidence the scope decisions of 2026-10-12 and 2026-10-13 cost nothing in precision.
+They also found nothing new here, which is the honest other half: two apps are a small sample,
+and the patterns the widenings target (a guard inside a `toggleable`, a clickable `Box` with two
+buttons, a hardcoded action label) simply do not occur in these two. The widenings rest on the
+source analysis recorded in `DECISIONS.md`, and this run shows they are not noisy.
+
+## Two observations worth keeping
+
+**U-07's three findings are debatable, in an interesting way.** All three are the names of
+fictional people used as avatar descriptions: `contentDescription = "Ali Conors"`. A proper name
+usually should not be translated, so these are arguably false positives for the localization
+defect the rule describes, even though each is literally a hardcoded accessibility string. The
+rule cannot tell a name from a label, and nothing at the call site could. This is a good example
+of a defect class where Layer 3 judges better than any static rule, and it belongs in the error
+analysis rather than in a rule change.
+
+**Fourteen of the twenty-six rules report nothing on either app.** That is not a defect: these
+are two small, carefully written Google samples, and rules such as P-03 (literal low contrast),
+P-07 (custom overlays without a pane title) and R-05 (hand-drawn progress) target patterns that
+good code avoids. It does mean the development apps cannot exercise most of the taxonomy, and
+that the evaluation corpus has to be large enough to reach the rules these two never touch.
+
+## A note on the build
+
+`:app:lintDebug` ends with `BUILD FAILED` on JetNews because the rules report `Severity.ERROR`
+issues and the app leaves `abortOnError` at its default. The lint reports are written in full
+before the build fails, so the run is complete; the failure is the rules doing their job, not a
+broken build. For an evaluation harness, set `abortOnError = false` so a corpus run does not stop
+at the first app with an error-level finding.

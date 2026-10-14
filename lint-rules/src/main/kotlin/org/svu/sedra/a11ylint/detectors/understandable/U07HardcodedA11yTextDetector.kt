@@ -31,6 +31,12 @@ import org.svu.sedra.a11ylint.util.UiScope
  * `Modifier.clickable(onClickLabel = "Open")`, `CustomAccessibilityAction("Share") { }`), and a
  * property set inside a semantics block (`semantics { contentDescription = "Delete" }`). Previews
  * and test sources are skipped, as CLAUDE.md 7.4 asks.
+ *
+ * The action labels of `semantics { onClick(label = ...) }` and `onLongClick(label = ...)` are
+ * read as well. They are the same semantics property that `Modifier.clickable`'s `onClickLabel`
+ * sets, by the same code path (`Clickable.kt:1597`), so reading one and not the other would
+ * leave the same defect reported in one spelling and missed in the other. See DECISIONS,
+ * 2026-10-13.
  */
 class U07HardcodedA11yTextDetector : Detector(), SourceCodeScanner {
     override fun getApplicableUastTypes(): List<Class<out UElement>> =
@@ -47,6 +53,12 @@ class U07HardcodedA11yTextDetector : Detector(), SourceCodeScanner {
                     report(context, node.valueArguments.firstOrNull(), "error")
                 ComposeCalls.isCall(node, CUSTOM_ACTION) ->
                     report(context, ComposeCalls.argument(context, node, "label"), "customActions")
+                ComposeCalls.isCall(node, SEMANTICS_ACTIONS) ->
+                    report(
+                        context,
+                        ComposeCalls.argument(context, node, "label"),
+                        "${ComposeCalls.name(node)} label",
+                    )
                 else -> ARGUMENT_NAMES.forEach { name ->
                     report(context, ComposeCalls.argument(context, node, name), name)
                 }
@@ -104,8 +116,17 @@ class U07HardcodedA11yTextDetector : Detector(), SourceCodeScanner {
         private const val SEMANTICS_ERROR = "$SEMANTICS.error"
         private const val CUSTOM_ACTION = "$SEMANTICS.CustomAccessibilityAction"
 
-        /** Accessibility text passed as a call argument. */
-        private val ARGUMENT_NAMES = listOf("contentDescription", "onClickLabel")
+        /**
+         * The semantics actions that carry a label. `onClick` is the property
+         * `Modifier.clickable(onClickLabel = ...)` writes, so both spellings are read.
+         */
+        private val SEMANTICS_ACTIONS = listOf("$SEMANTICS.onClick", "$SEMANTICS.onLongClick")
+
+        /**
+         * Accessibility text passed as a call argument. `onLongClickLabel` is
+         * `combinedClickable`'s counterpart to `onClickLabel` (`Clickable.kt:331`).
+         */
+        private val ARGUMENT_NAMES = listOf("contentDescription", "onClickLabel", "onLongClickLabel")
 
         /** Accessibility text assigned inside a semantics block. */
         private val PROPERTY_NAMES = setOf("contentDescription", "stateDescription", "paneTitle")
@@ -117,7 +138,7 @@ class U07HardcodedA11yTextDetector : Detector(), SourceCodeScanner {
             explanation = """
                 Text that only a screen reader hears is easy to forget when an app is \
                 translated, because nobody sees it on screen. A hardcoded `contentDescription`, \
-                `onClickLabel`, `stateDescription`, `paneTitle`, error message or custom action \
+                `onClickLabel`, `onLongClickLabel`, `stateDescription`, `paneTitle`, action                 label, error message or custom action \
                 label stays in the original language, so users of every other language hear \
                 English in the middle of their own interface. This is a localization defect \
                 rather than a WCAG failure. Move the text to `strings.xml` and read it with \

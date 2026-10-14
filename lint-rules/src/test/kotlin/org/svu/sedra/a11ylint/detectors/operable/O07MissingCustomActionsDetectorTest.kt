@@ -158,14 +158,45 @@ src/test/pkg/Screen.kt:21: Warning: [O-07] Possible missing custom actions: clic
     """))
 
     // A Box is not one of the containers CLAUDE.md names for this rule.
-    fun testClickableBoxIsClean() = expectClean(screen("""
-        @Composable fun Screen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit) {
-            Box(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
-                IconButton(onClick = onFavorite) { Text("Favorite") }
-                IconButton(onClick = onShare) { Text("Share") }
-            }
-        }
-    """))
+    // A clickable Box is a container too. CLAUDE.md 7.4 named Card, Surface and Row only; this
+    // was a negative test until the scope decision of 2026-10-13 (see DECISIONS).
+    fun testClickableBoxWithTwoIconButtons() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:21: Warning: [O-07] Possible missing custom actions: clickable Box holds 2 clickable children but offers no customActions, so screen readers announce one element with only its own action [ComposeMissingCustomActions]
+                    Box(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
+                    ~~~
+0 errors, 1 warning
+            """,
+            screen("""
+                @Composable fun Screen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit) {
+                    Box(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
+                        IconButton(onClick = onFavorite) { Text("Favorite") }
+                        IconButton(onClick = onShare) { Text("Share") }
+                    }
+                }
+            """),
+        )
+    }
+
+    fun testClickableColumnWithTwoIconButtons() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:21: Warning: [O-07] Possible missing custom actions: clickable Column holds 2 clickable children but offers no customActions, so screen readers announce one element with only its own action [ComposeMissingCustomActions]
+                    Column(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
+                    ~~~~~~
+0 errors, 1 warning
+            """,
+            screen("""
+                @Composable fun Screen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit) {
+                    Column(modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }) {
+                        IconButton(onClick = onFavorite) { Text("Favorite") }
+                        IconButton(onClick = onShare) { Text("Share") }
+                    }
+                }
+            """),
+        )
+    }
 
     // The nested clickable Row owns the two buttons, so only the Row is reported: the Card sees
     // one clickable child, the Row itself, and stops there.
@@ -189,4 +220,31 @@ src/test/pkg/Screen.kt:22: Warning: [O-07] Possible missing custom actions: clic
             """),
         )
     }
+
+    fun testNonClickableBoxIsClean() = expectClean(screen("""
+        @Composable fun Screen(onFavorite: () -> Unit, onShare: () -> Unit) {
+            Box {
+                IconButton(onClick = onFavorite) { Text("Favorite") }
+                IconButton(onClick = onShare) { Text("Share") }
+            }
+        }
+    """))
+
+    fun testClickableColumnWithCustomActionsIsClean() = expectClean(screen("""
+        @Composable fun Screen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit) {
+            Column(
+                modifier = Modifier
+                    .clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }
+                    .semantics {
+                        customActions = listOf(
+                            CustomAccessibilityAction("Favorite") { onFavorite(); true },
+                            CustomAccessibilityAction("Share") { onShare(); true },
+                        )
+                    }
+            ) {
+                IconButton(onClick = onFavorite) { Text("Favorite") }
+                IconButton(onClick = onShare) { Text("Share") }
+            }
+        }
+    """))
 }

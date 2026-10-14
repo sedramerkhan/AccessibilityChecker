@@ -1,6 +1,7 @@
 package org.svu.sedra.a11ylint.sample.defects.o07
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Card
@@ -41,6 +42,20 @@ fun O07BadScreen(onOpen: () -> Unit, onFavorite: () -> Unit, onShare: () -> Unit
             modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }, // EXPECT: ComposeHardcodedA11yText
         ) {
             Text("Running shoes")
+            IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable
+                Icon(icon, contentDescription = "Add to favourites") // EXPECT: ComposeHardcodedA11yText
+            }
+            IconButton(onClick = onShare) { // EXPECT: ComposeNestedClickable
+                Icon(icon, contentDescription = "Share") // EXPECT: ComposeHardcodedA11yText
+            }
+        }
+
+        // And on a clickable Box. Which layout was used does not change the defect, which is
+        // why Box and Column were added to the container list on 2026-10-13 (see DECISIONS).
+        Box( // EXPECT: ComposeMissingCustomActions
+            modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onOpen() }, // EXPECT: ComposeHardcodedA11yText
+        ) {
+            Text("Winter jacket")
             IconButton(onClick = onFavorite) { // EXPECT: ComposeNestedClickable
                 Icon(icon, contentDescription = "Add to favourites") // EXPECT: ComposeHardcodedA11yText
             }

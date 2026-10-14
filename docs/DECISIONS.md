@@ -867,3 +867,113 @@ itself worth reporting rather than quietly folding into the precision figure.
 deliberately and reviewed by experts, in Google's own Compose sample, leaves a control without an
 accessible name, and the comment above it shows the author believed otherwise. That is the gap
 between intent and semantics that the framework exists to surface.
+
+### Scope: a rule follows the defect, not CLAUDE.md's example list
+
+Three open questions had the same shape: CLAUDE.md section 7 names a narrower set of APIs than
+the defect actually covers, because the taxonomy wording was drafted from the WCAG mapping before
+any detector existed. O-06 named only `clickable`, O-07 only `Card`/`Surface`/`Row`, U-07 only
+`onClickLabel`. Sedra decided on 2026-10-13 to widen all three on one principle:
+
+> Where the same defect provably exists on a sibling API with the same parameter, the rule
+> follows the defect. Each widening is recorded as a taxonomy wording change.
+
+The reason is that the alternative produces false negatives with no defensible explanation. A
+reader who sees the tool report one line and stay silent on the identical line beside it will
+not accept "the taxonomy listed only the first one" as an answer, and two of the three cases are
+**internal** inconsistencies: O-02 already treats `Box` and `Column` as containers while O-07
+did not, and U-07 read `onClickLabel` while missing `semantics { onClick(label = ...) }`, which
+P-01's investigation on 2026-10-13 showed is the same property by the same code path.
+
+The cost is a possible fall in precision, which is measurable rather than hypothetical: the
+development apps are re-run after the three changes and the delta is recorded in
+DEV_APP_RESULTS, which turns a scope judgement into an evidence-based decision.
+
+### O-06 widened to every click and toggle modifier that takes `enabled`
+
+All five take the same parameter, checked against Compose 1.10.4: `clickable` and
+`combinedClickable` (`Clickable.kt:327`), `toggleable` and `triStateToggleable`
+(`Toggleable.kt:71, 378`), `selectable` (`Selectable.kt:67`). Each declares `enabled: Boolean =
+true`, and in each the defect is identical: the handler guards on an enabled state that the
+modifier is never told about, so the element keeps its interactive state in the semantics tree.
+
+**The handler's name differs, so the detector maps it.** `toggleable` calls its handler
+`onValueChange`; the other four call it `onClick`. `HANDLERS` holds that mapping and doubles as
+the list of matched calls, so `getApplicableMethodNames` is derived from it and the two cannot
+drift apart.
+
+**The message names the modifier that was found** rather than saying "clickable" for all five,
+so a `toggleable` report reads as being about `toggleable`. The existing tests were updated for
+the reworded message; no behaviour of the `clickable` case changed.
+
+**Not widened to `onLongClick` or `onDoubleClick`.** `combinedClickable` takes those as well, and
+a guard could be written in either, but `enabled` governs the whole modifier, so the primary
+handler is where the defect is. Reading all three would report the same modifier up to three
+times.
+
+**Verified.** 8 positive and 8 negative tests, and the sample app check moved from 194 to 196
+expected and reported, 0 missing, 0 unexpected, on the first run. The new sample rows use
+`toggleable` and `selectable`, which R-01, O-02 and O-04 do not match, so no other rule's
+markers moved.
+
+### U-07 widened to the action labels, closing a hole P-01 exposed
+
+CLAUDE.md 7.4 names `onClickLabel`. Two more spellings of the same text are now read.
+
+**`onLongClickLabel`**, which `combinedClickable` takes beside `onClickLabel`
+(`Clickable.kt:331`). The same text, heard only by a screen reader, with the same localization
+defect.
+
+**`semantics { onClick(label = ...) }` and `onLongClick(label = ...)`.** This is the one that
+mattered. P-01's investigation on 2026-10-13 established that `Modifier.clickable(onClickLabel =
+...)` compiles to exactly this call (`Clickable.kt:1597` calls `onClick(label = onClickLabel)`),
+so the two are the same semantics property written two ways. U-07 read one and missed the other.
+That is the same incoherence the P-01 decision refused to accept on the same day, sitting inside
+a different rule, and JetNews writes its labels in precisely the spelling U-07 could not see.
+
+**The message names the action.** A report reads `onClick label is set to the hardcoded string
+"Bookmark"`, so the two spellings are distinguishable in a report without opening the file.
+
+**Not read: `onDoubleClick` and the other semantics actions.** They take no label in the
+`combinedClickable` signature, and the semantics actions that do take one (`onLongClick`,
+`onClick`) are the two covered here. Others, such as `dismiss` or `expand`, are rarely given a
+label in application code; they can be added if the evaluation corpus shows otherwise.
+
+**Verified.** 8 positive and 6 negative tests, and the sample app check moved from 196 to 200
+expected and reported, 0 missing, 0 unexpected, on the first run. Both sample screens gained the
+new spellings, the bad one with literals and the good one with `stringResource`.
+
+**A side finding worth recording.** Measuring the Lint XML report to write the documentation
+showed U-07 now reports **110 lines** of the sample app, not the 94 recorded when the rule was
+built. The corpus grew with every rule added after it, and 4 of the difference is today's change.
+The 94 figure in the Milestone 4 notes is correct as a statement about that day and has been left
+as it is; RULES.md now carries the current measured number instead.
+
+### O-07 widened to clickable `Box` and `Column`
+
+CLAUDE.md 7.4 names `Card`, `Surface` and `Row`. `Box` and `Column` are now containers as well,
+so `CONTAINERS` is the Material set plus `Clickables.layoutContainers`, the same set O-02 and
+P-03 already use. One list, one meaning of the word across the rules.
+
+**The internal inconsistency is what decided it.** O-02 reported a missing `onClickLabel` on a
+clickable `Box`, while O-07 ignored the same `Box` holding two buttons. Two rules in one codebase
+disagreeing about what a container is cannot be explained to a reader, and the defect plainly
+does not depend on which layout the developer reached for: a clickable `Box` with a favourite and
+a share button inside announces exactly like the `Row` version.
+
+**This was the widening with real precision risk**, because a clickable `Box` with two clickable
+children is a common shape in real code. Two things reduce it. The rule still needs **two or
+more** clickable descendants and no `customActions`, which is specific. And only the nearest
+clickable container is reported, so nesting does not multiply warnings.
+
+**One negative test became a positive one.** `testClickableBoxIsClean` asserted precisely the
+behaviour this change reverses, so it was rewritten as `testClickableBoxWithTwoIconButtons`, with
+a comment saying why, rather than deleted. A `Column` case was added beside it, and two new
+negatives cover a non-clickable `Box` and a `Column` that does offer `customActions`.
+
+**Verified.** 7 positive and 5 negative tests. On the existing sample corpus the change reported
+**nothing new**, which is itself worth recording: no screen built over four milestones had a
+clickable `Box` or `Column` with two clickable children, so the widening is behaviour-preserving
+there and the new sample row was written for it. The check moved from 200 to 206 expected and
+reported, 0 missing, 0 unexpected, the six being the new row's own markers across O-07, O-03 and
+U-07.

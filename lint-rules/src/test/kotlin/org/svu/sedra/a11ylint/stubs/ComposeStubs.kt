@@ -180,6 +180,7 @@ private val semanticsStubs = kotlin(
     fun SemanticsPropertyReceiver.heading() {}
     fun SemanticsPropertyReceiver.error(description: String) {}
     fun SemanticsPropertyReceiver.onClick(label: String? = null, action: (() -> Boolean)?) {}
+    fun SemanticsPropertyReceiver.onLongClick(label: String? = null, action: (() -> Boolean)?) {}
     """,
 ).indented()
 
@@ -510,6 +511,13 @@ private val selectionStubs = kotlin(
 
     fun Modifier.selectable(
         selected: Boolean,
+        enabled: Boolean = true,
+        role: Role? = null,
+        onClick: () -> Unit,
+    ): Modifier = this
+
+    fun Modifier.triStateToggleable(
+        state: androidx.compose.ui.state.ToggleableState,
         enabled: Boolean = true,
         role: Role? = null,
         onClick: () -> Unit,

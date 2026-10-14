@@ -1,6 +1,7 @@
 package org.svu.sedra.a11ylint.sample.defects.u07
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
@@ -13,6 +14,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -50,6 +53,29 @@ fun U07BadScreen(onOpen: () -> Unit, onShare: () -> Unit) {
             },
         ) {
             Text("Volume")
+        }
+
+        // The action labels are the same property that onClickLabel sets, written the other way.
+        Row(
+            modifier = Modifier.semantics {
+                onClick(label = "Bookmark", action = null) // EXPECT: ComposeHardcodedA11yText
+                onLongClick(label = "Show options", action = null) // EXPECT: ComposeHardcodedA11yText
+            },
+        ) {
+            Text("Compose accessibility")
+        }
+
+        // combinedClickable carries a long click label beside the click label.
+        Row(
+            modifier = Modifier.combinedClickable(
+                onClickLabel = "Open details", // EXPECT: ComposeHardcodedA11yText
+                role = Role.Button,
+                onLongClickLabel = "Show options", // EXPECT: ComposeHardcodedA11yText
+                onLongClick = onShare,
+                onClick = onOpen,
+            ),
+        ) {
+            Text("Running shoes")
         }
     }
 }

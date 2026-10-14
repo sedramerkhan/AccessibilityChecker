@@ -78,7 +78,41 @@ rule that fires somewhere it should not are both caught:
 python3 scripts/check_sample_expectations.py   # on Windows: py scripts/check_sample_expectations.py
 ```
 
-Current state: 26 issue IDs, 194 expected, 194 reported, 0 missing, 0 unexpected.
+Current state: 26 issue IDs, 206 expected, 206 reported, 0 missing, 0 unexpected.
+
+### Exporting the findings as JSON
+
+Phase 3 and the evaluation read the findings as JSON rather than parsing the Lint XML. The format
+is fixed by CLAUDE.md section 8 and must stay stable:
+
+```bash
+py scripts/lint_xml_to_json.py --out findings.json          # the sample app
+```
+
+```json
+{
+  "taxonomyId": "P-01",
+  "issueId": "ComposeMissingContentDescription",
+  "severity": "Error",
+  "file": "sample-app/src/main/java/.../P01BadScreen.kt",
+  "line": 42,
+  "column": 9,
+  "message": "[P-01] Interactive Icon has no contentDescription, ...",
+  "detection": "STATIC"
+}
+```
+
+`taxonomyId` is read from the `[P-01]` prefix every message carries, and `detection` from
+`Taxonomy.kt`, so the export cannot drift from the taxonomy. Built-in Lint checks in the same
+report are skipped. Several reports can be converted at once, which is what a corpus run needs,
+and `--root` controls what the paths are relative to:
+
+```bash
+py scripts/lint_xml_to_json.py --root ../corpus --out corpus.json     ../corpus/app-a/app/build/reports/lint-results-debug.xml     ../corpus/app-b/app/build/reports/lint-results-debug.xml
+```
+
+Findings are sorted by file, line and column, so two runs of the same code give byte-identical
+output and a diff shows only real changes.
 
 ## Using the rules in another project
 

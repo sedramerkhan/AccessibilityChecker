@@ -9,7 +9,7 @@
 | 2 Critical rules (7) | Done, including the development app run (2026-10-06). |
 | 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable. |
 | 4 Minor rules (8) | Done (2026-10-08). |
-| 5 Packaging and reporting | Started: publishing to mavenLocal works and is verified. Scripts and the final docs pass are open. |
+| 5 Packaging and reporting | In progress: publishing to mavenLocal and the JSON export are done and verified. `measure_lint_time.sh` and the final docs pass are open. |
 
 **Every rule in the taxonomy is now implemented.** 26 detectors, which is all 27 minus R-03,
 dropped as not applicable. Each is registered in `Taxonomy.kt`, documented in `RULES.md` and
@@ -27,9 +27,11 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
 
 ### What is left, in order
 
-1. **Milestone 5**, the only milestone left: `scripts/measure_lint_time.sh`, the XML to JSON converter in the format
-   Phase 3 expects, and a final pass over `RULES.md`. The publishing part of this milestone is
-   already done and verified.
+1. **Milestone 5**, the only milestone left. Done: publishing to `mavenLocal()`, and
+   `scripts/lint_xml_to_json.py`, which exports findings in the format Phase 3 expects (verified
+   on the sample app and both development apps, 2026-10-14). Open: `scripts/measure_lint_time.sh`
+   and a final pass over `RULES.md`, whose sections are currently in build order rather than
+   taxonomy order.
 
 ### Open questions for Sedra
 

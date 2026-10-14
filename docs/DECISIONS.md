@@ -977,3 +977,34 @@ clickable `Box` or `Column` with two clickable children, so the widening is beha
 there and the new sample row was written for it. The check moved from 200 to 206 expected and
 reported, 0 missing, 0 unexpected, the six being the new row's own markers across O-07, O-03 and
 U-07.
+
+## 2026-10-14
+
+### The JSON export reads the taxonomy rather than carrying its own copy
+
+`scripts/lint_xml_to_json.py` converts a Lint XML report into the JSON that CLAUDE.md section 8
+fixes and that Phase 3 reads. Three choices in it are worth recording.
+
+**`taxonomyId` comes from the message, not from a table.** Every rule's message starts with the
+`[P-01]` prefix that CLAUDE.md 5.2 requires precisely so Phase 3 can parse it, so the converter
+uses the same prefix. That also gives the filter for free: a finding without the prefix is a
+built-in Lint check and is skipped, so a report containing `UnusedResources` or `RedundantLabel`
+converts cleanly without a list of our issue IDs to maintain.
+
+**`detection` is read from `Taxonomy.kt` at run time.** It is the one field the Lint report does
+not carry. CLAUDE.md 5.1 makes `Taxonomy.kt` the single source of truth for rule metadata, so
+the converter parses it rather than holding a second copy that could drift. Each
+`TaxonomyEntry` names its detector's constant rather than spelling the ID out, so the ID is
+derived from the detector class name: `P01MissingContentDescriptionDetector` gives `P-01`. A
+taxonomy ID in a report that the taxonomy does not have is an error (exit 1), which is what would
+show if a rule were added without an entry.
+
+**Output is sorted by file, line and column.** Lint's order is not guaranteed to be stable
+between runs, and an unstable order would make a diff of two corpus runs unreadable. Sorting
+means the same code gives byte-identical output, so a diff shows only what really changed, which
+the evaluation needs when a rule is adjusted.
+
+**Verified** against three inputs: the sample app (206 findings, matching the expectation check
+exactly), both development apps converted together (40 findings, 17 JetNews and 23 Jetchat,
+matching the counts measured independently from the XML), and a missing report (exit 2). All 26
+taxonomy entries parse, 16 `STATIC` and 10 `STATIC_LLM`.

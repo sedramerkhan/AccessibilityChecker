@@ -42,7 +42,12 @@ android {
 }
 
 dependencies {
-    lintChecks(project(":lint-rules"))
+    // `-Pa11ylint.off=true` builds without the custom rules, which is how
+    // scripts/measure_lint_time.sh measures what they add to a Lint run. Normal builds, the IDE
+    // and every check in CI leave the property unset and get the rules.
+    if (!providers.gradleProperty("a11ylint.off").isPresent) {
+        lintChecks(project(":lint-rules"))
+    }
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

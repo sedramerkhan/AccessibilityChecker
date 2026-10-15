@@ -1008,3 +1008,48 @@ the evaluation needs when a rule is adjusted.
 exactly), both development apps converted together (40 findings, 17 JetNews and 23 Jetchat,
 matching the counts measured independently from the XML), and a missing report (exit 2). All 26
 taxonomy entries parse, 16 `STATIC` and 10 `STATIC_LLM`.
+
+### Measuring the build overhead, and why this machine cannot give the number
+
+`scripts/measure_lint_time.sh` implements Plan section 6.5: run `:sample-app:lintDebug
+--rerun-tasks` several times with the rules and several times without, and report what they add.
+Four choices in it, and one finding.
+
+**"Without the rules" removes the dependency, not the issues.** `sample-app/build.gradle.kts`
+applies `lintChecks(project(":lint-rules"))` unless `-Pa11ylint.off=true` is set. Disabling the
+issues instead would still load the jar and construct the detectors, so the figure would be too
+small. Verified: with the property set, the sample app reports 0 of our findings. Normal builds
+and the IDE leave it unset.
+
+**The runs alternate** with, without, with, without, rather than doing all the "with" runs first.
+A machine that warms up or throttles during the measurement then biases both sides equally.
+
+**`--rerun-tasks` is required.** Without it Gradle reports the task up to date and times almost
+nothing.
+
+**The summary leads with a trimmed mean**, dropping the fastest and slowest run of each side,
+with median, mean, min and max beside it and every repetition printed above. The script warns
+when the spread of the runs is wider than the difference being measured.
+
+**The finding: this machine cannot produce a figure worth quoting.** Three sessions were run,
+and the warning fired in every one:
+
+| Session | Added, mean | Added, median | Spread of the "with" runs |
+|---|---|---|---|
+| 3 repetitions | 20.7 s | 9.3 s | 26.8 s |
+| 7 repetitions | 5.2 s | 12.0 s | 66.9 s |
+| 5 repetitions | 9.0 s | 0.2 s | 48.9 s |
+
+The mean and the median disagree by more than the quantity being measured, and single runs swing
+from 38 s to 105 s for identical work. The cause is the machine, not the rules: the same
+behaviour was diagnosed on the unit test suite, where one test absorbed a 16 hour overnight
+suspend while the other 299 took 36 minutes (see PROGRESS, 2026-10-13). The five clean
+repetitions of the 7-run session, before the disturbance, averaged about **14 s added**, and that
+is the best estimate available, but it is picked from the data after the fact and must not be
+quoted as a measurement.
+
+**What the thesis needs:** one run of `scripts/measure_lint_time.sh 7` on an otherwise idle
+machine, with Android Studio and anything syncing closed, quoting the trimmed mean and the
+number of repetitions. The per-run table should go in the appendix so the variance is visible
+rather than hidden behind an average. Reporting a spread rather than a single mean is better
+methodology in any case; here it is forced, which is worth a sentence of its own.

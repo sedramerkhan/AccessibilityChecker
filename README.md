@@ -114,6 +114,21 @@ py scripts/lint_xml_to_json.py --root ../corpus --out corpus.json     ../corpus/
 Findings are sorted by file, line and column, so two runs of the same code give byte-identical
 output and a diff shows only real changes.
 
+### Measuring what the rules add to a build
+
+```bash
+scripts/measure_lint_time.sh 7      # 7 runs with the rules, 7 without
+```
+
+Each run is `:sample-app:lintDebug --rerun-tasks`. "Without" means the `lintChecks` dependency is
+not applied at all (`-Pa11ylint.off=true`), so the figure covers loading the rules as well as
+running them. Runs alternate between the two, and the summary leads with a **trimmed mean**, the
+fastest and slowest run of each side dropped.
+
+Run it on an otherwise idle machine. The script warns when the spread between runs is wider than
+the difference it is measuring, which is what happens on a machine that is also doing something
+else, and the number is then not worth quoting. See `docs/DECISIONS.md`, 2026-10-14.
+
 ## Using the rules in another project
 
 The rules are published as an AAR, so no source copying is needed:

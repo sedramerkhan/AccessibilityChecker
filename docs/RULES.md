@@ -1,6 +1,12 @@
 # Rules
 
-Catalog of the Compose accessibility rules. One section per rule. Every message starts with the taxonomy ID in brackets, for example `[P-01]`.
+Catalog of the Compose accessibility rules. One section per rule, in taxonomy order (P, O, U, R),
+each with what it flags, what it ignores, a bad and a good example, its known limitations, and
+its test and sample coverage. Every message starts with the taxonomy ID in brackets, for example
+`[P-01]`.
+
+26 rules are implemented. R-03 is listed and kept in place, with the evidence that the defect it
+describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 
 | ID | Issue ID | Severity | Detection | WCAG | Status |
 |---|---|---|---|---|---|
@@ -18,19 +24,85 @@ Catalog of the Compose accessibility rules. One section per rule. Every message 
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
-| U-06 | `ComposeInconsistentLabels` | Warning (Minor) | STATIC_LLM | 3.2.4 | Done |
-| U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
-| R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
-| R-05 | `ComposeMissingProgressRange` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
 | U-04 | `ComposeVagueButtonLabel` | Warning (Major) | STATIC_LLM | 2.4.6 | Done |
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
+| U-06 | `ComposeInconsistentLabels` | Warning (Minor) | STATIC_LLM | 3.2.4 | Done |
+| U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
 | R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
 | R-02 | `ComposeClearAndSetSemanticsLoss` | Warning (Major) | STATIC | 4.1.2 | Done |
 | R-03 | `ComposeMergeHidesInteractive` | — | — | 4.1.2 | **Not applicable** |
+| R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
+| R-05 | `ComposeMissingProgressRange` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | R-06 | `ComposeComposableWithoutSemantics` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
+
+---
+
+## P-01 · ComposeMissingContentDescription
+
+- **Taxonomy:** Perceivable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 1.1.1 Non-text Content.
+- **Detector:** `detectors/perceivable/P01MissingContentDescriptionDetector.kt`
+- **Message:** `[P-01] Interactive Icon has no contentDescription, so screen readers announce it without a name` (`Image` instead of `Icon` for images).
+- **Reported at:** the `contentDescription` argument.
+
+### What it flags
+
+An `Icon` (Material3 or Material) or `Image` (foundation) whose `contentDescription` is the literal `null` or `""`, when the icon or image is the only possible label of a clickable element. That is the case when either:
+
+1. its own `modifier` contains `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` or `selectable`, or
+2. the nearest clickable element around it in the same function has no other name. Clickable elements are the Material buttons (`Button`, `TextButton`, `OutlinedButton`, `ElevatedButton`, `FilledTonalButton`), icon buttons (`IconButton`, `IconToggleButton`, `FilledIconButton`, `FilledTonalIconButton`, `OutlinedIconButton`), floating action buttons, `Card`/`ElevatedCard`/`OutlinedCard`/`Surface` called with `onClick` or `onCheckedChange`, and any composable whose `modifier` has one of the modifiers above. The element has no other name when its content has no `Text` with text, no other labelled `Icon` or `Image`, and nothing sets `contentDescription` in semantics (on the element or inside it).
+
+### What it ignores
+
+- An Icon with `null` inside a button that also has a `Text` (the icon is decorative, the button already has a name).
+- An Icon with `null` next to another Icon that has a label.
+- Non-interactive images with `null` or `""` (decorative images are allowed).
+- `contentDescription = stringResource(...)`, a non-empty literal, or any other expression, including a variable that may be null.
+- A label set with `Modifier.semantics { contentDescription = ... }` on the icon or on the clickable parent.
+
+### Example
+
+Bad:
+
+```kotlin
+IconButton(onClick = onDelete) {
+    Icon(Icons.Filled.Delete, contentDescription = null)
+}
+```
+
+Good:
+
+```kotlin
+IconButton(onClick = onDelete) {
+    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_draft))
+}
+
+Button(onClick = onDelete) {
+    Icon(Icons.Filled.Delete, contentDescription = null) // decorative
+    Text(stringResource(R.string.delete))
+}
+```
+
+### Overlap with other rules
+
+O-05 (`ComposeEmptyClickable`) covers clickables with no readable content at all. When the clickable contains an unlabelled Icon or Image, P-01 reports the icon and O-05 must not report the clickable (see DECISIONS, 2026-10-03).
+
+### Known limitations
+
+- A `contentDescription` held in a variable is never reported, even when it may be null.
+- The clickable parent must be in the same function. An Icon in a separate composable called from an `IconButton` is not seen.
+- A Text or label inside another composable called from the clickable's content is not seen, so the rule cannot know that the clickable already has a name. (This can cause a false positive.)
+- A positional `onClick` on `Card`/`Surface` (`Card(onAction) { }`) is not recognised on the compiled Material3 library. See LIMITATIONS.
+- Custom icon wrappers (for example a project's own `AppIcon(...)` composable) are not recognised.
+
+### Tests and sample
+
+- `P01MissingContentDescriptionDetectorTest`: 7 positive tests (8 reported icons) and 6 negative tests. One of them, `testActionLabelOnTheParentIsNotAName`, pins the decision that a parent's `semantics { onClick(label = ...) }` is not a name (see DECISIONS, 2026-10-13).
+- Sample: `sample-app/.../defects/p01/P01BadScreen.kt` (6 `// EXPECT` lines) and `P01GoodScreen.kt` (no reports).
 
 ---
 
@@ -52,6 +124,26 @@ A non-interactive Material `Icon` or foundation `Image` with a non-empty literal
 - Resource, variable, or computed descriptions.
 - Different descriptions and visible text.
 - Text emitted by another composable function.
+
+### Example
+
+Bad:
+
+```kotlin
+Icon(painter = icon, contentDescription = "Delete")
+Text("Delete")
+```
+
+Good:
+
+```kotlin
+Icon(painter = icon, contentDescription = "Trash can illustration")
+Text("Delete draft")
+
+// Or, when the icon adds nothing the text does not already say:
+Icon(painter = icon, contentDescription = null)
+Text("Delete")
+```
 
 ### Known limitations
 
@@ -82,6 +174,29 @@ A `Text` whose literal `color = Color(0x...)` has a WCAG contrast ratio below 4.
 - A container that is not the Text's direct parent (no multi-level lookup).
 - Text with no background found at all (own modifier, and direct parent, both without a literal background).
 
+### Example
+
+Bad:
+
+```kotlin
+Surface(color = Color(0xFFFFFFFF)) {
+    Text("Delete draft", color = Color(0xFFB0B0B0))   // about 2.2:1
+}
+```
+
+Good:
+
+```kotlin
+Surface(color = Color(0xFFFFFFFF)) {
+    Text("Delete draft", color = Color(0xFF000000))   // 21:1
+}
+
+// Theme colors are assumed already checked, so they are never reported:
+Surface(color = MaterialTheme.colorScheme.surface) {
+    Text("Delete draft", color = MaterialTheme.colorScheme.onSurface)
+}
+```
+
 ### Known limitations
 
 Only one level of container is checked. A background set two levels up, or a background that comes from a `Modifier` passed in as a function parameter, is not seen (see `docs/LIMITATIONS.md`).
@@ -111,6 +226,21 @@ A `fontSize` (on `Text` directly, or in a `TextStyle(...)`/`.copy(...)` passed a
 - A Material typography style with no `fontSize` override.
 - Any other expression as `fontSize` (its value is unknown, so it is not assumed to be a problem).
 
+### Example
+
+Bad:
+
+```kotlin
+Text("Caption", fontSize = with(LocalDensity.current) { 16.dp.toSp() })
+```
+
+Good:
+
+```kotlin
+Text("Caption", fontSize = 16.sp)
+Text("Caption", style = MaterialTheme.typography.bodyLarge)
+```
+
 ### Known limitations
 
 Only a `with(density) { ... }` block or a bare `.toSp()` call is recognised. A `.toSp()` call made another way (for example `density.run { ... }`, or inside a separate function that returns the converted size) is not seen.
@@ -119,6 +249,64 @@ Only a `with(density) { ... }` block or a bare `.toSp()` call is recognised. A `
 
 - `P04TextSizeInDpDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/p04/P04BadScreen.kt` and `P04GoodScreen.kt`.
+
+---
+
+## P-05 · ComposeTextOverImage
+
+- **Taxonomy:** Perceivable, Minor, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 1.4.3 Contrast (Minimum).
+- **Detector:** `detectors/perceivable/P05TextOverImageDetector.kt`
+- **Message:** `[P-05] Possible text over an image: this Text is drawn on top of an Image with no background or scrim, so its contrast depends on the picture`.
+
+### What it flags
+
+A `Box` whose content lambda holds an `Image` and then, later in source order, a `Text`. In a `Box` children are stacked in the order they are written, so such a Text is drawn over the picture. The first Text above the Image is reported, so one `Box` gives at most one warning.
+
+### What it ignores
+
+- A Text with its own `Modifier.background(...)`.
+- A layer with a `Modifier.background(...)` between the Image and the Text, which is the usual way to write a scrim.
+- A Text written **before** the Image, since the picture is then drawn on top of it.
+- Any layout that is not a `Box`, because only a `Box` overlays its children.
+- An `Icon`, as opposed to an `Image`. CLAUDE.md 7.4 names `Image`, and a `Box` holding an Icon and a Text is normally an icon-and-label button rather than text over a photo.
+
+### Example
+
+Bad:
+
+```kotlin
+Box {
+    Image(photo, contentDescription = null)
+    Text("Summer sale")          // drawn straight onto the picture
+}
+```
+
+Good:
+
+```kotlin
+Box {
+    Image(photo, contentDescription = null)
+    Box(modifier = Modifier.fillMaxSize().background(Color(0x99000000)))   // a scrim
+    Text("Summer sale")
+}
+
+// Or give the caption its own background:
+Box {
+    Image(photo, contentDescription = null)
+    Text("Summer sale", modifier = Modifier.background(Color(0xCC000000)))
+}
+```
+
+### Known limitations
+
+Whether the result is actually unreadable depends on the picture, which static analysis cannot know, so this is a candidate for Phase 3 rather than a certain defect. A scrim drawn some other way, for example with `drawBehind` or a gradient `Brush`, is not recognised.
+
+### Tests and sample
+
+- `P05TextOverImageDetectorTest`: 2 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/p05/P05BadScreen.kt` and `P05GoodScreen.kt`.
 
 ---
 
@@ -140,6 +328,27 @@ A `Text(text = s)` (or `Text(text = s.value)`) where `s` is a local declared wit
 - Text that already sets `liveRegion`.
 - A variable with no `mutableStateOf` in its initializer or delegate, or no assignment found at all in the function (a value coming from a ViewModel, for example).
 
+### Example
+
+Bad:
+
+```kotlin
+var status by remember { mutableStateOf("Loading") }
+LaunchedEffect(Unit) { status = "Ready" }
+Text(text = status)              // the change is never announced
+```
+
+Good:
+
+```kotlin
+var status by remember { mutableStateOf("Loading") }
+LaunchedEffect(Unit) { status = "Ready" }
+Text(
+    text = status,
+    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+)
+```
+
 ### Known limitations
 
 Only a direct `Text(text = s)`/`Text(text = s.value)` read and assignments in the same function are seen. See `docs/LIMITATIONS.md`.
@@ -148,6 +357,119 @@ Only a direct `Text(text = s)`/`Text(text = s.value)` read and assignments in th
 
 - `P06MissingLiveRegionDetectorTest`: 4 positive and 6 negative cases.
 - Sample: `sample-app/.../defects/p06/P06BadScreen.kt` and `P06GoodScreen.kt`.
+
+---
+
+## P-07 · ComposeMissingPaneTitle
+
+- **Taxonomy:** Perceivable, Minor, STATIC.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships.
+- **Detector:** `detectors/perceivable/P07MissingPaneTitleDetector.kt`
+- **Message:** `[P-07] <Popup|Dialog> has no paneTitle, so screen readers do not announce what opened`.
+
+### What it flags
+
+A custom overlay built on `androidx.compose.ui.window.Popup` or `Dialog` where neither the overlay's own modifier nor anything in its content sets `paneTitle` in semantics.
+
+### What it ignores
+
+- The Material overlays. `AlertDialog`, `ModalBottomSheet` and the modal drawers all set a `paneTitle` of their own, verified in the Material3 1.4.0 sources (see `docs/DECISIONS.md`), so they are not in the rule's list at all.
+- An overlay that sets `paneTitle` anywhere inside, including on a nested child.
+
+### Example
+
+Bad:
+
+```kotlin
+Popup(onDismissRequest = onDismiss) {
+    Column {
+        Text("Sort by date")
+        Text("Sort by name")
+    }
+}
+```
+
+Good:
+
+```kotlin
+Popup(onDismissRequest = onDismiss) {
+    Column(modifier = Modifier.semantics { paneTitle = stringResource(R.string.sort_options) }) {
+        Text("Sort by date")
+        Text("Sort by name")
+    }
+}
+```
+
+### Known limitations
+
+Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a full-screen `Box` shown with `AnimatedVisibility`, which is not detected: that shape cannot be told apart from an ordinary animated `Box` without guessing, and P-07 is a STATIC rule.
+
+### Tests and sample
+
+- `P07MissingPaneTitleDetectorTest`: 2 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/p07/P07BadScreen.kt` and `P07GoodScreen.kt`.
+
+---
+
+## O-01 · ComposeSmallTouchTarget
+
+- **Taxonomy:** Operable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 2.5.8 Target Size (Minimum). The threshold is the Android guideline of 48dp, which is stricter than the 24 CSS pixels of WCAG.
+- **Detector:** `detectors/operable/O01SmallTouchTargetDetector.kt`
+- **Message:** `[O-01] Clickable element is only 20dp wide and 20dp high, smaller than the 48dp minimum touch target` (only the axes below 48dp are named).
+- **Reported at:** the size modifier call that makes the target too small (for example `size(20.dp)`).
+
+### What it flags
+
+A modifier chain with `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` or `selectable` whose clickable area is narrower or lower than 48dp, measured from literal sizes:
+
+- A size set before the clickable modifier (`Modifier.size(20.dp).clickable { }`) is the clickable size, minus any padding between the two (`Modifier.size(48.dp).padding(8.dp).clickable { }` is 32dp).
+- Without one, the first size set after it (`Modifier.clickable { }.size(32.dp)`) is used, plus any padding between the two.
+- Sizes are read from `size`, `width`, `height`, `requiredSize`, `requiredWidth` and `requiredHeight`. Paddings from every `padding` overload and `absolutePadding`.
+- A modifier chain stored in a local `val` of the same function is followed.
+
+### What it ignores
+
+- Chains that contain `minimumInteractiveComponentSize()` anywhere.
+- Chains passed to Material components that enforce 48dp themselves: buttons, icon buttons, FABs, and `Card`/`Surface` with `onClick`.
+- Sizes or paddings that are not literals, and axes set by `fillMaxWidth`, `widthIn`, `sizeIn`, `defaultMinSize`, `weight`, `aspectRatio` and similar. Such an axis is unknown and never reported.
+- Elements without a click or toggle modifier.
+
+### Example
+
+Bad:
+
+```kotlin
+Icon(
+    painter = closeIcon,
+    contentDescription = "Close",
+    modifier = Modifier.size(24.dp).clickable { onClose() },
+)
+```
+
+Good:
+
+```kotlin
+IconButton(onClick = onClose) {
+    Icon(closeIcon, contentDescription = "Close", modifier = Modifier.size(24.dp))
+}
+
+Box(Modifier.clickable { onClose() }.padding(12.dp).size(24.dp)) { ... } // 48dp target
+```
+
+### Known limitations
+
+- The size of the parent and the layout constraints are not known. A small element inside a parent that stretches it (for example `Row` with `fillMaxHeight` children) may be reported.
+- A modifier passed in as a parameter is not followed (see LIMITATIONS).
+- `minimumInteractiveComponentSize()` anywhere in the chain suppresses the warning, even in an order where it would not help.
+- Only `dp` literals are read. `DpSize`, values from `dimensionResource` and constants are unknown.
+
+### Tests and sample
+
+- `O01SmallTouchTargetDetectorTest`: 5 positive tests and 5 negative tests (13 cases in the negative tests).
+- Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines) and `O01GoodScreen.kt` (no reports).
 
 ---
 
@@ -169,6 +491,29 @@ Only a direct `Text(text = s)`/`Text(text = s.value)` read and assignments in th
 - A literal or variable `onClickLabel`.
 - Material buttons, since they are never in the container list and already announce their own role.
 
+### Example
+
+Bad:
+
+```kotlin
+Row(modifier = Modifier.clickable(role = Role.Button) { onAction() }) {
+    Text("Open")
+}
+```
+
+Good:
+
+```kotlin
+Row(
+    modifier = Modifier.clickable(
+        onClickLabel = stringResource(R.string.open_details),
+        role = Role.Button,
+    ) { onAction() },
+) {
+    Text("Open")
+}
+```
+
 ### Known limitations
 
 CLAUDE.md names this rule as possibly noisy; it is reported as written, with no tuning ahead of the development app run.
@@ -177,6 +522,71 @@ CLAUDE.md names this rule as possibly noisy; it is reported as written, with no 
 
 - `O02MissingOnClickLabelDetectorTest`: 5 positive and 5 negative cases.
 - Sample: `sample-app/.../defects/o02/O02BadScreen.kt` and `O02GoodScreen.kt`.
+
+---
+
+## O-03 · ComposeNestedClickable
+
+- **Taxonomy:** Operable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 2.4.3 Focus Order, 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/operable/O03NestedClickableDetector.kt`
+- **Message:** `[O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element`
+- **Reported at:** the name of the inner element call (for example `IconButton`).
+
+### What it flags
+
+A clickable element inside the content lambda of another clickable element in the same function. Layout calls in between (`Row`, `Column`, a `Box` without a click modifier) are passed through. Clickable elements are the same as in P-01: click and toggle modifiers (`clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`), Material buttons, icon buttons and FABs, and `Card`/`ElevatedCard`/`OutlinedCard`/`Surface` called with `onClick` or `onCheckedChange`.
+
+Each inner clickable is reported once, against its nearest clickable ancestor. With three levels, the middle and the inner element are both reported.
+
+A Material selection control (`Checkbox`, `TriStateCheckbox`, `Switch`, `RadioButton`) counts as a nested clickable when its callback is anything other than a `null` literal, because each one installs its own toggle modifier only in that case. A control is only ever the inner element, since it takes no content lambda. The message differs for this case, because the defect is two touch targets for one choice rather than a focus order problem.
+
+### What it ignores
+
+- Sibling clickables.
+- Clickables inside non-clickable containers (`Card` or `Surface` without `onClick`, a list, a plain `Row`).
+- The content of a Material button (`Icon` and `Text` are not clickable).
+- Clickables inside a separate composable called from the content (not followed in Phase 2).
+- A `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` whose callback is a `null` literal: that is the documented way to let a surrounding toggleable row own the interaction (see DECISIONS).
+- Selection controls that are not inside another clickable element at all.
+
+### Example
+
+Bad:
+
+```kotlin
+Card(onClick = onOpen) {
+    Text(article.title)
+    IconButton(onClick = onFavorite) {
+        Icon(Icons.Filled.Favorite, contentDescription = "Favorite")
+    }
+}
+```
+
+Good:
+
+```kotlin
+Card(
+    onClick = onOpen,
+    modifier = Modifier.semantics {
+        customActions = listOf(CustomAccessibilityAction("Favorite") { onFavorite(); true })
+    },
+) {
+    Text(article.title)
+    FavoriteIcon() // not clickable on its own
+}
+```
+
+### Known limitations
+
+- Clickables inside another composable called from the content are not seen.
+- Common card designs (a clickable card with a favourite or bookmark button) are reported. Whether they are true defects depends on how TalkBack groups them, so precision must be measured on the development apps.
+
+### Tests and sample
+
+- `O03NestedClickableDetectorTest`: 9 positive tests (12 reports) and 9 negative tests. Four of each cover the selection controls, including the `null` callback that must stay clean.
+- Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (5 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports). The last pair is a toggleable row holding a `Checkbox`, interactive in the bad screen and `onCheckedChange = null` in the good one.
 
 ---
 
@@ -197,6 +607,31 @@ A `Box`, `Row` or `Column` with `clickable` or `combinedClickable`, no role (no 
 - Containers with a role, on the click modifier or in semantics.
 - Rich content (several Texts, or no Text at all).
 - Anything that is not a `Box`, `Row` or `Column`, including `Card`, `Surface` and Material buttons.
+
+### Example
+
+Bad:
+
+```kotlin
+Row(modifier = Modifier.clickable(onClickLabel = "Buy now") { onAction() }) {
+    Text("Buy now")              // a button written as a Row
+}
+```
+
+Good:
+
+```kotlin
+Button(onClick = onAction) {
+    Text("Buy now")
+}
+
+// Or keep the layout and say what it is:
+Row(
+    modifier = Modifier.clickable(onClickLabel = "Buy now", role = Role.Button) { onAction() },
+) {
+    Text("Buy now")
+}
+```
 
 ### Known limitations
 
@@ -230,6 +665,33 @@ A clickable element (the same definition P-01 and O-03 use) whose content holds 
 - A clickable element that **is itself** such a composable, for the same reason. The rule reads the layouts, the Material components and `Spacer`/`Canvas`; anything else may render its own name. Added after the development app run, where both of this rule's findings were of this shape.
 - `onClickLabel` is not a name: it describes the action, not the element, so it does not silence this rule.
 
+### Example
+
+Bad:
+
+```kotlin
+Box(
+    modifier = Modifier
+        .size(48.dp)
+        .clickable(onClickLabel = "Open", role = Role.Button) { onAction() },
+)                                 // nothing inside to announce
+```
+
+Good:
+
+```kotlin
+Box(
+    modifier = Modifier.clickable(onClickLabel = "Open", role = Role.Button) { onAction() },
+) {
+    Text("Open")
+}
+
+// A labelled icon names it just as well:
+Box(modifier = Modifier.clickable(role = Role.Button) { onAction() }) {
+    Icon(icon, contentDescription = stringResource(R.string.open_details))
+}
+```
+
 ### Known limitations
 
 Content in another composable function is not read, so such clickables are never reported (see `docs/LIMITATIONS.md`).
@@ -238,219 +700,6 @@ Content in another composable function is not read, so such clickables are never
 
 - `O05EmptyClickableDetectorTest`: 6 positive and 7 negative cases.
 - Sample: `sample-app/.../defects/o05/O05BadScreen.kt` and `O05GoodScreen.kt`.
-
----
-
-## U-03 · ComposeMissingSemanticError
-
-- **Taxonomy:** Understandable, Major, STATIC.
-- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
-- **WCAG 2.2:** 3.3.1 Error Identification.
-- **Detector:** `detectors/understandable/U03MissingSemanticErrorDetector.kt`
-- **Message:** `[U-03] <TextField> is in its error state but gives no message, so screen readers only announce the generic "Error" and the user is not told what is wrong`.
-
-### What it flags
-
-A `TextField` or `OutlinedTextField` (Material or Material3) whose `isError` argument is passed and is not the literal `false`, with neither a `supportingText` nor an `error(...)` in its own semantics.
-
-Material already sets an `error(...)` semantic for `isError = true`, but only with its generic default message ("Error"), confirmed in the Material3 1.4.0 and Material 1.10.4 sources (see `docs/DECISIONS.md`). So the defect is an error state with no message saying what is actually wrong, not a missing error semantic.
-
-### What it ignores
-
-- `isError = false`, or no `isError` argument at all.
-- A `supportingText` that is not the literal `null`.
-- A specific message set with `Modifier.semantics { error("...") }`.
-
-### Known limitations
-
-A message shown by a sibling composable (a `Text` under the field, rather than its `supportingText` slot) is not seen, so such a field is still reported.
-
-### Tests and sample
-
-- `U03MissingSemanticErrorDetectorTest`: 4 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/u03/U03BadScreen.kt` and `U03GoodScreen.kt`.
-
----
-
-## U-04 · ComposeVagueButtonLabel
-
-- **Taxonomy:** Understandable, Major, STATIC_LLM.
-- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
-- **WCAG 2.2:** 2.4.6 Headings and Labels.
-- **Detector:** `detectors/understandable/U04VagueButtonLabelDetector.kt`
-- **Message:** `[U-04] Possible vague button label: "<label>" does not say what the button does`.
-
-### What it flags
-
-A `Button`, `TextButton` or `OutlinedButton` (Material or Material3) holding exactly one Text whose text is a literal and, trimmed and lowercased, is one of:
-
-`ok`, `click`, `click here`, `here`, `tap`, `tap here`, `go`, `submit`, `done`, `more`, `yes`, `no`
-
-The list is `U04VagueButtonLabelDetector.VAGUE_LABELS`, taken from CLAUDE.md 7.3.
-
-### What it ignores
-
-- A descriptive label, including one that merely contains a vague word ("Read more about shipping").
-- A `contentDescription` set in the button's own semantics, which overrides the visible label for screen readers.
-- Text that is not a literal, for example `stringResource(...)` or a variable.
-- A button with no Text, or with more than one Text, since the label cannot be judged from one literal.
-
-### Known limitations
-
-A vague Text next to a labelled Icon is still reported, although the icon's `contentDescription` becomes part of the announced name. The icon is not read as part of the label.
-
-### Tests and sample
-
-- `U04VagueButtonLabelDetectorTest`: 4 positive and 6 negative cases.
-- Sample: `sample-app/.../defects/u04/U04BadScreen.kt` and `U04GoodScreen.kt`.
-
----
-
-## R-02 · ComposeClearAndSetSemanticsLoss
-
-- **Taxonomy:** Robust, Major, STATIC.
-- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
-- **WCAG 2.2:** 4.1.2 Name, Role, Value.
-- **Detector:** `detectors/robust/R02ClearAndSetSemanticsLossDetector.kt`
-- **Message:** `[R-02] clearAndSetSemantics is empty, so it hides <what was lost> from screen readers`, or `[R-02] clearAndSetSemantics does not put back <what was lost>, so screen readers lose it`.
-
-### What it flags
-
-A `Modifier.clearAndSetSemantics { }` that drops something its content provided without putting it back. The rule works out what the content had, then checks the block against it:
-
-- a **name**, when the content holds a Text with text, or a labelled Icon or Image, and the block sets no `contentDescription` or `text`;
-- a **role or state**, when the element or its content is clickable, toggleable, selectable, or holds a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton`, and the block sets no `role`, `stateDescription`, `toggleableState` or `selected`.
-
-An empty block loses whatever the content had, so it is reported whenever the content had either.
-
-### What it ignores
-
-- A block that puts back everything the content provided. Replacing several Texts with one sentence is the intended use of this modifier, as is adding a name to content that only had decorative icons.
-- An empty block over content with no name and no interaction, which is the documented way to hide a decorative subtree. This also covers content the rule cannot see into.
-
-### Known limitations
-
-This narrows CLAUDE.md 7.3, which asks for every empty block to be flagged. The development app run showed that reporting an empty block unconditionally flags a correct and deliberate pattern; see `docs/DEV_APP_RESULTS.md` for the case and `docs/DECISIONS.md` for the decision.
-
-### Tests and sample
-
-- `R02ClearAndSetSemanticsLossDetectorTest`: 4 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/r02/R02BadScreen.kt` and `R02GoodScreen.kt`.
-
----
-
-## R-03 · ComposeMergeHidesInteractive — not applicable, no detector
-
-**This rule was dropped after the check CLAUDE.md asks for.** The defect it describes cannot
-occur in Compose 1.10.4, so no detector exists and no taxonomy entry is registered.
-
-CLAUDE.md 7.3 defines R-03 as a merged container (`semantics(mergeDescendants = true)`) hiding
-its interactive children. In Compose, merging deliberately stops at any child that is itself a
-merging root, and every clickable element is one:
-
-- `SemanticsNode.mergeConfig` skips a child when `child.isMergingSemanticsOfDescendants`, with
-  the comment "because that indicates they're independently screen-reader-focusable".
-- `AbstractClickableNode` (the base of `clickable`, `combinedClickable`, `toggleable` and
-  `selectable`, and so of every Material button) has
-  `final override val shouldMergeDescendantSemantics: Boolean get() = true`.
-
-So a `Button`, `IconButton`, `Checkbox` or `Switch` inside a merged container stays
-independently focusable, and the rule would only ever report correct code.
-
-The modifier that really does remove interactive children is `clearAndSetSemantics`, which
-**R-02** covers. See `docs/DECISIONS.md` for the full evidence and the decision.
-
----
-
-## R-06 · ComposeComposableWithoutSemantics
-
-- **Taxonomy:** Robust, Major, STATIC_LLM.
-- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
-- **WCAG 2.2:** 4.1.2 Name, Role, Value.
-- **Detector:** `detectors/robust/R06ComposableWithoutSemanticsDetector.kt`
-- **Message:** `[R-06] Possible missing semantics: <function> handles input with a custom gesture but sets no semantics, so screen readers have no action to offer`.
-
-### What it flags
-
-Reported on the **function declaration**: a `@Composable` function whose body uses a custom gesture API and contains no semantics anywhere.
-
-Gestures: `pointerInput`, `draggable`, `draggable2D`, and the `detect*Gestures` family (`detectTapGestures`, `detectDragGestures`, `detectDragGesturesAfterLongPress`, `detectVerticalDragGestures`, `detectHorizontalDragGestures`, `detectTransformGestures`).
-
-Semantics that clear the rule: `semantics`, `clearAndSetSemantics`, `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`.
-
-### What it ignores
-
-- Functions that also use `clickable` or `toggleable`, which already carry an action and are covered by R-01, O-02 and U-02.
-- Functions that set any semantics at all.
-- Functions that are not `@Composable`.
-
-### Known limitations
-
-The check is per function, so a gesture in one composable and the semantics in its caller are not connected. `swipeable` and `anchoredDraggable`, which CLAUDE.md also names, are not matched: neither is public API in these versions (see `docs/DECISIONS.md`).
-
-### Tests and sample
-
-- `R06ComposableWithoutSemanticsDetectorTest`: 3 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/r06/R06BadScreen.kt` and `R06GoodScreen.kt`.
-
----
-
-## P-05 · ComposeTextOverImage
-
-- **Taxonomy:** Perceivable, Minor, STATIC_LLM.
-- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
-- **WCAG 2.2:** 1.4.3 Contrast (Minimum).
-- **Detector:** `detectors/perceivable/P05TextOverImageDetector.kt`
-- **Message:** `[P-05] Possible text over an image: this Text is drawn on top of an Image with no background or scrim, so its contrast depends on the picture`.
-
-### What it flags
-
-A `Box` whose content lambda holds an `Image` and then, later in source order, a `Text`. In a `Box` children are stacked in the order they are written, so such a Text is drawn over the picture. The first Text above the Image is reported, so one `Box` gives at most one warning.
-
-### What it ignores
-
-- A Text with its own `Modifier.background(...)`.
-- A layer with a `Modifier.background(...)` between the Image and the Text, which is the usual way to write a scrim.
-- A Text written **before** the Image, since the picture is then drawn on top of it.
-- Any layout that is not a `Box`, because only a `Box` overlays its children.
-- An `Icon`, as opposed to an `Image`. CLAUDE.md 7.4 names `Image`, and a `Box` holding an Icon and a Text is normally an icon-and-label button rather than text over a photo.
-
-### Known limitations
-
-Whether the result is actually unreadable depends on the picture, which static analysis cannot know, so this is a candidate for Phase 3 rather than a certain defect. A scrim drawn some other way, for example with `drawBehind` or a gradient `Brush`, is not recognised.
-
-### Tests and sample
-
-- `P05TextOverImageDetectorTest`: 2 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/p05/P05BadScreen.kt` and `P05GoodScreen.kt`.
-
----
-
-## P-07 · ComposeMissingPaneTitle
-
-- **Taxonomy:** Perceivable, Minor, STATIC.
-- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
-- **WCAG 2.2:** 1.3.1 Info and Relationships.
-- **Detector:** `detectors/perceivable/P07MissingPaneTitleDetector.kt`
-- **Message:** `[P-07] <Popup|Dialog> has no paneTitle, so screen readers do not announce what opened`.
-
-### What it flags
-
-A custom overlay built on `androidx.compose.ui.window.Popup` or `Dialog` where neither the overlay's own modifier nor anything in its content sets `paneTitle` in semantics.
-
-### What it ignores
-
-- The Material overlays. `AlertDialog`, `ModalBottomSheet` and the modal drawers all set a `paneTitle` of their own, verified in the Material3 1.4.0 sources (see `docs/DECISIONS.md`), so they are not in the rule's list at all.
-- An overlay that sets `paneTitle` anywhere inside, including on a nested child.
-
-### Known limitations
-
-Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a full-screen `Box` shown with `AnimatedVisibility`, which is not detected: that shape cannot be told apart from an ordinary animated `Box` without guessing, and P-07 is a STATIC rule.
-
-### Tests and sample
-
-- `P07MissingPaneTitleDetectorTest`: 2 positive and 5 negative cases.
-- Sample: `sample-app/.../defects/p07/P07BadScreen.kt` and `P07GoodScreen.kt`.
 
 ---
 
@@ -570,6 +819,346 @@ Children emitted by another composable function are not counted, and the rule do
 
 ---
 
+## U-01 · ComposeMissingHeading
+
+- **Taxonomy:** Understandable, Critical, STATIC_LLM (a candidate: whether the text is really a heading needs a judgement about intent).
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships, 2.4.6 Headings and Labels.
+- **Detector:** `detectors/understandable/U01MissingHeadingDetector.kt`
+- **Message:** `[U-01] Possible heading: this Text is styled like a heading (headlineSmall) but has no heading() semantics, so screen reader users cannot jump to it`. The part in brackets names the style, or the size, for example `24sp bold`.
+- **Reported at:** the name of the `Text` call.
+
+### What it flags
+
+A Material 3 or Material 2 `Text` that looks like a heading and whose own modifier has no `heading()` in `semantics { }` or `clearAndSetSemantics { }`. It looks like a heading when:
+
+1. its `style` is `MaterialTheme.typography.<style>` (also with `.copy(...)`) and the style is `displayLarge`, `displayMedium`, `displaySmall`, `headlineLarge`, `headlineMedium`, `headlineSmall` or `titleLarge` (Material 2: `h1` to `h6`), or
+2. its font size is at least 20sp and its font weight is bold (700 or more: `Bold`, `ExtraBold`, `Black`, `W700` to `W900`, or `FontWeight(700+)`). Size and weight are read from the `fontSize`/`fontWeight` arguments, or from a `TextStyle(...)` or `.copy(...)` passed as `style`.
+
+### What it ignores
+
+- Text with `heading()` in its own semantics.
+- Text inside a Material button, icon button or FAB (it is the button label).
+- Text inside a top app bar (`TopAppBar`, `CenterAlignedTopAppBar`, `MediumTopAppBar`, `LargeTopAppBar`, Material 2 `TopAppBar`). Note: Material3 does not mark these titles as headings (see DECISIONS).
+- Body, label and other title styles, large text that is not bold, and bold text below 20sp.
+- A style stored in a variable or passed in as a parameter.
+
+### Example
+
+Bad:
+
+```kotlin
+Text("Account settings", style = MaterialTheme.typography.headlineSmall)
+```
+
+Good:
+
+```kotlin
+Text(
+    text = "Account settings",
+    style = MaterialTheme.typography.headlineSmall,
+    modifier = Modifier.semantics { heading() },
+)
+```
+
+### Known limitations
+
+- Large numbers, prices or display text in a heading style are reported although they are not headings. The message says "Possible", and Phase 3 will judge intent.
+- `heading()` on a parent (for example a `Row` with `mergeDescendants = true` that holds the title) is not considered.
+- Styles from variables, custom theme objects (`AppTheme.typography.title`) and a theme's own `TextStyle` constants are not recognised.
+
+### Tests and sample
+
+- `U01MissingHeadingDetectorTest`: 5 positive tests (6 reports) and 5 negative tests.
+- Sample: `sample-app/.../defects/u01/U01BadScreen.kt` (4 `// EXPECT` lines) and `U01GoodScreen.kt` (no reports).
+
+---
+
+## U-02 · ComposeMissingStateDescription
+
+- **Taxonomy:** Understandable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/understandable/U02MissingStateDescriptionDetector.kt`
+- **Message:** `[U-02] Clickable element toggles expanded but exposes no state, so screen readers do not announce whether it is on or off` (names the flipped Boolean as written in the code).
+- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
+
+### What it flags
+
+`Modifier.clickable { }` or `Modifier.combinedClickable { }` whose click lambda flips a Boolean:
+
+- `x = !x` (also with a delegated `var x by remember { mutableStateOf(false) }`),
+- `x.value = !x.value`,
+- a call to a function named `on...Change` or `on...Changed` with a negated argument, for example `onCheckedChange(!checked)`,
+
+when the same modifier chain does not expose the state: no `toggleable`, `triStateToggleable` or `selectable` modifier, and no `stateDescription`, `toggleableState` or `selected` set in semantics.
+
+### What it ignores
+
+- Material `Switch`, `Checkbox` and `RadioButton`, and `Modifier.toggleable`/`selectable` (they expose state already).
+- Click handlers that do not flip a Boolean (navigation, counters, `x = true`).
+- Chains with state semantics.
+- A chain passed to a Material clickable component.
+
+### Example
+
+Bad:
+
+```kotlin
+var expanded by remember { mutableStateOf(false) }
+Row(Modifier.clickable { expanded = !expanded }) { Text("Details") }
+```
+
+Good:
+
+```kotlin
+Row(
+    Modifier.toggleable(value = expanded, onValueChange = { expanded = it }),
+) { Text("Details") }
+```
+
+### Known limitations
+
+- Only the three flip patterns above are recognised. A flip inside a called function (`toggle()`), `x = x.not()`, `setX(!x)` from a destructured state, or a ViewModel method is not seen.
+- Material clickable components with a flipping `onClick` (for example `IconButton(onClick = { favorite = !favorite })`) are not checked, because CLAUDE.md limits the rule to `Modifier.clickable`.
+
+### Tests and sample
+
+- `U02MissingStateDescriptionDetectorTest`: 4 positive tests and 4 negative tests (9 cases in the negative tests).
+- Sample: `sample-app/.../defects/u02/U02BadScreen.kt` (3 `// EXPECT` lines) and `U02GoodScreen.kt` (no reports).
+
+---
+
+## U-03 · ComposeMissingSemanticError
+
+- **Taxonomy:** Understandable, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 3.3.1 Error Identification.
+- **Detector:** `detectors/understandable/U03MissingSemanticErrorDetector.kt`
+- **Message:** `[U-03] <TextField> is in its error state but gives no message, so screen readers only announce the generic "Error" and the user is not told what is wrong`.
+
+### What it flags
+
+A `TextField` or `OutlinedTextField` (Material or Material3) whose `isError` argument is passed and is not the literal `false`, with neither a `supportingText` nor an `error(...)` in its own semantics.
+
+Material already sets an `error(...)` semantic for `isError = true`, but only with its generic default message ("Error"), confirmed in the Material3 1.4.0 and Material 1.10.4 sources (see `docs/DECISIONS.md`). So the defect is an error state with no message saying what is actually wrong, not a missing error semantic.
+
+### What it ignores
+
+- `isError = false`, or no `isError` argument at all.
+- A `supportingText` that is not the literal `null`.
+- A specific message set with `Modifier.semantics { error("...") }`.
+
+### Example
+
+Bad:
+
+```kotlin
+TextField(
+    value = email,
+    onValueChange = onEmailChange,
+    label = { Text("Email") },
+    isError = true,              // the user only hears "Error"
+)
+```
+
+Good:
+
+```kotlin
+TextField(
+    value = email,
+    onValueChange = onEmailChange,
+    label = { Text("Email") },
+    supportingText = { Text("Enter a valid email address") },
+    isError = true,
+)
+```
+
+### Known limitations
+
+A message shown by a sibling composable (a `Text` under the field, rather than its `supportingText` slot) is not seen, so such a field is still reported.
+
+### Tests and sample
+
+- `U03MissingSemanticErrorDetectorTest`: 4 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/u03/U03BadScreen.kt` and `U03GoodScreen.kt`.
+
+---
+
+## U-04 · ComposeVagueButtonLabel
+
+- **Taxonomy:** Understandable, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 2.4.6 Headings and Labels.
+- **Detector:** `detectors/understandable/U04VagueButtonLabelDetector.kt`
+- **Message:** `[U-04] Possible vague button label: "<label>" does not say what the button does`.
+
+### What it flags
+
+A `Button`, `TextButton` or `OutlinedButton` (Material or Material3) holding exactly one Text whose text is a literal and, trimmed and lowercased, is one of:
+
+`ok`, `click`, `click here`, `here`, `tap`, `tap here`, `go`, `submit`, `done`, `more`, `yes`, `no`
+
+The list is `U04VagueButtonLabelDetector.VAGUE_LABELS`, taken from CLAUDE.md 7.3.
+
+### What it ignores
+
+- A descriptive label, including one that merely contains a vague word ("Read more about shipping").
+- A `contentDescription` set in the button's own semantics, which overrides the visible label for screen readers.
+- Text that is not a literal, for example `stringResource(...)` or a variable.
+- A button with no Text, or with more than one Text, since the label cannot be judged from one literal.
+
+### Example
+
+Bad:
+
+```kotlin
+Button(onClick = onConfirm) { Text("OK") }
+TextButton(onClick = onOpen) { Text("Click here") }
+```
+
+Good:
+
+```kotlin
+Button(onClick = onConfirm) { Text("Delete draft") }
+TextButton(onClick = onOpen) { Text("Read more about shipping") }
+```
+
+### Known limitations
+
+A vague Text next to a labelled Icon is still reported, although the icon's `contentDescription` becomes part of the announced name. The icon is not read as part of the label.
+
+### Tests and sample
+
+- `U04VagueButtonLabelDetectorTest`: 4 positive and 6 negative cases.
+- Sample: `sample-app/.../defects/u04/U04BadScreen.kt` and `U04GoodScreen.kt`.
+
+---
+
+## U-05 · ComposeTextFieldWithoutLabel
+
+- **Taxonomy:** Understandable, Critical, STATIC.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions.
+- **Detector:** `detectors/understandable/U05TextFieldWithoutLabelDetector.kt`
+- **Message:** `[U-05] TextField has no label, so screen reader users are not told what to enter`. When a placeholder is set, the message adds `(the placeholder disappears when the user types)`.
+- **Reported at:** the name of the text field call.
+
+### What it flags
+
+A Material 3 or Material 2 `TextField` or `OutlinedTextField` (every overload: `String`, `TextFieldValue` and `TextFieldState`) whose `label` argument is not passed or is the literal `null`. A `placeholder` alone does not count.
+
+### What it ignores
+
+- Fields with any `label` argument other than `null`, including a label passed in as a variable.
+- Functions with the same name in other packages.
+
+### Example
+
+Bad:
+
+```kotlin
+OutlinedTextField(
+    value = email,
+    onValueChange = onEmailChange,
+    placeholder = { Text("you@example.com") },
+)
+```
+
+Good:
+
+```kotlin
+OutlinedTextField(
+    value = email,
+    onValueChange = onEmailChange,
+    label = { Text("Email address") },
+    placeholder = { Text("you@example.com") },
+)
+```
+
+### Known limitations
+
+- A field labelled through `Modifier.semantics { contentDescription = ... }` is still reported. It has a name for screen readers but no visible label, so 3.3.2 is still not met. Decide with Sedra if this should change.
+- `BasicTextField` and custom field wrappers are not checked.
+- A visible `Text` above the field is not linked to the field and does not count as a label.
+
+### Tests and sample
+
+- `U05TextFieldWithoutLabelDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
+- Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (3 `// EXPECT` lines) and `U05GoodScreen.kt` (no reports).
+
+---
+
+## U-06 · ComposeInconsistentLabels
+
+- **Taxonomy:** Understandable, Minor, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
+- **WCAG 2.2:** 3.2.4 Consistent Identification.
+- **Detector:** `detectors/understandable/U06InconsistentLabelsDetector.kt`
+- **Message:** `[U-06] Possible inconsistent label: <Icons.Filled.Delete> is described as "<Delete>" here but as "<Remove item>" elsewhere, so the same icon is announced in different words`.
+
+### What makes this rule different
+
+It is the only **project-wide** rule: nothing in a single file is wrong, so no file can be judged on its own. Each file contributes what it saw to a `LintMap` through Lint's partial analysis, and the comparison runs once in `checkPartialResults`, after every file has been read. In global analysis nothing calls that hook, so `afterCheckRootProject` runs the same comparison itself.
+
+Every occurrence of a disagreeing icon is reported, not just one, because there is no way to tell which wording is the right one. The message names the other wordings.
+
+### What it flags
+
+An icon used with two or more different literal `contentDescription` strings anywhere in the project. An icon is identified by where it comes from:
+
+- a drawable read at the call site, `painterResource(R.drawable.ic_bin)`, identified as `@drawable/ic_bin`;
+- a property holding an `ImageVector` or a `Painter`, identified by its fully qualified name, so `Icons.Default.Delete` is `androidx.compose.material.icons.filled.Delete`.
+
+Resolving rather than reading source text means `Icons.Default.Delete` and `Icons.Filled.Delete` are correctly treated as the same icon, since `Default` is an alias for `Filled`.
+
+### What it ignores
+
+- An icon used with one label, or always the same label.
+- Different icons, however similar their labels.
+- A `contentDescription` that is not a literal, such as `stringResource(...)`, and `null`.
+- An icon held in a **local variable**. One local often stands in for several different icons, so following it would compare labels that were never meant to describe the same thing (see `docs/DECISIONS.md`).
+
+### Example
+
+Bad:
+
+```kotlin
+// ProfileScreen.kt
+Icon(Icons.Default.Delete, contentDescription = "Delete")       // reported
+// SettingsScreen.kt
+Icon(Icons.Default.Delete, contentDescription = "Remove item")  // reported
+```
+
+Both lines are flagged, not one of them: nothing in the code says which wording is the right one.
+
+Good:
+
+```kotlin
+// ProfileScreen.kt
+Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_item))
+// SettingsScreen.kt
+Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_item))
+```
+
+One wording, kept in one string resource, so the two screens cannot drift apart. This rule is
+unlike the others in that neither line is wrong on its own; the defect only exists across files.
+
+### Scope widened beyond CLAUDE.md 7.4
+
+CLAUDE.md specifies "the same `Icons.X.Y`". Searching all 364 Kotlin files of `compose-samples` found **123 `Icon(...)` calls and zero uses of `Icons.X.Y`** — Google's samples pass their own drawables. Keyed only on `Icons.X.Y`, the rule would report nothing on either development app. Agreed with Sedra on 2026-10-08 to key on any icon source. **The thesis taxonomy text for U-06 needs this widening.**
+
+### Known limitations
+
+Labels are compared exactly, so "Delete" and "delete " are different; an icon behind a local variable or passed in as a parameter is not identified; and only literal descriptions can be compared, so a project that correctly uses `stringResource` everywhere is invisible to this rule (see `docs/LIMITATIONS.md`).
+
+### Tests and sample
+
+- `U06InconsistentLabelsDetectorTest`: 5 positive and 6 negative cases, several using two source files.
+- Sample: `sample-app/.../defects/u06/U06BadScreen.kt` and `U06GoodScreen.kt`, each holding two screens so the comparison has something to cross.
+
+---
+
 ## U-07 · ComposeHardcodedA11yText
 
 - **Taxonomy:** Understandable, Minor, STATIC.
@@ -623,6 +1212,139 @@ This rule fires far more widely than any other: **110 lines** across the sample 
 
 - `U07HardcodedA11yTextDetectorTest`: 8 positive and 6 negative cases. Three of the positives cover the action labels and `onLongClickLabel`.
 - Sample: `sample-app/.../defects/u07/U07BadScreen.kt` and `U07GoodScreen.kt`.
+
+---
+
+## R-01 · ComposeClickableWithoutRole
+
+- **Taxonomy:** Robust, Critical, STATIC_LLM (a candidate: the right role depends on what the element is for).
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R01ClickableWithoutRoleDetector.kt`
+- **Message:** `[R-01] Possible missing role: clickable Row has no role, so screen readers do not say what kind of control it is` (names the element that receives the modifier, or says "clickable element" when the modifier is stored in a variable).
+- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
+
+### What it flags
+
+`Modifier.clickable` or `Modifier.combinedClickable` without a `role` argument (or with `role = null`), when no `role` is set in the semantics of the same modifier chain, on a custom element.
+
+### What it ignores
+
+- Click modifiers with a role, or chains that set `role` in `semantics { }`.
+- Chains passed to a Material clickable component (`Button`, `IconButton`, FAB, `Card`/`Surface` with `onClick`, and the others in `Clickables`), which set their own role.
+- The O-04 case (overlap policy, CLAUDE.md 7.1): a clickable `Box`, `Row` or `Column` whose direct content is one `Text`, or one `Icon`/`Image` and one `Text` (with optional `Spacer`s). O-04 will report it as "use Button".
+- `toggleable` and `selectable`, which are not part of this rule.
+
+### Example
+
+Bad:
+
+```kotlin
+Row(Modifier.clickable { open(contact) }) {
+    Text(contact.name)
+    Text(contact.status)
+}
+```
+
+Good:
+
+```kotlin
+Row(Modifier.clickable(role = Role.Button) { open(contact) }) {
+    Text(contact.name)
+    Text(contact.status)
+}
+```
+
+### Known limitations
+
+- A role set on a parent or child element is not considered.
+- A `Card` or `Surface` without `onClick` that is made clickable with a modifier is reported, because it is then a custom clickable element without a role.
+- The O-04 exclusion only reads the direct children of the content lambda. Button-like content inside a nested layout is treated as rich content.
+
+### Tests and sample
+
+- `R01ClickableWithoutRoleDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
+- Sample: `sample-app/.../defects/r01/R01BadScreen.kt` (4 `// EXPECT` lines) and `R01GoodScreen.kt` (no reports).
+
+---
+
+## R-02 · ComposeClearAndSetSemanticsLoss
+
+- **Taxonomy:** Robust, Major, STATIC.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
+- **WCAG 2.2:** 4.1.2 Name, Role, Value.
+- **Detector:** `detectors/robust/R02ClearAndSetSemanticsLossDetector.kt`
+- **Message:** `[R-02] clearAndSetSemantics is empty, so it hides <what was lost> from screen readers`, or `[R-02] clearAndSetSemantics does not put back <what was lost>, so screen readers lose it`.
+
+### What it flags
+
+A `Modifier.clearAndSetSemantics { }` that drops something its content provided without putting it back. The rule works out what the content had, then checks the block against it:
+
+- a **name**, when the content holds a Text with text, or a labelled Icon or Image, and the block sets no `contentDescription` or `text`;
+- a **role or state**, when the element or its content is clickable, toggleable, selectable, or holds a `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton`, and the block sets no `role`, `stateDescription`, `toggleableState` or `selected`.
+
+An empty block loses whatever the content had, so it is reported whenever the content had either.
+
+### What it ignores
+
+- A block that puts back everything the content provided. Replacing several Texts with one sentence is the intended use of this modifier, as is adding a name to content that only had decorative icons.
+- An empty block over content with no name and no interaction, which is the documented way to hide a decorative subtree. This also covers content the rule cannot see into.
+
+### Example
+
+Bad:
+
+```kotlin
+Row(modifier = Modifier.clearAndSetSemantics { }) {
+    Text("Running shoes")
+    Text("42 euro")              // both names are thrown away
+}
+```
+
+Good:
+
+```kotlin
+Row(
+    modifier = Modifier.clearAndSetSemantics {
+        contentDescription = stringResource(R.string.running_shoes_price)
+    },
+) {
+    Text("Running shoes")
+    Text("42 euro")
+}
+```
+
+### Known limitations
+
+This narrows CLAUDE.md 7.3, which asks for every empty block to be flagged. The development app run showed that reporting an empty block unconditionally flags a correct and deliberate pattern; see `docs/DEV_APP_RESULTS.md` for the case and `docs/DECISIONS.md` for the decision.
+
+### Tests and sample
+
+- `R02ClearAndSetSemanticsLossDetectorTest`: 4 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/r02/R02BadScreen.kt` and `R02GoodScreen.kt`.
+
+---
+
+## R-03 · ComposeMergeHidesInteractive — not applicable, no detector
+
+**This rule was dropped after the check CLAUDE.md asks for.** The defect it describes cannot
+occur in Compose 1.10.4, so no detector exists and no taxonomy entry is registered.
+
+CLAUDE.md 7.3 defines R-03 as a merged container (`semantics(mergeDescendants = true)`) hiding
+its interactive children. In Compose, merging deliberately stops at any child that is itself a
+merging root, and every clickable element is one:
+
+- `SemanticsNode.mergeConfig` skips a child when `child.isMergingSemanticsOfDescendants`, with
+  the comment "because that indicates they're independently screen-reader-focusable".
+- `AbstractClickableNode` (the base of `clickable`, `combinedClickable`, `toggleable` and
+  `selectable`, and so of every Material button) has
+  `final override val shouldMergeDescendantSemantics: Boolean get() = true`.
+
+So a `Button`, `IconButton`, `Checkbox` or `Switch` inside a merged container stays
+independently focusable, and the rule would only ever report correct code.
+
+The modifier that really does remove interactive children is `clearAndSetSemantics`, which
+**R-02** covers. See `docs/DECISIONS.md` for the full evidence and the decision.
 
 ---
 
@@ -751,465 +1473,62 @@ The parameter name is the only signal that a `Float` is a progress value, so an 
 
 ---
 
-## U-06 · ComposeInconsistentLabels
+## R-06 · ComposeComposableWithoutSemantics
 
-- **Taxonomy:** Understandable, Minor, STATIC_LLM.
-- **Lint:** `Severity.WARNING`, priority 3, category `A11Y`.
-- **WCAG 2.2:** 3.2.4 Consistent Identification.
-- **Detector:** `detectors/understandable/U06InconsistentLabelsDetector.kt`
-- **Message:** `[U-06] Possible inconsistent label: <Icons.Filled.Delete> is described as "<Delete>" here but as "<Remove item>" elsewhere, so the same icon is announced in different words`.
-
-### What makes this rule different
-
-It is the only **project-wide** rule: nothing in a single file is wrong, so no file can be judged on its own. Each file contributes what it saw to a `LintMap` through Lint's partial analysis, and the comparison runs once in `checkPartialResults`, after every file has been read. In global analysis nothing calls that hook, so `afterCheckRootProject` runs the same comparison itself.
-
-Every occurrence of a disagreeing icon is reported, not just one, because there is no way to tell which wording is the right one. The message names the other wordings.
-
-### What it flags
-
-An icon used with two or more different literal `contentDescription` strings anywhere in the project. An icon is identified by where it comes from:
-
-- a drawable read at the call site, `painterResource(R.drawable.ic_bin)`, identified as `@drawable/ic_bin`;
-- a property holding an `ImageVector` or a `Painter`, identified by its fully qualified name, so `Icons.Default.Delete` is `androidx.compose.material.icons.filled.Delete`.
-
-Resolving rather than reading source text means `Icons.Default.Delete` and `Icons.Filled.Delete` are correctly treated as the same icon, since `Default` is an alias for `Filled`.
-
-### What it ignores
-
-- An icon used with one label, or always the same label.
-- Different icons, however similar their labels.
-- A `contentDescription` that is not a literal, such as `stringResource(...)`, and `null`.
-- An icon held in a **local variable**. One local often stands in for several different icons, so following it would compare labels that were never meant to describe the same thing (see `docs/DECISIONS.md`).
-
-### Example
-
-```kotlin
-// ProfileScreen.kt
-Icon(Icons.Default.Delete, contentDescription = "Delete")       // reported
-// SettingsScreen.kt
-Icon(Icons.Default.Delete, contentDescription = "Remove item")  // reported
-```
-
-Both lines are flagged: agree on one wording and keep it in a string resource.
-
-### Scope widened beyond CLAUDE.md 7.4
-
-CLAUDE.md specifies "the same `Icons.X.Y`". Searching all 364 Kotlin files of `compose-samples` found **123 `Icon(...)` calls and zero uses of `Icons.X.Y`** — Google's samples pass their own drawables. Keyed only on `Icons.X.Y`, the rule would report nothing on either development app. Agreed with Sedra on 2026-10-08 to key on any icon source. **The thesis taxonomy text for U-06 needs this widening.**
-
-### Known limitations
-
-Labels are compared exactly, so "Delete" and "delete " are different; an icon behind a local variable or passed in as a parameter is not identified; and only literal descriptions can be compared, so a project that correctly uses `stringResource` everywhere is invisible to this rule (see `docs/LIMITATIONS.md`).
-
-### Tests and sample
-
-- `U06InconsistentLabelsDetectorTest`: 5 positive and 6 negative cases, several using two source files.
-- Sample: `sample-app/.../defects/u06/U06BadScreen.kt` and `U06GoodScreen.kt`, each holding two screens so the comparison has something to cross.
-
----
-
-## P-01 · ComposeMissingContentDescription
-
-- **Taxonomy:** Perceivable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.1.1 Non-text Content.
-- **Detector:** `detectors/perceivable/P01MissingContentDescriptionDetector.kt`
-- **Message:** `[P-01] Interactive Icon has no contentDescription, so screen readers announce it without a name` (`Image` instead of `Icon` for images).
-- **Reported at:** the `contentDescription` argument.
-
-### What it flags
-
-An `Icon` (Material3 or Material) or `Image` (foundation) whose `contentDescription` is the literal `null` or `""`, when the icon or image is the only possible label of a clickable element. That is the case when either:
-
-1. its own `modifier` contains `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` or `selectable`, or
-2. the nearest clickable element around it in the same function has no other name. Clickable elements are the Material buttons (`Button`, `TextButton`, `OutlinedButton`, `ElevatedButton`, `FilledTonalButton`), icon buttons (`IconButton`, `IconToggleButton`, `FilledIconButton`, `FilledTonalIconButton`, `OutlinedIconButton`), floating action buttons, `Card`/`ElevatedCard`/`OutlinedCard`/`Surface` called with `onClick` or `onCheckedChange`, and any composable whose `modifier` has one of the modifiers above. The element has no other name when its content has no `Text` with text, no other labelled `Icon` or `Image`, and nothing sets `contentDescription` in semantics (on the element or inside it).
-
-### What it ignores
-
-- An Icon with `null` inside a button that also has a `Text` (the icon is decorative, the button already has a name).
-- An Icon with `null` next to another Icon that has a label.
-- Non-interactive images with `null` or `""` (decorative images are allowed).
-- `contentDescription = stringResource(...)`, a non-empty literal, or any other expression, including a variable that may be null.
-- A label set with `Modifier.semantics { contentDescription = ... }` on the icon or on the clickable parent.
-
-### Example
-
-Bad:
-
-```kotlin
-IconButton(onClick = onDelete) {
-    Icon(Icons.Filled.Delete, contentDescription = null)
-}
-```
-
-Good:
-
-```kotlin
-IconButton(onClick = onDelete) {
-    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_draft))
-}
-
-Button(onClick = onDelete) {
-    Icon(Icons.Filled.Delete, contentDescription = null) // decorative
-    Text(stringResource(R.string.delete))
-}
-```
-
-### Overlap with other rules
-
-O-05 (`ComposeEmptyClickable`) covers clickables with no readable content at all. When the clickable contains an unlabelled Icon or Image, P-01 reports the icon and O-05 must not report the clickable (see DECISIONS, 2026-10-03).
-
-### Known limitations
-
-- A `contentDescription` held in a variable is never reported, even when it may be null.
-- The clickable parent must be in the same function. An Icon in a separate composable called from an `IconButton` is not seen.
-- A Text or label inside another composable called from the clickable's content is not seen, so the rule cannot know that the clickable already has a name. (This can cause a false positive.)
-- A positional `onClick` on `Card`/`Surface` (`Card(onAction) { }`) is not recognised on the compiled Material3 library. See LIMITATIONS.
-- Custom icon wrappers (for example a project's own `AppIcon(...)` composable) are not recognised.
-
-### Tests and sample
-
-- `P01MissingContentDescriptionDetectorTest`: 7 positive tests (8 reported icons) and 6 negative tests. One of them, `testActionLabelOnTheParentIsNotAName`, pins the decision that a parent's `semantics { onClick(label = ...) }` is not a name (see DECISIONS, 2026-10-13).
-- Sample: `sample-app/.../defects/p01/P01BadScreen.kt` (6 `// EXPECT` lines) and `P01GoodScreen.kt` (no reports).
-
----
-
-## O-01 · ComposeSmallTouchTarget
-
-- **Taxonomy:** Operable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 2.5.8 Target Size (Minimum). The threshold is the Android guideline of 48dp, which is stricter than the 24 CSS pixels of WCAG.
-- **Detector:** `detectors/operable/O01SmallTouchTargetDetector.kt`
-- **Message:** `[O-01] Clickable element is only 20dp wide and 20dp high, smaller than the 48dp minimum touch target` (only the axes below 48dp are named).
-- **Reported at:** the size modifier call that makes the target too small (for example `size(20.dp)`).
-
-### What it flags
-
-A modifier chain with `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable` or `selectable` whose clickable area is narrower or lower than 48dp, measured from literal sizes:
-
-- A size set before the clickable modifier (`Modifier.size(20.dp).clickable { }`) is the clickable size, minus any padding between the two (`Modifier.size(48.dp).padding(8.dp).clickable { }` is 32dp).
-- Without one, the first size set after it (`Modifier.clickable { }.size(32.dp)`) is used, plus any padding between the two.
-- Sizes are read from `size`, `width`, `height`, `requiredSize`, `requiredWidth` and `requiredHeight`. Paddings from every `padding` overload and `absolutePadding`.
-- A modifier chain stored in a local `val` of the same function is followed.
-
-### What it ignores
-
-- Chains that contain `minimumInteractiveComponentSize()` anywhere.
-- Chains passed to Material components that enforce 48dp themselves: buttons, icon buttons, FABs, and `Card`/`Surface` with `onClick`.
-- Sizes or paddings that are not literals, and axes set by `fillMaxWidth`, `widthIn`, `sizeIn`, `defaultMinSize`, `weight`, `aspectRatio` and similar. Such an axis is unknown and never reported.
-- Elements without a click or toggle modifier.
-
-### Example
-
-Bad:
-
-```kotlin
-Icon(
-    painter = closeIcon,
-    contentDescription = "Close",
-    modifier = Modifier.size(24.dp).clickable { onClose() },
-)
-```
-
-Good:
-
-```kotlin
-IconButton(onClick = onClose) {
-    Icon(closeIcon, contentDescription = "Close", modifier = Modifier.size(24.dp))
-}
-
-Box(Modifier.clickable { onClose() }.padding(12.dp).size(24.dp)) { ... } // 48dp target
-```
-
-### Known limitations
-
-- The size of the parent and the layout constraints are not known. A small element inside a parent that stretches it (for example `Row` with `fillMaxHeight` children) may be reported.
-- A modifier passed in as a parameter is not followed (see LIMITATIONS).
-- `minimumInteractiveComponentSize()` anywhere in the chain suppresses the warning, even in an order where it would not help.
-- Only `dp` literals are read. `DpSize`, values from `dimensionResource` and constants are unknown.
-
-### Tests and sample
-
-- `O01SmallTouchTargetDetectorTest`: 5 positive tests and 5 negative tests (13 cases in the negative tests).
-- Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines) and `O01GoodScreen.kt` (no reports).
-
----
-
-## O-03 · ComposeNestedClickable
-
-- **Taxonomy:** Operable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 2.4.3 Focus Order, 4.1.2 Name, Role, Value.
-- **Detector:** `detectors/operable/O03NestedClickableDetector.kt`
-- **Message:** `[O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element`
-- **Reported at:** the name of the inner element call (for example `IconButton`).
-
-### What it flags
-
-A clickable element inside the content lambda of another clickable element in the same function. Layout calls in between (`Row`, `Column`, a `Box` without a click modifier) are passed through. Clickable elements are the same as in P-01: click and toggle modifiers (`clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`), Material buttons, icon buttons and FABs, and `Card`/`ElevatedCard`/`OutlinedCard`/`Surface` called with `onClick` or `onCheckedChange`.
-
-Each inner clickable is reported once, against its nearest clickable ancestor. With three levels, the middle and the inner element are both reported.
-
-A Material selection control (`Checkbox`, `TriStateCheckbox`, `Switch`, `RadioButton`) counts as a nested clickable when its callback is anything other than a `null` literal, because each one installs its own toggle modifier only in that case. A control is only ever the inner element, since it takes no content lambda. The message differs for this case, because the defect is two touch targets for one choice rather than a focus order problem.
-
-### What it ignores
-
-- Sibling clickables.
-- Clickables inside non-clickable containers (`Card` or `Surface` without `onClick`, a list, a plain `Row`).
-- The content of a Material button (`Icon` and `Text` are not clickable).
-- Clickables inside a separate composable called from the content (not followed in Phase 2).
-- A `Checkbox`, `TriStateCheckbox`, `Switch` or `RadioButton` whose callback is a `null` literal: that is the documented way to let a surrounding toggleable row own the interaction (see DECISIONS).
-- Selection controls that are not inside another clickable element at all.
-
-### Example
-
-Bad:
-
-```kotlin
-Card(onClick = onOpen) {
-    Text(article.title)
-    IconButton(onClick = onFavorite) {
-        Icon(Icons.Filled.Favorite, contentDescription = "Favorite")
-    }
-}
-```
-
-Good:
-
-```kotlin
-Card(
-    onClick = onOpen,
-    modifier = Modifier.semantics {
-        customActions = listOf(CustomAccessibilityAction("Favorite") { onFavorite(); true })
-    },
-) {
-    Text(article.title)
-    FavoriteIcon() // not clickable on its own
-}
-```
-
-### Known limitations
-
-- Clickables inside another composable called from the content are not seen.
-- Common card designs (a clickable card with a favourite or bookmark button) are reported. Whether they are true defects depends on how TalkBack groups them, so precision must be measured on the development apps.
-
-### Tests and sample
-
-- `O03NestedClickableDetectorTest`: 9 positive tests (12 reports) and 9 negative tests. Four of each cover the selection controls, including the `null` callback that must stay clean.
-- Sample: `sample-app/.../defects/o03/O03BadScreen.kt` (5 `// EXPECT` lines) and `O03GoodScreen.kt` (no reports). The last pair is a toggleable row holding a `Checkbox`, interactive in the bad screen and `onCheckedChange = null` in the good one.
-
----
-
-## U-01 · ComposeMissingHeading
-
-- **Taxonomy:** Understandable, Critical, STATIC_LLM (a candidate: whether the text is really a heading needs a judgement about intent).
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.3.1 Info and Relationships, 2.4.6 Headings and Labels.
-- **Detector:** `detectors/understandable/U01MissingHeadingDetector.kt`
-- **Message:** `[U-01] Possible heading: this Text is styled like a heading (headlineSmall) but has no heading() semantics, so screen reader users cannot jump to it`. The part in brackets names the style, or the size, for example `24sp bold`.
-- **Reported at:** the name of the `Text` call.
-
-### What it flags
-
-A Material 3 or Material 2 `Text` that looks like a heading and whose own modifier has no `heading()` in `semantics { }` or `clearAndSetSemantics { }`. It looks like a heading when:
-
-1. its `style` is `MaterialTheme.typography.<style>` (also with `.copy(...)`) and the style is `displayLarge`, `displayMedium`, `displaySmall`, `headlineLarge`, `headlineMedium`, `headlineSmall` or `titleLarge` (Material 2: `h1` to `h6`), or
-2. its font size is at least 20sp and its font weight is bold (700 or more: `Bold`, `ExtraBold`, `Black`, `W700` to `W900`, or `FontWeight(700+)`). Size and weight are read from the `fontSize`/`fontWeight` arguments, or from a `TextStyle(...)` or `.copy(...)` passed as `style`.
-
-### What it ignores
-
-- Text with `heading()` in its own semantics.
-- Text inside a Material button, icon button or FAB (it is the button label).
-- Text inside a top app bar (`TopAppBar`, `CenterAlignedTopAppBar`, `MediumTopAppBar`, `LargeTopAppBar`, Material 2 `TopAppBar`). Note: Material3 does not mark these titles as headings (see DECISIONS).
-- Body, label and other title styles, large text that is not bold, and bold text below 20sp.
-- A style stored in a variable or passed in as a parameter.
-
-### Example
-
-Bad:
-
-```kotlin
-Text("Account settings", style = MaterialTheme.typography.headlineSmall)
-```
-
-Good:
-
-```kotlin
-Text(
-    text = "Account settings",
-    style = MaterialTheme.typography.headlineSmall,
-    modifier = Modifier.semantics { heading() },
-)
-```
-
-### Known limitations
-
-- Large numbers, prices or display text in a heading style are reported although they are not headings. The message says "Possible", and Phase 3 will judge intent.
-- `heading()` on a parent (for example a `Row` with `mergeDescendants = true` that holds the title) is not considered.
-- Styles from variables, custom theme objects (`AppTheme.typography.title`) and a theme's own `TextStyle` constants are not recognised.
-
-### Tests and sample
-
-- `U01MissingHeadingDetectorTest`: 5 positive tests (6 reports) and 5 negative tests.
-- Sample: `sample-app/.../defects/u01/U01BadScreen.kt` (4 `// EXPECT` lines) and `U01GoodScreen.kt` (no reports).
-
----
-
-## U-02 · ComposeMissingStateDescription
-
-- **Taxonomy:** Understandable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **Taxonomy:** Robust, Major, STATIC_LLM.
+- **Lint:** `Severity.WARNING`, priority 6, category `A11Y`.
 - **WCAG 2.2:** 4.1.2 Name, Role, Value.
-- **Detector:** `detectors/understandable/U02MissingStateDescriptionDetector.kt`
-- **Message:** `[U-02] Clickable element toggles expanded but exposes no state, so screen readers do not announce whether it is on or off` (names the flipped Boolean as written in the code).
-- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
+- **Detector:** `detectors/robust/R06ComposableWithoutSemanticsDetector.kt`
+- **Message:** `[R-06] Possible missing semantics: <function> handles input with a custom gesture but sets no semantics, so screen readers have no action to offer`.
 
 ### What it flags
 
-`Modifier.clickable { }` or `Modifier.combinedClickable { }` whose click lambda flips a Boolean:
+Reported on the **function declaration**: a `@Composable` function whose body uses a custom gesture API and contains no semantics anywhere.
 
-- `x = !x` (also with a delegated `var x by remember { mutableStateOf(false) }`),
-- `x.value = !x.value`,
-- a call to a function named `on...Change` or `on...Changed` with a negated argument, for example `onCheckedChange(!checked)`,
+Gestures: `pointerInput`, `draggable`, `draggable2D`, and the `detect*Gestures` family (`detectTapGestures`, `detectDragGestures`, `detectDragGesturesAfterLongPress`, `detectVerticalDragGestures`, `detectHorizontalDragGestures`, `detectTransformGestures`).
 
-when the same modifier chain does not expose the state: no `toggleable`, `triStateToggleable` or `selectable` modifier, and no `stateDescription`, `toggleableState` or `selected` set in semantics.
+Semantics that clear the rule: `semantics`, `clearAndSetSemantics`, `clickable`, `combinedClickable`, `toggleable`, `triStateToggleable`, `selectable`.
 
 ### What it ignores
 
-- Material `Switch`, `Checkbox` and `RadioButton`, and `Modifier.toggleable`/`selectable` (they expose state already).
-- Click handlers that do not flip a Boolean (navigation, counters, `x = true`).
-- Chains with state semantics.
-- A chain passed to a Material clickable component.
+- Functions that also use `clickable` or `toggleable`, which already carry an action and are covered by R-01, O-02 and U-02.
+- Functions that set any semantics at all.
+- Functions that are not `@Composable`.
 
 ### Example
 
 Bad:
 
 ```kotlin
-var expanded by remember { mutableStateOf(false) }
-Row(Modifier.clickable { expanded = !expanded }) { Text("Details") }
-```
-
-Good:
-
-```kotlin
-Row(
-    Modifier.toggleable(value = expanded, onValueChange = { expanded = it }),
-) { Text("Details") }
-```
-
-### Known limitations
-
-- Only the three flip patterns above are recognised. A flip inside a called function (`toggle()`), `x = x.not()`, `setX(!x)` from a destructured state, or a ViewModel method is not seen.
-- Material clickable components with a flipping `onClick` (for example `IconButton(onClick = { favorite = !favorite })`) are not checked, because CLAUDE.md limits the rule to `Modifier.clickable`.
-
-### Tests and sample
-
-- `U02MissingStateDescriptionDetectorTest`: 4 positive tests and 4 negative tests (9 cases in the negative tests).
-- Sample: `sample-app/.../defects/u02/U02BadScreen.kt` (3 `// EXPECT` lines) and `U02GoodScreen.kt` (no reports).
-
----
-
-## U-05 · ComposeTextFieldWithoutLabel
-
-- **Taxonomy:** Understandable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions.
-- **Detector:** `detectors/understandable/U05TextFieldWithoutLabelDetector.kt`
-- **Message:** `[U-05] TextField has no label, so screen reader users are not told what to enter`. When a placeholder is set, the message adds `(the placeholder disappears when the user types)`.
-- **Reported at:** the name of the text field call.
-
-### What it flags
-
-A Material 3 or Material 2 `TextField` or `OutlinedTextField` (every overload: `String`, `TextFieldValue` and `TextFieldState`) whose `label` argument is not passed or is the literal `null`. A `placeholder` alone does not count.
-
-### What it ignores
-
-- Fields with any `label` argument other than `null`, including a label passed in as a variable.
-- Functions with the same name in other packages.
-
-### Example
-
-Bad:
-
-```kotlin
-OutlinedTextField(
-    value = email,
-    onValueChange = onEmailChange,
-    placeholder = { Text("you@example.com") },
-)
-```
-
-Good:
-
-```kotlin
-OutlinedTextField(
-    value = email,
-    onValueChange = onEmailChange,
-    label = { Text("Email address") },
-    placeholder = { Text("you@example.com") },
-)
-```
-
-### Known limitations
-
-- A field labelled through `Modifier.semantics { contentDescription = ... }` is still reported. It has a name for screen readers but no visible label, so 3.3.2 is still not met. Decide with Sedra if this should change.
-- `BasicTextField` and custom field wrappers are not checked.
-- A visible `Text` above the field is not linked to the field and does not count as a label.
-
-### Tests and sample
-
-- `U05TextFieldWithoutLabelDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
-- Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (3 `// EXPECT` lines) and `U05GoodScreen.kt` (no reports).
-
----
-
-## R-01 · ComposeClickableWithoutRole
-
-- **Taxonomy:** Robust, Critical, STATIC_LLM (a candidate: the right role depends on what the element is for).
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 4.1.2 Name, Role, Value.
-- **Detector:** `detectors/robust/R01ClickableWithoutRoleDetector.kt`
-- **Message:** `[R-01] Possible missing role: clickable Row has no role, so screen readers do not say what kind of control it is` (names the element that receives the modifier, or says "clickable element" when the modifier is stored in a variable).
-- **Reported at:** the `clickable` or `combinedClickable` call (its name only).
-
-### What it flags
-
-`Modifier.clickable` or `Modifier.combinedClickable` without a `role` argument (or with `role = null`), when no `role` is set in the semantics of the same modifier chain, on a custom element.
-
-### What it ignores
-
-- Click modifiers with a role, or chains that set `role` in `semantics { }`.
-- Chains passed to a Material clickable component (`Button`, `IconButton`, FAB, `Card`/`Surface` with `onClick`, and the others in `Clickables`), which set their own role.
-- The O-04 case (overlap policy, CLAUDE.md 7.1): a clickable `Box`, `Row` or `Column` whose direct content is one `Text`, or one `Icon`/`Image` and one `Text` (with optional `Spacer`s). O-04 will report it as "use Button".
-- `toggleable` and `selectable`, which are not part of this rule.
-
-### Example
-
-Bad:
-
-```kotlin
-Row(Modifier.clickable { open(contact) }) {
-    Text(contact.name)
-    Text(contact.status)
+@Composable
+fun ColourSwatch(onPick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .pointerInput(Unit) { detectTapGestures(onTap = { onPick() }) },
+    )                             // TalkBack is offered no action at all
 }
 ```
 
 Good:
 
 ```kotlin
-Row(Modifier.clickable(role = Role.Button) { open(contact) }) {
-    Text(contact.name)
-    Text(contact.status)
+@Composable
+fun ColourSwatch(onPick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .pointerInput(Unit) { detectTapGestures(onTap = { onPick() }) }
+            .semantics { contentDescription = stringResource(R.string.pick_red) },
+    )
 }
 ```
 
 ### Known limitations
 
-- A role set on a parent or child element is not considered.
-- A `Card` or `Surface` without `onClick` that is made clickable with a modifier is reported, because it is then a custom clickable element without a role.
-- The O-04 exclusion only reads the direct children of the content lambda. Button-like content inside a nested layout is treated as rich content.
+The check is per function, so a gesture in one composable and the semantics in its caller are not connected. `swipeable` and `anchoredDraggable`, which CLAUDE.md also names, are not matched: neither is public API in these versions (see `docs/DECISIONS.md`).
 
 ### Tests and sample
 
-- `R01ClickableWithoutRoleDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
-- Sample: `sample-app/.../defects/r01/R01BadScreen.kt` (4 `// EXPECT` lines) and `R01GoodScreen.kt` (no reports).
+- `R06ComposableWithoutSemanticsDetectorTest`: 3 positive and 5 negative cases.
+- Sample: `sample-app/.../defects/r06/R06BadScreen.kt` and `R06GoodScreen.kt`.

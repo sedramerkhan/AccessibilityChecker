@@ -44,10 +44,10 @@ import androidx.compose.ui.Modifier
     fun testIconButtonInsideClickableCard() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: [O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:27: Warning: [O-03] Clickable IconButton is nested inside the clickable Card, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                     IconButton(onClick = onFavorite) {
                     ~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -68,10 +68,10 @@ import androidx.compose.ui.Modifier
     fun testButtonNestedThroughLayouts() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:28: Error: [O-03] Clickable Button is nested inside the clickable Row, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:28: Warning: [O-03] Clickable Button is nested inside the clickable Row, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                         Button(onClick = onBuy) {
                         ~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -94,10 +94,10 @@ import androidx.compose.ui.Modifier
     fun testClickableBoxInsideClickableSurface() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:26: Error: [O-03] Clickable Box is nested inside the clickable Surface, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:26: Warning: [O-03] Clickable Box is nested inside the clickable Surface, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                     Box(Modifier.clickable { onMore() }) {
                     ~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -117,10 +117,10 @@ import androidx.compose.ui.Modifier
     fun testClickableCardInsideToggleableBox() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:26: Error: [O-03] Clickable Card is nested inside the clickable Box, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:26: Warning: [O-03] Clickable Card is nested inside the clickable Box, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                     Card(onClick = onOpen) {
                     ~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -140,19 +140,19 @@ import androidx.compose.ui.Modifier
     fun testEveryNestedClickableIsReported() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: [O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:27: Warning: [O-03] Clickable IconButton is nested inside the clickable Card, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                         IconButton(onClick = onFavorite) {
                         ~~~~~~~~~~
-            src/test/pkg/Screen.kt:30: Error: [O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:30: Warning: [O-03] Clickable IconButton is nested inside the clickable Card, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                         IconButton(onClick = onShare) {
                         ~~~~~~~~~~
-            src/test/pkg/Screen.kt:36: Error: [O-03] Clickable Box is nested inside the clickable Box, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:36: Warning: [O-03] Clickable Box is nested inside the clickable Box, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                     Box(Modifier.clickable { onOpen() }) {
                     ~~~
-            src/test/pkg/Screen.kt:37: Error: [O-03] Clickable Button is nested inside the clickable Box, so screen readers may skip it or announce both as one element [ComposeNestedClickable]
+            src/test/pkg/Screen.kt:37: Warning: [O-03] Clickable Button is nested inside the clickable Box, so their touch targets overlap and screen readers announce them as two separate stops [ComposeNestedClickable]
                         Button(onClick = onShare) { Text("Share") }
                         ~~~~~~
-            4 errors, 0 warnings
+            0 errors, 4 warnings
             """,
             screen(
                 """
@@ -314,10 +314,10 @@ import androidx.compose.ui.state.ToggleableState
     fun testCheckboxWithCallbackInsideToggleableRow() {
         expectWarnings(
             """
-            src/test/pkg/Settings.kt:25: Error: [O-03] Checkbox handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
+            src/test/pkg/Settings.kt:25: Warning: [O-03] Checkbox handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
                     Checkbox(checked = checked, onCheckedChange = onCheckedChange)
                     ~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             controlScreen(
                 """
@@ -336,10 +336,10 @@ import androidx.compose.ui.state.ToggleableState
     fun testSwitchWithCallbackInsideClickableRow() {
         expectWarnings(
             """
-            src/test/pkg/Settings.kt:25: Error: [O-03] Switch handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
+            src/test/pkg/Settings.kt:25: Warning: [O-03] Switch handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
                     Switch(checked = checked, onCheckedChange = onToggle)
                     ~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             controlScreen(
                 """
@@ -358,10 +358,10 @@ import androidx.compose.ui.state.ToggleableState
     fun testRadioButtonWithCallbackInsideSelectableRow() {
         expectWarnings(
             """
-            src/test/pkg/Settings.kt:25: Error: [O-03] RadioButton handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
+            src/test/pkg/Settings.kt:25: Warning: [O-03] RadioButton handles its own clicks inside the clickable Row, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
                     RadioButton(selected = selected, onClick = onSelect)
                     ~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             controlScreen(
                 """
@@ -380,10 +380,10 @@ import androidx.compose.ui.state.ToggleableState
     fun testTriStateCheckboxWithCallbackInsideClickableCard() {
         expectWarnings(
             """
-            src/test/pkg/Settings.kt:25: Error: [O-03] TriStateCheckbox handles its own clicks inside the clickable Card, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
+            src/test/pkg/Settings.kt:25: Warning: [O-03] TriStateCheckbox handles its own clicks inside the clickable Card, so the two become separate targets and screen readers announce the label and the state as different elements [ComposeNestedClickable]
                     TriStateCheckbox(state = state, onClick = onToggle)
                     ~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             controlScreen(
                 """

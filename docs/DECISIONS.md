@@ -1294,3 +1294,15 @@ WCAG failures. Each change is its own commit.
 **R-01 verified.** 8 R-01 tests pass with the warning severity, and `TaxonomyTest` checks it.
 
 **U-01 verified.** 10 U-01 tests pass with the warning severity. The explanation and `Taxonomy.kt` now cite 1.3.1 only.
+**O-03 verified.** 18 O-03 tests pass with the warning severity and the corrected message. The old
+explanation said TalkBack "may merge them into one element, skip the inner one, or read them in a
+confusing order". That contradicts the R-03 finding in this file: merging stops at any child that
+merges its own descendants, and every click modifier does, so the inner element stays a separate
+stop. The explanation now describes what does happen (overlapping touch targets, and an outer
+element that does not mention the second action).
+
+This also corrects one argument of the O-07 and O-03 decision of 2026-10-18, which rejected
+suppressing O-03 partly because it would turn "a Critical defect into a Minor warning". O-03 is
+now itself a warning, so that argument no longer applies. The decision still stands on its other
+grounds: the two rules report on different nodes and say different things.
+

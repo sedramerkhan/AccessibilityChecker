@@ -77,7 +77,9 @@ without U-07 (206 and 93). No code change (2026-10-19, see DECISIONS).
 card with two nested buttons gives two O-03 errors and one O-07 warning. They report on different
 nodes, and O-07 states the fix O-03's explanation recommends, so neither is redundant.
 Suppressing O-03 would have turned a Critical defect into a Minor warning and changed a rule whose
-precision was already measured. No code change (2026-10-18, see DECISIONS).
+precision was already measured. No code change (2026-10-18, see DECISIONS). Since 2026-10-19 O-03
+is itself a warning, so the first argument no longer applies; the decision stands on the second
+and on the two rules saying different things.
 
 **Answered:** O-07's scope (question 1 until 2026-10-13), the last of the three scope questions.
 A clickable `Box` or `Column` is now a container, so O-07 uses the same layout list O-02 and P-03

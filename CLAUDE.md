@@ -252,7 +252,7 @@ Record any further overlaps you find in DECISIONS.
 - Ignore: `IconButton` and Material buttons (they enforce the minimum); sizes that are not literals; non-interactive elements.
 - Note: modifier order matters in Compose. Record exactly how you treat order in DECISIONS.
 
-**O-03 · `ComposeNestedClickable` · ERROR · STATIC · WCAG 2.4.3, 4.1.2**
+**O-03 · `ComposeNestedClickable` · WARNING (Critical, not a definite WCAG failure; ERROR until 2026-10-19) · STATIC · WCAG 2.4.3, 4.1.2**
 - Flag: a clickable element (Modifier.clickable, or `Card(onClick=...)`, `Surface(onClick=...)`) whose content lambda directly contains another clickable element (Modifier.clickable, Button, IconButton, `Card(onClick)`).
 - Ignore: siblings; clickables inside a separately declared composable called from the content (Phase 2 does not follow calls, record in LIMITATIONS).
 - Note: this rule may produce false positives for common card patterns. Track precision on the development apps and report to Sedra.

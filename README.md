@@ -76,7 +76,7 @@ check them before changing code.
 | P-07 | `ComposeMissingPaneTitle` | Warning | A custom overlay or popup with no pane title |
 | O-01 | `ComposeSmallTouchTarget` | Error / Warning | A clickable element below 24dp (error, fails WCAG) or below 48dp (warning, Android guideline) |
 | O-02 | `ComposeMissingOnClickLabel` | Warning | A clickable container with no click label |
-| O-03 | `ComposeNestedClickable` | Error | A clickable element inside another clickable element |
+| O-03 | `ComposeNestedClickable` | Warning | A clickable element inside another clickable element |
 | O-04 | `ComposeClickableContainer` | Warning | Possible: a clickable Box, Row or Column that should be a Button |
 | O-05 | `ComposeEmptyClickable` | Warning | A clickable element with nothing readable inside |
 | O-06 | `ComposeDisabledButClickable` | Warning | A click handler that checks "enabled" itself instead of passing it |

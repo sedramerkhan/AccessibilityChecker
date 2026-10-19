@@ -33,7 +33,7 @@ class TaxonomyTest {
     }
 
     private companion object {
-        val CRITICAL_WARNINGS = setOf("R-01", "U-01")
+        val CRITICAL_WARNINGS = setOf("R-01", "U-01", "O-03")
     }
 
     @Test

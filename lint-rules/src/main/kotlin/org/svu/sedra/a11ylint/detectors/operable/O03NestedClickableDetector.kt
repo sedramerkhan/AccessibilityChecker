@@ -4,6 +4,7 @@ import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -25,6 +26,12 @@ import org.svu.sedra.a11ylint.util.ComposeCalls
  * A Material selection control with a live callback counts as a nested clickable too, because
  * it installs its own toggle modifier (see [Clickables.isInteractiveSelectionControl]). It is
  * only ever the inner element: a selection control takes no content, so it cannot contain one.
+ *
+ * Compose keeps the inner element separately focusable: merging stops at any child that merges
+ * its own descendants, and every click modifier does (see the R-03 entry in DECISIONS). So the
+ * inner action is not lost. The problem is two overlapping touch targets and an outer element
+ * that does not mention the second action, which is a usability defect rather than a definite
+ * WCAG failure, hence a warning.
  */
 class O03NestedClickableDetector : Detector(), SourceCodeScanner {
     override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UCallExpression::class.java)
@@ -41,8 +48,8 @@ class O03NestedClickableDetector : Detector(), SourceCodeScanner {
                     "become separate targets and screen readers announce the label and the " +
                     "state as different elements"
             } else {
-                "Clickable $inner is nested inside the clickable $outerName, " +
-                    "so screen readers may skip it or announce both as one element"
+                "Clickable $inner is nested inside the clickable $outerName, so their touch " +
+                    "targets overlap and screen readers announce them as two separate stops"
             }
             context.report(ISSUE, node, context.getNameLocation(node), A11yIssues.message(TAXONOMY_ID, message))
         }
@@ -70,10 +77,12 @@ class O03NestedClickableDetector : Detector(), SourceCodeScanner {
             briefDescription = "Clickable element nested inside another clickable element",
             explanation = """
                 A clickable element inside another clickable element gives two overlapping \
-                touch targets. TalkBack may merge them into one element, skip the inner one, or \
-                read them in a confusing order, and switch access users cannot tell which action \
-                they will trigger. This relates to WCAG 2.2 success criteria 2.4.3 (Focus Order) \
-                and 4.1.2 (Name, Role, Value). Keep one clickable per element: make the outer \
+                touch targets, so a tap near the inner element can trigger the outer action, \
+                which is hard to avoid for people with motor impairments. TalkBack reaches both, \
+                but as two separate stops, and the outer element does not say that a second \
+                action exists. This is not a failure of a WCAG 2.2 criterion by itself; it \
+                relates to 2.4.3 (Focus Order) and 4.1.2 (Name, Role, Value), which is why it is \
+                a warning. Keep one clickable per element: make the outer \
                 container non-clickable, keep the outer click and offer the inner action \
                 through `semantics { customActions = ... }`, or, for a Checkbox, Switch or \
                 RadioButton inside a toggleable row, pass `null` as the control's callback so \
@@ -81,6 +90,9 @@ class O03NestedClickableDetector : Detector(), SourceCodeScanner {
             """,
             priority = Priority.CRITICAL,
             detector = O03NestedClickableDetector::class.java,
+            // A usability defect rather than a definite WCAG failure, so it must not fail the
+            // build. Lint priority stays Critical (DECISIONS, 2026-10-19).
+            severity = Severity.WARNING,
         )
     }
 }

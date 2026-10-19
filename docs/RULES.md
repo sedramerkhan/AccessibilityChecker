@@ -19,7 +19,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 | P-07 | `ComposeMissingPaneTitle` | Warning (Minor) | STATIC | 1.3.1 | Done |
 | O-01 | `ComposeSmallTouchTarget` | Error below 24dp (Critical), Warning below 48dp | STATIC | 2.5.8 | Done |
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
-| O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
+| O-03 | `ComposeNestedClickable` | Warning (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
@@ -529,10 +529,10 @@ CLAUDE.md names this rule as possibly noisy; it is reported as written, with no 
 ## O-03 · ComposeNestedClickable
 
 - **Taxonomy:** Operable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 2.4.3 Focus Order, 4.1.2 Name, Role, Value.
+- **Lint:** `Severity.WARNING`, priority 9, category `A11Y`. Critical in the taxonomy, but not a definite WCAG failure, so it does not fail the build (since 2026-10-19, see DECISIONS).
+- **WCAG 2.2:** related to 2.4.3 Focus Order and 4.1.2 Name, Role, Value, but not a failure of either by itself. Compose keeps the inner element separately focusable, so the inner action is not lost; the defect is two overlapping touch targets and an outer element that does not mention the second action.
 - **Detector:** `detectors/operable/O03NestedClickableDetector.kt`
-- **Message:** `[O-03] Clickable IconButton is nested inside the clickable Card, so screen readers may skip it or announce both as one element`
+- **Message:** `[O-03] Clickable IconButton is nested inside the clickable Card, so their touch targets overlap and screen readers announce them as two separate stops` (until 2026-10-19 it said screen readers "may skip it or announce both as one element", which Compose does not do)
 - **Reported at:** the name of the inner element call (for example `IconButton`).
 
 ### What it flags

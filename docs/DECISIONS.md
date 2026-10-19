@@ -1293,3 +1293,4 @@ WCAG failures. Each change is its own commit.
 
 **R-01 verified.** 8 R-01 tests pass with the warning severity, and `TaxonomyTest` checks it.
 
+**U-01 verified.** 10 U-01 tests pass with the warning severity. The explanation and `Taxonomy.kt` now cite 1.3.1 only.

@@ -3,6 +3,7 @@ package org.svu.sedra.a11ylint.detectors.understandable
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
@@ -103,11 +104,14 @@ class U01MissingHeadingDetector : Detector(), SourceCodeScanner {
                 Screen reader users move through a screen by jumping from heading to heading. \
                 A Text that looks like a heading but is not marked as one is read as plain text, \
                 so these users lose the structure that sighted users see. This relates to WCAG 2.2 \
-                success criteria 1.3.1 (Info and Relationships) and 2.4.6 (Headings and Labels). \
-                If the Text is a section title, add `Modifier.semantics { heading() }`.
+                success criterion 1.3.1 (Info and Relationships). If the Text is a section title, \
+                add `Modifier.semantics { heading() }`.
             """,
             priority = Priority.CRITICAL,
             detector = U01MissingHeadingDetector::class.java,
+            // A candidate: only the developer knows whether the Text is a heading, so it must not
+            // fail the build. Lint priority stays Critical (DECISIONS, 2026-10-19).
+            severity = Severity.WARNING,
         )
     }
 }

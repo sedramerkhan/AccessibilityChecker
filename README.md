@@ -81,7 +81,7 @@ check them before changing code.
 | O-05 | `ComposeEmptyClickable` | Warning | A clickable element with nothing readable inside |
 | O-06 | `ComposeDisabledButClickable` | Warning | A click handler that checks "enabled" itself instead of passing it |
 | O-07 | `ComposeMissingCustomActions` | Warning | Possible: a clickable card with inner buttons and no custom actions |
-| U-01 | `ComposeMissingHeading` | Error | Possible: heading-styled text not marked as a heading |
+| U-01 | `ComposeMissingHeading` | Warning | Possible: heading-styled text not marked as a heading |
 | U-02 | `ComposeMissingStateDescription` | Error | A custom toggle that does not announce its state |
 | U-03 | `ComposeMissingSemanticError` | Warning | A text field in error with no message saying what is wrong |
 | U-04 | `ComposeVagueButtonLabel` | Warning | Possible: a button labeled "OK", "Click here", "Submit" and similar |

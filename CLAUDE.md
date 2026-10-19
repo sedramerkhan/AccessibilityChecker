@@ -247,7 +247,7 @@ Record any further overlaps you find in DECISIONS.
 - Ignore: Icon with `null` inside a `Button` that also has a `Text` (decorative, the button already has a name); non-interactive images with `null` (decorative is allowed); `contentDescription = stringResource(...)` or any non-empty expression.
 - Edge cases: `""` counts as missing; a variable that may be null is **not** flagged (record in LIMITATIONS).
 
-**O-01 · `ComposeSmallTouchTarget` · ERROR · STATIC · WCAG 2.5.8 (Android guideline 48dp)**
+**O-01 · `ComposeSmallTouchTarget` · ERROR below 24dp, WARNING below 48dp (since 2026-10-19) · STATIC · WCAG 2.5.8 (Android guideline 48dp)**
 - Flag: an element with `clickable`/`toggleable`/`selectable` in its modifier chain and a literal `size`, `width`, `height`, `requiredSize` (etc.) below `48.dp`, when `minimumInteractiveComponentSize()` is not in the chain.
 - Ignore: `IconButton` and Material buttons (they enforce the minimum); sizes that are not literals; non-interactive elements.
 - Note: modifier order matters in Compose. Record exactly how you treat order in DECISIONS.
@@ -257,7 +257,7 @@ Record any further overlaps you find in DECISIONS.
 - Ignore: siblings; clickables inside a separately declared composable called from the content (Phase 2 does not follow calls, record in LIMITATIONS).
 - Note: this rule may produce false positives for common card patterns. Track precision on the development apps and report to Sedra.
 
-**U-01 · `ComposeMissingHeading` · ERROR · STATIC_LLM · WCAG 1.3.1, 2.4.6**
+**U-01 · `ComposeMissingHeading` · WARNING (Critical, candidate; ERROR until 2026-10-19) · STATIC_LLM · WCAG 1.3.1**
 - Flag (candidate): `Text(...)` with `style = MaterialTheme.typography.displayX / headlineX / titleLarge`, or `fontSize >= 20.sp` with `FontWeight.Bold`, and no `heading()` in its semantics.
 - Ignore: Text that already has `heading()`; `TopAppBar` titles (verify whether Material already marks them, and note the result); text inside a `Button`.
 
@@ -269,7 +269,7 @@ Record any further overlaps you find in DECISIONS.
 - Flag: `TextField`/`OutlinedTextField` without a `label` argument (placeholder alone does not count, because it disappears when the user types).
 - Ignore: fields with `label = { ... }`.
 
-**R-01 · `ComposeClickableWithoutRole` · ERROR · STATIC_LLM · WCAG 4.1.2**
+**R-01 · `ComposeClickableWithoutRole` · WARNING (Critical, candidate; ERROR until 2026-10-19) · STATIC_LLM · WCAG 4.1.2**
 - Flag (candidate): `Modifier.clickable` without a `role` argument and without `role = ...` in a semantics block, on a custom element (not a Material component).
 - Ignore: clickables with a role; Material components; the O-04 case (see overlap policy).
 

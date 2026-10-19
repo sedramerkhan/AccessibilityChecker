@@ -44,10 +44,10 @@ import androidx.compose.ui.unit.sp
     fun testHeadlineStyle() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:21: Error: ${message("headlineSmall")}
+            src/test/pkg/Screen.kt:21: Warning: ${message("headlineSmall")}
                 Text("Settings", style = MaterialTheme.typography.headlineSmall)
                 ~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -63,13 +63,13 @@ import androidx.compose.ui.unit.sp
     fun testDisplayAndTitleLargeStylesWithCopy() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:22: Error: ${message("displayMedium")}
+            src/test/pkg/Screen.kt:22: Warning: ${message("displayMedium")}
                     Text(text = "Welcome", style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal))
                     ~~~~
-            src/test/pkg/Screen.kt:23: Error: ${message("titleLarge")}
+            src/test/pkg/Screen.kt:23: Warning: ${message("titleLarge")}
                     Text(style = MaterialTheme.typography.titleLarge, text = "Recent")
                     ~~~~
-            2 errors, 0 warnings
+            0 errors, 2 warnings
             """,
             screen(
                 """
@@ -88,10 +88,10 @@ import androidx.compose.ui.unit.sp
     fun testLargeBoldFontSize() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:21: Error: ${message("24sp bold")}
+            src/test/pkg/Screen.kt:21: Warning: ${message("24sp bold")}
                 Text("Orders", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 ~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -107,10 +107,10 @@ import androidx.compose.ui.unit.sp
     fun testLargeBoldTextStyle() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:21: Error: ${message("20sp bold")}
+            src/test/pkg/Screen.kt:21: Warning: ${message("20sp bold")}
                 Text(
                 ~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -130,10 +130,10 @@ import androidx.compose.ui.unit.sp
         // heading() on the parent Column does not make the Text itself a heading.
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:22: Error: ${message("h3")}
+            src/test/pkg/Screen.kt:22: Warning: ${message("h3")}
                     androidx.compose.material.Text("Old style", style = androidx.compose.material.MaterialTheme.typography.h3)
                                               ~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """

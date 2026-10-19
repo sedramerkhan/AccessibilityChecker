@@ -174,7 +174,7 @@ object Taxonomy {
             id = U01MissingHeadingDetector.TAXONOMY_ID,
             issue = U01MissingHeadingDetector.ISSUE,
             pour = Pour.UNDERSTANDABLE,
-            wcag = listOf("1.3.1", "2.4.6"),
+            wcag = listOf("1.3.1"),
             detection = DetectionType.STATIC_LLM,
             priority = Priority.CRITICAL,
         ),

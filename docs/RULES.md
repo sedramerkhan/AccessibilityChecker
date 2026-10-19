@@ -24,7 +24,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 | O-05 | `ComposeEmptyClickable` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-06 | `ComposeDisabledButClickable` | Warning (Minor) | STATIC | 4.1.2 | Done |
 | O-07 | `ComposeMissingCustomActions` | Warning (Minor) | STATIC_LLM | 2.1.1 | Done |
-| U-01 | `ComposeMissingHeading` | Error (Critical) | STATIC_LLM | 1.3.1, 2.4.6 | Done |
+| U-01 | `ComposeMissingHeading` | Warning (Critical) | STATIC_LLM | 1.3.1 | Done |
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
 | U-04 | `ComposeVagueButtonLabel` | Warning (Major) | STATIC_LLM | 2.4.6 | Done |
@@ -823,8 +823,8 @@ Children emitted by another composable function are not counted, and the rule do
 ## U-01 · ComposeMissingHeading
 
 - **Taxonomy:** Understandable, Critical, STATIC_LLM (a candidate: whether the text is really a heading needs a judgement about intent).
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.3.1 Info and Relationships, 2.4.6 Headings and Labels.
+- **Lint:** `Severity.WARNING`, priority 9, category `A11Y`. Critical in the taxonomy, but a candidate, so it does not fail the build (since 2026-10-19, see DECISIONS).
+- **WCAG 2.2:** 1.3.1 Info and Relationships. (2.4.6 Headings and Labels was cited until 2026-10-19; it requires headings to be descriptive, not to be marked, so it does not apply.)
 - **Detector:** `detectors/understandable/U01MissingHeadingDetector.kt`
 - **Message:** `[U-01] Possible heading: this Text is styled like a heading (headlineSmall) but has no heading() semantics, so screen reader users cannot jump to it`. The part in brackets names the style, or the size, for example `24sp bold`.
 - **Reported at:** the name of the `Text` call.

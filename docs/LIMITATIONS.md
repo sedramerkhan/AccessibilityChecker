@@ -125,6 +125,22 @@ val iconSize = 20.dp
 Box(Modifier.size(iconSize).clickable { open() }) // not reported
 ```
 
+### The WCAG spacing exception is not checked
+
+WCAG 2.5.8 accepts a target below 24dp when a 24dp circle centred on it does not overlap any
+other target. The rule only sees the element's own modifier chain, not its neighbours, so such a
+target is still reported as an error:
+
+```kotlin
+Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
+    Box(Modifier.size(20.dp).clickable { }) // error, although the spacing passes WCAG 2.5.8
+    Box(Modifier.size(20.dp).clickable { })
+}
+```
+
+It still fails the Android 48dp guideline, so a report is justified; only the severity is
+arguable.
+
 ### `minimumInteractiveComponentSize()` in an order where it does not help
 
 Any position in the chain suppresses the warning.

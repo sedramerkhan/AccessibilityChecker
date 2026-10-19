@@ -1,8 +1,10 @@
 package org.svu.sedra.a11ylint.detectors.operable
 
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
@@ -21,6 +23,10 @@ import org.svu.sedra.a11ylint.util.ModifierSizes.Axis
  * The rule starts at each click or toggle modifier, reads the whole modifier chain around it,
  * and measures the clickable bounds with [ModifierSizes.measure]. Chains passed to a Material
  * component that enforces the minimum size itself are ignored.
+ *
+ * Two thresholds, two severities. Below [WCAG_MINIMUM_DP] the target fails WCAG 2.2 success
+ * criterion 2.5.8 and is reported as an error. From there up to [MINIMUM_DP] it meets WCAG but
+ * not the Android guideline, and the same issue is reported as a warning.
  */
 class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
     override fun getApplicableMethodNames(): List<String> =
@@ -48,15 +54,26 @@ class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
         val description = small.joinToString(" and ") { (axis, measured) ->
             "${format(measured.dp)}dp " + if (axis == Axis.WIDTH) "wide" else "high"
         }
-        context.report(
+        val failsWcag = small.any { (_, measured) -> measured.dp < WCAG_MINIMUM_DP }
+        val call = small.first().second.call
+        val incident = Incident(
             ISSUE,
-            small.first().second.call,
-            context.getCallLocation(small.first().second.call, includeReceiver = false, includeArguments = true),
+            call,
+            context.getCallLocation(call, includeReceiver = false, includeArguments = true),
             A11yIssues.message(
                 TAXONOMY_ID,
-                "Clickable element is only $description, smaller than the 48dp minimum touch target",
+                if (failsWcag) {
+                    "Clickable element is only $description, below the 24dp WCAG minimum target " +
+                        "size and the 48dp Android touch target"
+                } else {
+                    "Clickable element is only $description, smaller than the 48dp Android " +
+                        "minimum touch target"
+                },
             ),
         )
+        // The issue's default severity is the WCAG case; the guideline-only case is lowered.
+        if (!failsWcag) incident.overrideSeverity(Severity.WARNING)
+        context.report(incident)
     }
 
     private fun format(dp: Float): String =
@@ -65,8 +82,11 @@ class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
     companion object {
         const val TAXONOMY_ID = "O-01"
 
-        /** Android's minimum touch target size (Material guideline), used for WCAG 2.5.8. */
+        /** Android's minimum touch target size (Material guideline). Below it: a warning. */
         const val MINIMUM_DP = 48f
+
+        /** WCAG 2.2 success criterion 2.5.8 (Target Size, Minimum, level AA). Below it: an error. */
+        const val WCAG_MINIMUM_DP = 24f
 
         private val MINIMUM_SIZE_MODIFIERS = setOf(
             "androidx.compose.material3.minimumInteractiveComponentSize",
@@ -78,11 +98,12 @@ class O01SmallTouchTargetDetector : Detector(), SourceCodeScanner {
             id = "ComposeSmallTouchTarget",
             briefDescription = "Clickable element smaller than 48dp",
             explanation = """
-                Clickable elements need a touch target of at least 48 by 48dp. Small targets are \
-                hard to hit for people with motor impairments or tremors, and for anyone using \
-                the phone with one hand. This relates to WCAG 2.2 success criterion 2.5.8 (Target \
-                Size, Minimum) and the Android accessibility guideline of 48dp. Make the element \
-                at least `48.dp`, add padding inside the clickable area, or add \
+                Small touch targets are hard to hit for people with motor impairments or tremors, \
+                and for anyone using the phone with one hand. A target below 24 by 24dp fails WCAG \
+                2.2 success criterion 2.5.8 (Target Size, Minimum) and is reported as an error; a \
+                target from 24dp up to 48dp meets WCAG but not the Android accessibility guideline \
+                of 48 by 48dp, and is reported as a warning. Make the element at least `48.dp`, \
+                add padding inside the clickable area, or add \
                 `Modifier.minimumInteractiveComponentSize()`.
             """,
             priority = Priority.CRITICAL,

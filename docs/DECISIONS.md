@@ -1226,3 +1226,40 @@ to every timed run, which also drops the compile tasks. Verified with `--dry-run
 **Next.** Run the script once more on an idle machine. The figure from that run is the one for
 the thesis; the table above stays here as the record of why it was rerun.
 
+### O-01 has two levels: an error below 24dp, a warning below 48dp
+
+**Decision (Sedra, 2026-10-19):** O-01 keeps one issue (`ComposeSmallTouchTarget`) but reports
+it at two severities:
+- **below 24dp** on any axis: `Severity.ERROR`, because the target fails WCAG 2.2 success
+  criterion 2.5.8 (Target Size, Minimum, level AA), whose minimum is 24 by 24;
+- **from 24dp up to 48dp**: `Severity.WARNING`, because the target meets WCAG but not the Android
+  accessibility guideline of 48 by 48dp.
+
+**Reason.** O-01 reported everything below 48dp as an error and cited WCAG 2.5.8, but a 32dp
+target passes 2.5.8. The claim was inaccurate, and an examiner who knows WCAG could challenge it.
+48dp is still the right threshold to report at, since it is Google's guideline and what its
+Accessibility Scanner checks, so nothing that was reported before is dropped; only the severity
+now follows the standard that is actually broken. The thesis can state the rule simply: errors
+are WCAG failures, warnings are platform guideline failures.
+
+**How.** `Incident(...).overrideSeverity(Severity.WARNING)` (Lint API, present in lint-api
+32.4.1) lowers the guideline-only case, so the issue's default severity stays ERROR, which is the
+WCAG case, and `Taxonomy.kt` keeps O-01 as Critical. Exactly 24dp counts as meeting WCAG. The
+message names the broken standard. A severity set by the user in `lint.xml` or the `lint { }`
+block still takes precedence, as for any Lint issue.
+
+**Alternatives considered.**
+- Keep ERROR for everything and only fix the explanation: accurate text, but every 24 to 47dp
+  target would still count as a Critical defect in the evaluation.
+- Keep everything as it was: the WCAG claim would stay inaccurate.
+- Two separate issues: rejected because it would add a 28th taxonomy entry for one defect.
+
+**Not covered.** WCAG 2.5.8 has a spacing exception: a target below 24dp passes if a 24dp circle
+centred on it does not overlap another target. The rule cannot see neighbouring targets, so it
+reports such a target as an error anyway (recorded in LIMITATIONS).
+
+**Verified.** 12 O-01 tests (7 positive: 3 errors and 4 warnings; 5 negative). Sample app: the 20dp
+target is an error, the 24, 32, 32 and 40dp targets are warnings, and the check stays at 207
+expected, 207 reported. The JSON export carries the per-finding severity. On the development
+apps, O-01's only finding (Jetchat `Conversation.kt:598`, 42dp high) becomes a warning.
+

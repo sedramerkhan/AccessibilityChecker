@@ -305,3 +305,10 @@ issues and the app leaves `abortOnError` at its default. The lint reports are wr
 before the build fails, so the run is complete; the failure is the rules doing their job, not a
 broken build. For an evaluation harness, set `abortOnError = false` so a corpus run does not stop
 at the first app with an error-level finding.
+
+## Note, 2026-10-19: O-01 severity
+
+O-01 now reports below 24dp as an error and 24 to 47dp as a warning (see DECISIONS, 2026-10-19).
+Its only finding here, Jetchat `Conversation.kt:598` ("only 42dp high"), is therefore a warning.
+The counts in the tables above do not change; only that finding's severity does.
+

@@ -46,6 +46,11 @@ belongs to.
 None at the moment. All four questions raised in Milestone 4 were answered on 2026-10-18 and
 2026-10-19.
 
+**Answered:** O-01's severity (raised by Sedra on 2026-10-19). O-01 called every target below
+48dp a WCAG 2.5.8 error, but WCAG's minimum is 24dp. Below 24dp is now an error, 24 to 47dp a
+warning; nothing reported before is dropped. On the development apps, the one O-01 finding (42dp)
+becomes a warning (2026-10-19, see DECISIONS).
+
 **Answered:** R-05 and the word `value` (question 1 until 2026-10-19). `value` now counts only as
 the whole parameter name. A hand-drawn slider taking `value: Float` is still reported, which is
 right, because Material's own `Slider` sets the range through `progressSemantics`. A name such as
@@ -179,6 +184,11 @@ These are not questions, they are edits the taxonomy chapter needs.
    value" to "whose name contains progress, percent or fraction, or is exactly value", and the
    rule accepts `Modifier.progressSemantics` as setting the range. Agreed with Sedra on
    2026-10-19. See `DECISIONS.md`.
+
+9. **O-01 gets two severities**: an error below 24dp (fails WCAG 2.5.8) and a warning from 24dp
+   up to 48dp (Android guideline only). The taxonomy priority stays Critical, with a note that
+   the guideline-only case is reported as a warning. Agreed with Sedra on 2026-10-19. See
+   `DECISIONS.md`.
 
 ### The Python check is verified (2026-10-12)
 

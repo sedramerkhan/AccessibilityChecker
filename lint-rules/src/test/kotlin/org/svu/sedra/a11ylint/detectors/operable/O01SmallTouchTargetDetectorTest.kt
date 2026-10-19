@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
     fun testSizeBeforeClickable() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 20dp wide and 20dp high, smaller than the 48dp minimum touch target [ComposeSmallTouchTarget]
+            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 20dp wide and 20dp high, below the 24dp WCAG minimum target size and the 48dp Android touch target [ComposeSmallTouchTarget]
                 Box(modifier = Modifier.size(20.dp).clickable { onClose() })
                                         ~~~~~~~~~~~
             1 errors, 0 warnings
@@ -68,10 +68,10 @@ import androidx.compose.ui.unit.dp
     fun testSizeAfterClickable() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 32dp wide and 32dp high, smaller than the 48dp minimum touch target [ComposeSmallTouchTarget]
+            src/test/pkg/Screen.kt:30: Warning: [O-01] Clickable element is only 32dp wide and 32dp high, smaller than the 48dp Android minimum touch target [ComposeSmallTouchTarget]
                 Box(Modifier.combinedClickable(onLongClick = {}) { onClose() }.size(32.dp))
                                                                                ~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -87,10 +87,10 @@ import androidx.compose.ui.unit.dp
     fun testOnlyOneAxisTooSmall() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:34: Error: [O-01] Clickable element is only 40dp wide, smaller than the 48dp minimum touch target [ComposeSmallTouchTarget]
+            src/test/pkg/Screen.kt:34: Warning: [O-01] Clickable element is only 40dp wide, smaller than the 48dp Android minimum touch target [ComposeSmallTouchTarget]
                         .width(40.dp)
                          ~~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -112,10 +112,10 @@ import androidx.compose.ui.unit.dp
     fun testPaddingInsideOuterSizeShrinksTheTarget() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 32dp wide and 32dp high, smaller than the 48dp minimum touch target [ComposeSmallTouchTarget]
+            src/test/pkg/Screen.kt:30: Warning: [O-01] Clickable element is only 32dp wide and 32dp high, smaller than the 48dp Android minimum touch target [ComposeSmallTouchTarget]
                 Box(Modifier.size(48.dp).padding(8.dp).clickable { onClose() })
                              ~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -131,10 +131,10 @@ import androidx.compose.ui.unit.dp
     fun testSizeFromLocalValue() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 24dp wide and 24dp high, smaller than the 48dp minimum touch target [ComposeSmallTouchTarget]
+            src/test/pkg/Screen.kt:30: Warning: [O-01] Clickable element is only 24dp wide and 24dp high, smaller than the 48dp Android minimum touch target [ComposeSmallTouchTarget]
                 val small = Modifier.requiredSize(24.dp)
                                      ~~~~~~~~~~~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -142,6 +142,46 @@ import androidx.compose.ui.unit.dp
                 fun Option(selected: Boolean, onSelect: () -> Unit) {
                     val small = Modifier.requiredSize(24.dp)
                     Box(small.selectable(selected = selected, onClick = onSelect))
+                }
+                """,
+            ),
+        )
+    }
+
+    // One axis below 24dp is a WCAG failure even when the other axis is large enough.
+    fun testOneAxisBelowWcagIsAnError() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 16dp wide, below the 24dp WCAG minimum target size and the 48dp Android touch target [ComposeSmallTouchTarget]
+                Box(Modifier.clickable { onClose() }.width(16.dp).height(56.dp))
+                                                     ~~~~~~~~~~~~
+            1 errors, 0 warnings
+            """,
+            screen(
+                """
+                @Composable
+                fun Close(onClose: () -> Unit) {
+                    Box(Modifier.clickable { onClose() }.width(16.dp).height(56.dp))
+                }
+                """,
+            ),
+        )
+    }
+
+    // Just below the WCAG minimum: still an error.
+    fun testJustBelowWcagIsAnError() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:30: Error: [O-01] Clickable element is only 23.5dp wide and 23.5dp high, below the 24dp WCAG minimum target size and the 48dp Android touch target [ComposeSmallTouchTarget]
+                Box(Modifier.size(23.5.dp).clickable { onClose() })
+                             ~~~~~~~~~~~~~
+            1 errors, 0 warnings
+            """,
+            screen(
+                """
+                @Composable
+                fun Close(onClose: () -> Unit) {
+                    Box(Modifier.size(23.5.dp).clickable { onClose() })
                 }
                 """,
             ),

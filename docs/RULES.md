@@ -17,7 +17,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 | P-05 | `ComposeTextOverImage` | Warning (Minor) | STATIC_LLM | 1.4.3 | Done |
 | P-06 | `ComposeMissingLiveRegion` | Warning (Major) | STATIC_LLM | 4.1.3 | Done |
 | P-07 | `ComposeMissingPaneTitle` | Warning (Minor) | STATIC | 1.3.1 | Done |
-| O-01 | `ComposeSmallTouchTarget` | Error (Critical) | STATIC | 2.5.8 | Done |
+| O-01 | `ComposeSmallTouchTarget` | Error below 24dp (Critical), Warning below 48dp | STATIC | 2.5.8 | Done |
 | O-02 | `ComposeMissingOnClickLabel` | Warning (Major) | STATIC | 4.1.2 | Done |
 | O-03 | `ComposeNestedClickable` | Error (Critical) | STATIC | 2.4.3, 4.1.2 | Done |
 | O-04 | `ComposeClickableContainer` | Warning (Major) | STATIC_LLM | 4.1.2 | Done |
@@ -415,10 +415,11 @@ Only `Popup` and `Dialog` are treated as overlays. CLAUDE.md also mentions a ful
 ## O-01 · ComposeSmallTouchTarget
 
 - **Taxonomy:** Operable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 2.5.8 Target Size (Minimum). The threshold is the Android guideline of 48dp, which is stricter than the 24 CSS pixels of WCAG.
+- **Lint:** `Severity.ERROR` by default, priority 9, category `A11Y`. Since 2026-10-19 a target that is at least 24dp on both axes is reported as `Severity.WARNING` through `Incident.overrideSeverity`.
+- **WCAG 2.2:** 2.5.8 Target Size (Minimum, level AA), whose minimum is 24 by 24. The 48dp threshold is the Android guideline, which is stricter.
+- **Two levels:** below 24dp on any axis the target fails WCAG 2.5.8 and is an **error**; from 24dp up to 48dp it meets WCAG but not the Android guideline and is a **warning**.
 - **Detector:** `detectors/operable/O01SmallTouchTargetDetector.kt`
-- **Message:** `[O-01] Clickable element is only 20dp wide and 20dp high, smaller than the 48dp minimum touch target` (only the axes below 48dp are named).
+- **Message:** below 24dp, `[O-01] Clickable element is only 20dp wide and 20dp high, below the 24dp WCAG minimum target size and the 48dp Android touch target`; from 24dp, `[O-01] Clickable element is only 32dp wide and 32dp high, smaller than the 48dp Android minimum touch target` (only the axes below 48dp are named).
 - **Reported at:** the size modifier call that makes the target too small (for example `size(20.dp)`).
 
 ### What it flags
@@ -468,8 +469,8 @@ Box(Modifier.clickable { onClose() }.padding(12.dp).size(24.dp)) { ... } // 48dp
 
 ### Tests and sample
 
-- `O01SmallTouchTargetDetectorTest`: 5 positive tests and 5 negative tests (13 cases in the negative tests).
-- Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines) and `O01GoodScreen.kt` (no reports).
+- `O01SmallTouchTargetDetectorTest`: 7 positive tests (3 errors, including 23.5dp just below the WCAG minimum, and 4 warnings, including 24dp exactly) and 5 negative tests (13 cases in the negative tests).
+- Sample: `sample-app/.../defects/o01/O01BadScreen.kt` (5 `// EXPECT` lines: one error at 20dp, four warnings at 24, 32, 32 and 40dp) and `O01GoodScreen.kt` (no reports).
 
 ---
 

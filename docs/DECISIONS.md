@@ -1199,3 +1199,30 @@ JitPack builds on Linux. Page and build logs: https://jitpack.io/#sedramerkhan/A
 **Not changed.** `DEV_APP_RESULTS.md` keeps `org.svu.sedra:a11ylint:0.1.0`, because that is what
 the development app runs actually used.
 
+### The build overhead run no longer includes compiling the rules
+
+**What happened.** On 2026-10-19 `scripts/measure_lint_time.sh 7` ran on an idle machine and,
+for the first time, passed its own reliability check (the "with" runs spread 11.6 s, less than
+the effect):
+
+| | trimmed | median | mean | min | max |
+|---|---|---|---|---|---|
+| with rules | 39.31 s | 38.37 s | 39.27 s | 33.37 s | 44.99 s |
+| without | 19.71 s | 20.29 s | 19.63 s | 16.33 s | 22.54 s |
+| added | 19.60 s | 18.08 s | 19.64 s | | |
+
+**Why it cannot be quoted.** The script times `:sample-app:lintDebug --rerun-tasks`, and with the
+rules attached through `lintChecks(project(":lint-rules"))` that task graph includes
+`:lint-rules:compileKotlin` and `:lint-rules:jar`. `--rerun-tasks` forces them, so every "with"
+run recompiled all detectors from Kotlin. A project that uses the published library receives a
+built jar and never pays this. Recompiling the rules alone took 4.7 to 6.2 s here (three runs,
+including Gradle's own start-up), so a share of the 19.60 s is compile time, not Lint time.
+
+**Fix.** The script builds `:lint-rules:jar` once before timing and passes `-x :lint-rules:jar`
+to every timed run, which also drops the compile tasks. Verified with `--dry-run` (no
+`lint-rules` task in the graph) and with a real run (the sample check still gives 207 expected,
+207 reported, so the rules still load from the prebuilt jar).
+
+**Next.** Run the script once more on an idle machine. The figure from that run is the one for
+the thesis; the table above stays here as the record of why it was rerun.
+

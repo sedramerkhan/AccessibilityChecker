@@ -85,7 +85,9 @@ bash scripts/measure_lint_time.sh 7      # 7 runs with the rules, 7 without
 
 Each run is `:sample-app:lintDebug --rerun-tasks`. "Without" means the `lintChecks` dependency is
 not applied at all (`-Pa11ylint.off=true`), so the figure covers loading the rules as well as
-running them. Runs alternate between the two, and the summary leads with a **trimmed mean**, the
+running them. The rules jar is built once before timing and reused (`-x :lint-rules:jar`), so
+compiling the rules is not counted, just as a project using the published library never
+compiles them. Runs alternate between the two, and the summary leads with a **trimmed mean**, the
 fastest and slowest run of each side dropped.
 
 Run it on an otherwise idle machine. The script warns when the spread between runs is wider than

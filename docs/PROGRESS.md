@@ -32,9 +32,11 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
    development apps); `scripts/measure_lint_time.sh`; and the final pass over `RULES.md`, which
    reordered the catalog into taxonomy order, added the 13 bad/good examples that were missing,
    and cross-checked every rule's metadata against `Taxonomy.kt` and the detectors.
-2. **One measurement is still owed:** `scripts/measure_lint_time.sh 7` on an otherwise idle
-   machine, for the build overhead figure. Three sessions on this machine all failed the
-   script's own reliability check (see DECISIONS, 2026-10-14).
+2. **One measurement is still owed:** `bash scripts/measure_lint_time.sh 7` on an otherwise
+   idle machine, for the build overhead figure. The 2026-10-19 run was the first to pass the
+   reliability check (19.60 s added, trimmed, 7 repetitions), but it turned out to include
+   recompiling the rules in every run. The script now reuses a prebuilt jar, so it has to be run
+   once more (see DECISIONS, 2026-10-14 and 2026-10-19).
 
 ### Open questions for Sedra
 

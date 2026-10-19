@@ -6,6 +6,11 @@
 # is not applied at all (`-Pa11ylint.off=true`), not merely that the issues are disabled, so the
 # figure covers loading the jar and running the detectors.
 #
+# The rules jar is built once before timing and left out of every timed run
+# (`-x :lint-rules:jar`, which also drops its compile tasks). Otherwise `--rerun-tasks` would
+# recompile all the detectors from Kotlin in every "with" run, a cost a project that uses the
+# published library never pays. Until 2026-10-19 that compile was included (see DECISIONS).
+#
 # The run order alternates (with, without, with, without, ...) rather than doing all the "with"
 # runs first. A machine that warms up or throttles during the measurement then affects both sides
 # equally instead of biasing one.
@@ -39,7 +44,7 @@ fi
 run_lint() {
     local start end
     start=$(date +%s%3N)
-    if ! "$GRADLE" "$TASK" --rerun-tasks -q "$@" > /dev/null 2>&1; then
+    if ! "$GRADLE" "$TASK" --rerun-tasks -x :lint-rules:jar -q "$@" > /dev/null 2>&1; then
         echo "A Lint run failed. Run the task by hand to see why." >&2
         return 1
     fi
@@ -71,6 +76,11 @@ summarise() {
 }
 
 echo "Measuring $TASK, $REPS repetitions each way."
+echo "Building the rules jar once; the timed runs reuse it instead of recompiling the rules."
+if ! "$GRADLE" :lint-rules:jar -q > /dev/null 2>&1; then
+    echo "Building :lint-rules:jar failed. Run it by hand to see why." >&2
+    exit 1
+fi
 echo "A warm-up run first, so the Gradle daemon and the Kotlin compiler are already started."
 run_lint > /dev/null || exit 1
 

@@ -668,9 +668,19 @@ the function, or by a parameter named something else, is not reported:
 
 ### `value` is a broad word
 
-The name list comes from CLAUDE.md and includes `value`, so a composable with an unrelated
-`value: Float` that happens to draw something can be reported. The drawing requirement keeps this
-rare, but it is the rule's most likely false positive.
+The name list comes from CLAUDE.md and includes `value`. Since 2026-10-19 it counts only as the
+whole parameter name, so `alphaValue` or `animatedValue` is no longer reported, but a composable
+with an unrelated parameter named exactly `value` that happens to draw something still is:
+
+```kotlin
+@Composable fun Shimmer(value: Float) {   // reported, although this is not progress
+    Canvas(Modifier) { drawRect(color.copy(alpha = value)) }
+}
+```
+
+The drawing requirement keeps this rare, but it remains the rule's most likely false positive.
+The narrowing also has a cost: a progress value in a name like `sliderValue` is now missed, unless
+the name also contains `progress`, `percent` or `fraction`.
 
 ### Only `Canvas` and `drawBehind` count as hand drawing
 

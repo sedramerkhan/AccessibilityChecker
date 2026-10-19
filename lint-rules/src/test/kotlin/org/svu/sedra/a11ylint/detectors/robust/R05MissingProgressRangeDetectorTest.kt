@@ -16,6 +16,7 @@ package test.pkg
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +36,7 @@ $body
     fun testCanvasProgressBar() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:17: Warning: [R-05] ProgressBar draws its own progress from progress but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+src/test/pkg/Screen.kt:18: Warning: [R-05] ProgressBar draws its own progress from progress but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
                 @Composable fun ProgressBar(progress: Float) {
                                 ~~~~~~~~~~~
 0 errors, 1 warning
@@ -51,7 +52,7 @@ src/test/pkg/Screen.kt:17: Warning: [R-05] ProgressBar draws its own progress fr
     fun testDrawBehindRing() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:17: Warning: [R-05] Ring draws its own progress from fraction but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+src/test/pkg/Screen.kt:18: Warning: [R-05] Ring draws its own progress from fraction but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
                 @Composable fun Ring(fraction: Float) {
                                 ~~~~
 0 errors, 1 warning
@@ -68,7 +69,7 @@ src/test/pkg/Screen.kt:17: Warning: [R-05] Ring draws its own progress from frac
     fun testNameContainingAProgressWord() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:17: Warning: [R-05] Download draws its own progress from downloadPercent but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+src/test/pkg/Screen.kt:18: Warning: [R-05] Download draws its own progress from downloadPercent but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
                 @Composable fun Download(downloadPercent: Float) {
                                 ~~~~~~~~
 0 errors, 1 warning
@@ -85,7 +86,7 @@ src/test/pkg/Screen.kt:17: Warning: [R-05] Download draws its own progress from 
     fun testSemanticsWithoutTheRange() {
         expectWarnings(
             """
-src/test/pkg/Screen.kt:17: Warning: [R-05] ProgressBar draws its own progress from progress but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+src/test/pkg/Screen.kt:18: Warning: [R-05] ProgressBar draws its own progress from progress but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
                 @Composable fun ProgressBar(progress: Float) {
                                 ~~~~~~~~~~~
 0 errors, 1 warning
@@ -98,7 +99,62 @@ src/test/pkg/Screen.kt:17: Warning: [R-05] ProgressBar draws its own progress fr
         )
     }
 
+    // `value` as the whole name is the slider and gauge convention, so it counts.
+    fun testExactValueName() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:18: Warning: [R-05] VolumeSlider draws its own progress from value but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+                @Composable fun VolumeSlider(value: Float) {
+                                ~~~~~~~~~~~~
+0 errors, 1 warning
+            """,
+            screen("""
+                @Composable fun VolumeSlider(value: Float) {
+                    Box(Modifier.drawBehind { })
+                }
+            """),
+        )
+    }
+
+    // A progress word inside a longer name still counts when `value` sits beside it.
+    fun testProgressValueName() {
+        expectWarnings(
+            """
+src/test/pkg/Screen.kt:18: Warning: [R-05] Upload draws its own progress from progressValue but sets no progressBarRangeInfo, so screen readers announce no value [ComposeMissingProgressRange]
+                @Composable fun Upload(progressValue: Float) {
+                                ~~~~~~
+0 errors, 1 warning
+            """,
+            screen("""
+                @Composable fun Upload(progressValue: Float) {
+                    Canvas(Modifier) { }
+                }
+            """),
+        )
+    }
+
     // Negative tests: must not be flagged.
+
+    // Inside a longer name `value` is too common to mean progress.
+    fun testValueInsideALongerNameIsClean() = expectClean(screen("""
+        @Composable fun FadingLogo(alphaValue: Float) {
+            Canvas(Modifier) { }
+        }
+    """))
+
+    // The foundation shortcut sets progressBarRangeInfo itself.
+    fun testProgressSemanticsIsClean() = expectClean(screen("""
+        @Composable fun ProgressBar(progress: Float) {
+            Canvas(Modifier.progressSemantics(progress)) { }
+        }
+    """))
+
+    // The indeterminate overload sets the range too.
+    fun testIndeterminateProgressSemanticsIsClean() = expectClean(screen("""
+        @Composable fun Spinner(fraction: Float) {
+            Box(Modifier.progressSemantics().drawBehind { })
+        }
+    """))
 
     fun testProgressBarRangeInfoIsClean() = expectClean(screen("""
         @Composable fun ProgressBar(progress: Float) {

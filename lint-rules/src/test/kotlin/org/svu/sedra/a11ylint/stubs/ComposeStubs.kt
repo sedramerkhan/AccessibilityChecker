@@ -491,6 +491,14 @@ private val foundationStubs = kotlin(
     ) {}
 
     @Composable fun Canvas(modifier: Modifier, onDraw: DrawScope.() -> Unit) {}
+
+    // ProgressSemantics.kt, foundation 1.12.1: both overloads set progressBarRangeInfo.
+    fun Modifier.progressSemantics(
+        value: Float,
+        valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+        steps: Int = 0,
+    ): Modifier = this
+    fun Modifier.progressSemantics(): Modifier = this
     """,
 ).indented()
 

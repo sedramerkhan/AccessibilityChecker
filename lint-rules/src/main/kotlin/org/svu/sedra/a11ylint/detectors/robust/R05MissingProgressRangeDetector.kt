@@ -24,7 +24,8 @@ import org.svu.sedra.a11ylint.util.ModifierChain
  * A hand-drawn bar or ring shows how far along something is by its shape alone. Nothing in the
  * drawing reaches accessibility services, so TalkBack announces no value at all and the user
  * cannot tell whether the task is at the start, halfway or nearly done. The Material indicators
- * set the range themselves, which is why a function that uses one is not reported.
+ * set the range themselves, which is why a function that uses one is not reported, and so does
+ * the foundation shortcut `Modifier.progressSemantics`.
  */
 class R05MissingProgressRangeDetector : Detector(), SourceCodeScanner {
     override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java)
@@ -39,6 +40,8 @@ class R05MissingProgressRangeDetector : Detector(), SourceCodeScanner {
             // A Material indicator already carries the range, so the function is not hand-drawn
             // progress in the sense this rule means.
             if (calls.any { ComposeCalls.isCall(it, MATERIAL_INDICATORS) }) return
+            // progressSemantics(...) sets progressBarRangeInfo itself (ProgressSemantics.kt).
+            if (calls.any { ComposeCalls.isCall(it, PROGRESS_SEMANTICS) }) return
             if (setsProgressRange(node)) return
 
             context.report(
@@ -54,11 +57,14 @@ class R05MissingProgressRangeDetector : Detector(), SourceCodeScanner {
         }
     }
 
-    /** A `Float` parameter whose name says it carries a progress value. */
+    /**
+     * A `Float` parameter whose name says it carries a progress value: one that contains a
+     * progress word, or is exactly `value`.
+     */
     private fun isProgressParameter(parameter: UParameter): Boolean {
         if (parameter.type.canonicalText !in FLOAT_TYPES) return false
         val name = parameter.name.lowercase()
-        return PROGRESS_NAMES.any { it in name }
+        return name == EXACT_PROGRESS_NAME || PROGRESS_NAMES.any { it in name }
     }
 
     private fun setsProgressRange(method: UMethod): Boolean {
@@ -95,8 +101,18 @@ class R05MissingProgressRangeDetector : Detector(), SourceCodeScanner {
         /** Kotlin `Float` is a JVM primitive; the boxed forms appear for a nullable `Float?`. */
         private val FLOAT_TYPES = setOf("float", "java.lang.Float", "kotlin.Float")
 
-        /** CLAUDE.md 7.4: "named like progress, percent, fraction or value". */
-        private val PROGRESS_NAMES = listOf("progress", "percent", "fraction", "value")
+        /**
+         * CLAUDE.md 7.4: "named like progress, percent, fraction or value". These three may
+         * appear anywhere in the name, so `downloadPercent` counts.
+         */
+        private val PROGRESS_NAMES = listOf("progress", "percent", "fraction")
+
+        /**
+         * `value` counts only as the whole name, the convention of sliders and gauges
+         * (Material's `Slider(value: Float)`). Inside a longer name it is too common:
+         * `alphaValue` or `animatedValue` drawn on a `Canvas` is not progress.
+         */
+        private const val EXACT_PROGRESS_NAME = "value"
 
         /** Drawing the indicator by hand, rather than composing one. */
         private val DRAWING = setOf(
@@ -107,6 +123,9 @@ class R05MissingProgressRangeDetector : Detector(), SourceCodeScanner {
         private val MATERIAL_INDICATORS = setOf("androidx.compose.material3", "androidx.compose.material")
             .flatMap { listOf("$it.LinearProgressIndicator", "$it.CircularProgressIndicator") }
             .toSet()
+
+        /** Both overloads, determinate and indeterminate, set `progressBarRangeInfo`. */
+        private const val PROGRESS_SEMANTICS = "androidx.compose.foundation.progressSemantics"
 
         private const val PROGRESS_RANGE = "progressBarRangeInfo"
 

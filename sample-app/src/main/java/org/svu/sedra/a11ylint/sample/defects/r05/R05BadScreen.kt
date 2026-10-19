@@ -46,3 +46,18 @@ fun R05BadProgressRing(fraction: Float) { // EXPECT: ComposeMissingProgressRange
             },
     )
 }
+
+// A slider drawn by hand: the knob's position is the only sign of the volume.
+@Composable
+fun R05BadVolumeSlider(value: Float) { // EXPECT: ComposeMissingProgressRange
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(24.dp),
+    ) {
+        drawRect(
+            color = Color(0xFF1565C0),
+            size = Size(width = size.width * value, height = size.height),
+        )
+    }
+}

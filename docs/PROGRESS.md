@@ -13,8 +13,8 @@
 
 **Every rule in the taxonomy is now implemented.** 26 detectors, which is all 27 minus R-03,
 dropped as not applicable. Each is registered in `Taxonomy.kt`, documented in `RULES.md` and
-covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 206
-expected, 206 reported, 0 missing, 0 unexpected (rechecked 2026-10-18). U-07 alone accounts for 113 of those markers,
+covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 207
+expected, 207 reported, 0 missing, 0 unexpected (rechecked 2026-10-19). U-07 alone accounts for 113 of those markers,
 which is explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write, twice. The first run (2026-10-06, 18
@@ -41,9 +41,17 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
-   progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
-   accept missing sliders? This is the rule's most likely false positive.
+None at the moment. All four questions raised in Milestone 4 were answered on 2026-10-18 and
+2026-10-19.
+
+**Answered:** R-05 and the word `value` (question 1 until 2026-10-19). `value` now counts only as
+the whole parameter name. A hand-drawn slider taking `value: Float` is still reported, which is
+right, because Material's own `Slider` sets the range through `progressSemantics`. A name such as
+`alphaValue` no longer counts. While checking this, a false positive was found and fixed: the
+foundation shortcut `Modifier.progressSemantics(...)` sets `progressBarRangeInfo` but was not
+recognised, so correct code was reported. R-05 now has 6 positive and 9 negative tests, and the
+sample check is 26 issue IDs, 207 expected, 207 reported, 0 missing, 0 unexpected (2026-10-19, see
+DECISIONS). R-05 had no findings on the development apps, so their results do not change.
 
 **Answered:** R-04 and list length (question 1 until 2026-10-19). Kept as it is: any loop in a
 `Column` or `Row` is reported, with or without a scroll modifier. The evidence decided it: R-04's
@@ -165,6 +173,10 @@ These are not questions, they are edits the taxonomy chapter needs.
    of all 364 Kotlin files in `compose-samples` found 123 `Icon(...)` calls and **zero** uses of
    `Icons.X.Y`, so the rule as originally worded could not have fired on either development app.
    Agreed with Sedra on 2026-10-08. See `DECISIONS.md`.
+8. **R-05's wording changes** from "a `Float` parameter named like progress, percent, fraction or
+   value" to "whose name contains progress, percent or fraction, or is exactly value", and the
+   rule accepts `Modifier.progressSemantics` as setting the range. Agreed with Sedra on
+   2026-10-19. See `DECISIONS.md`.
 
 ### The Python check is verified (2026-10-12)
 

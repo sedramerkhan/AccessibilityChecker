@@ -1,6 +1,7 @@
 package org.svu.sedra.a11ylint.sample.defects.r05
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.LinearProgressIndicator
@@ -14,8 +15,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
- * R-05 good examples: either the range is set by hand, or a Material indicator provides it.
- * R-05 must report nothing here.
+ * R-05 good examples: the range is set by hand, by the `progressSemantics` shortcut, or by a
+ * Material indicator; or the drawing is not progress at all. R-05 must report nothing here.
  */
 
 // The drawing is the same, but the value is now announced and announced again when it changes.
@@ -43,4 +44,32 @@ fun R05GoodMaterialProgress(progress: Float) {
         progress = { progress },
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+// The foundation shortcut sets the same progressBarRangeInfo in one call.
+@Composable
+fun R05GoodProgressSemantics(progress: Float) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp)
+            .progressSemantics(progress),
+    ) {
+        drawRect(
+            color = Color(0xFF1565C0),
+            size = Size(width = size.width * progress, height = size.height),
+        )
+    }
+}
+
+// `value` inside a longer name is not progress: this is a fade, not a bar.
+@Composable
+fun R05GoodFadingBand(alphaValue: Float) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp),
+    ) {
+        drawRect(color = Color(0xFF1565C0).copy(alpha = alphaValue))
+    }
 }

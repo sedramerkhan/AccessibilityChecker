@@ -472,6 +472,7 @@ untested in the sample app.
   a lowercase "contains", so `downloadPercent` and `scrollFraction` count. `value` is the loose
   one and comes straight from CLAUDE.md 7.4; it is kept because a slider-like control is exactly
   the case the rule is for, and the drawing requirement keeps it from firing on much.
+  (Narrowed on 2026-10-19: `value` now counts only as the whole name. See that entry.)
 - **Reported on the function declaration**, like R-06, not on the `Canvas` call. The fix belongs
   to the component as a whole: the range has to come from the parameter the function receives, so
   the function is the unit that is wrong.
@@ -1138,4 +1139,43 @@ evidence above. CLAUDE.md 7.4 says "often with verticalScroll", not "only with".
 **Still to watch.** The evaluation corpus is the first place where short non-list loops (for
 example two buttons built in a loop) could show up. If they do, they are false positives of the
 kind already recorded in LIMITATIONS.
+
+### R-05 matches `value` only as the whole name, and accepts `progressSemantics`
+
+**Decision (Sedra, 2026-10-19):** two changes to R-05.
+
+1. **`value` counts only as the whole parameter name.** `progress`, `percent` and `fraction` are
+   still matched anywhere in the name, so `downloadPercent` still counts.
+2. **`Modifier.progressSemantics(...)` counts as setting the range**, both the determinate and the
+   indeterminate overload.
+
+**Reason for 1.** Two facts pulled in opposite directions:
+- Dropping `value` would miss real defects. Material3 1.4.0's own `Slider` exposes its value
+  through `progressSemantics` (`Slider.kt:2278`), so a hand-drawn slider without
+  `progressBarRangeInfo` has exactly the defect R-05 describes, and sliders conventionally take
+  `value: Float`.
+- Keeping the substring match reported unrelated drawings. `value` is a common suffix:
+  `alphaValue`, `animatedValue` and `rotationValue` drawn on a `Canvas` are not progress.
+
+The exact match keeps the first case and removes the second. It still fits CLAUDE.md 7.4's
+"named like ... value".
+
+**Reason for 2: a false positive found while checking.** `Modifier.progressSemantics(value)` in
+`androidx.compose.foundation` (`ProgressSemantics.kt:50`, foundation 1.12.1) sets
+`progressBarRangeInfo` inside a `semantics(mergeDescendants = true)` block, and the
+no-argument overload sets `ProgressBarRangeInfo.Indeterminate`. R-05 only looked for a direct
+`progressBarRangeInfo = ...` assignment, so correct code using the shortcut was reported. The
+call is matched by its fully qualified name, and a stub with the real signatures was added.
+
+**Alternatives considered.** Keep the substring match (option A) or drop `value` (option B).
+Rejected for the reasons above.
+
+**Verified.** 15 R-05 tests (6 positive, 9 negative; new: an exact `value`, a `progressValue`, an
+`alphaValue`, and both `progressSemantics` overloads). Sample app: one new bad screen (a slider
+taking `value`) and two new good ones (`progressSemantics`, and an `alphaValue` fade). The check is
+26 issue IDs, 207 expected, 207 reported, 0 missing, 0 unexpected. R-05 had no findings on the
+development apps, so `DEV_APP_RESULTS.md` does not change.
+
+**Thesis text.** R-05's taxonomy wording should say "a `Float` parameter whose name contains
+progress, percent or fraction, or is exactly value".
 

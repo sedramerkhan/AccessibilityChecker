@@ -1420,16 +1420,17 @@ Column(Modifier.semantics { collectionInfo = CollectionInfo(orders.size, 1) }) {
 
 Reported **on the function declaration**, like R-06. A `@Composable` function that has all three of:
 
-- a `Float` parameter whose name contains `progress`, `percent`, `fraction` or `value`, so `downloadPercent` and `scrollFraction` count;
+- a `Float` parameter whose name contains `progress`, `percent` or `fraction`, so `downloadPercent` and `scrollFraction` count, or is exactly `value`, the slider and gauge convention (`alphaValue` does not count);
 - a call to `Canvas` or `Modifier.drawBehind`, meaning the indicator is drawn by hand;
-- no `progressBarRangeInfo` set anywhere in the body.
+- no `progressBarRangeInfo` set anywhere in the body, directly or through `Modifier.progressSemantics`.
 
 The shape of the drawing is the only thing that says how far along the task is, and none of it reaches accessibility services. TalkBack announces the element with no value at all, so the user cannot tell a download at 5% from one at 95%, and never hears it change.
 
 ### What it ignores
 
 - A function that composes a Material `LinearProgressIndicator` or `CircularProgressIndicator`. Those set the range themselves, which is the exclusion CLAUDE.md 7.4 asks for.
-- A function that sets `progressBarRangeInfo`.
+- A function that sets `progressBarRangeInfo`, or calls `Modifier.progressSemantics(...)` (either overload), which sets it (`ProgressSemantics.kt:50` in foundation 1.12.1).
+- A `Float` whose name only contains `value` inside a longer word, such as `alphaValue` or `animatedValue`.
 - Drawing with no progress-like parameter: a divider or a chart is not a progress indicator.
 - A progress parameter with no hand drawing. Whatever renders it is somebody else's node.
 - A parameter that is not a `Float`, and any function that is not `@Composable`.
@@ -1464,11 +1465,11 @@ fun ProgressBar(progress: Float) {
 
 ### Known limitations
 
-The parameter name is the only signal that a `Float` is a progress value, so an indicator driven by a differently named parameter or by state read inside the function is missed, and `value` is broad enough to catch an unrelated drawing (see `docs/LIMITATIONS.md`).
+The parameter name is the only signal that a `Float` is a progress value, so an indicator driven by a differently named parameter or by state read inside the function is missed, and an unrelated drawing that takes a `Float` named exactly `value` can still be reported (see `docs/LIMITATIONS.md`).
 
 ### Tests and sample
 
-- `R05MissingProgressRangeDetectorTest`: 4 positive and 6 negative cases.
+- `R05MissingProgressRangeDetectorTest`: 6 positive and 9 negative cases. The exact `value` match and the `progressSemantics` shortcut were added on 2026-10-19.
 - Sample: `sample-app/.../defects/r05/R05BadScreen.kt` and `R05GoodScreen.kt`.
 
 ---

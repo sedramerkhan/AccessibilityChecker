@@ -11,7 +11,7 @@ class U05TextFieldWithoutLabelDetectorTest : A11yLintTest() {
 
     override fun getIssues(): List<Issue> = listOf(U05TextFieldWithoutLabelDetector.ISSUE)
 
-    /** A screen file with the imports every test needs. [body] starts at line 15. */
+    /** A screen file with the imports every test needs. [body] starts at line 20. */
     private fun screen(body: String): TestFile = kotlin(
         "src/test/pkg/Screen.kt",
         """
@@ -26,6 +26,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 
 
 """ + body.trimIndent(),
@@ -41,7 +46,7 @@ import androidx.compose.runtime.setValue
     fun testTextFieldWithoutAnyLabel() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:18: Error: ${message("TextField", placeholder = false)}
+            src/test/pkg/Screen.kt:23: Error: ${message("TextField", placeholder = false)}
                 TextField(value = name, onValueChange = { name = it })
                 ~~~~~~~~~
             1 errors, 0 warnings
@@ -61,7 +66,7 @@ import androidx.compose.runtime.setValue
     fun testPlaceholderAloneIsNotALabel() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:17: Error: ${message("OutlinedTextField", placeholder = true)}
+            src/test/pkg/Screen.kt:22: Error: ${message("OutlinedTextField", placeholder = true)}
                 OutlinedTextField(
                 ~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
@@ -84,7 +89,7 @@ import androidx.compose.runtime.setValue
     fun testNullLabelIsMissing() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:17: Error: ${message("TextField", placeholder = false)}
+            src/test/pkg/Screen.kt:22: Error: ${message("TextField", placeholder = false)}
                 TextField(query, onQueryChange, label = null)
                 ~~~~~~~~~
             1 errors, 0 warnings
@@ -103,10 +108,10 @@ import androidx.compose.runtime.setValue
     fun testSeveralFieldsInAForm() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:19: Error: ${message("TextField", placeholder = true)}
+            src/test/pkg/Screen.kt:24: Error: ${message("TextField", placeholder = true)}
                     TextField(city, onCity, placeholder = { Text("City") })
                     ~~~~~~~~~
-            src/test/pkg/Screen.kt:20: Error: ${message("OutlinedTextField", placeholder = false)}
+            src/test/pkg/Screen.kt:25: Error: ${message("OutlinedTextField", placeholder = false)}
                     OutlinedTextField(zip, onZip, isError = zip.isEmpty())
                     ~~~~~~~~~~~~~~~~~
             2 errors, 0 warnings
@@ -120,6 +125,83 @@ import androidx.compose.runtime.setValue
                         TextField(city, onCity, placeholder = { Text("City") })
                         OutlinedTextField(zip, onZip, isError = zip.isEmpty())
                     }
+                }
+                """,
+            ),
+        )
+    }
+
+    private fun nameOnlyMessage(name: String, placeholder: Boolean) =
+        "[U-05] $name has a contentDescription but no visible label" +
+            (if (placeholder) " (the placeholder disappears when the user types)" else "") +
+            ", so users who do not use a screen reader are not told what to enter [ComposeTextFieldWithoutLabel]"
+
+    // A name in semantics helps screen readers but is not a visible label: a warning.
+    fun testContentDescriptionWithoutVisibleLabel() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:22: Warning: ${nameOnlyMessage("TextField", placeholder = false)}
+                TextField(
+                ~~~~~~~~~
+            0 errors, 1 warnings
+            """,
+            screen(
+                """
+                @Composable
+                fun NameField(name: String, onNameChange: (String) -> Unit) {
+                    TextField(
+                        value = name,
+                        onValueChange = onNameChange,
+                        modifier = Modifier.semantics { contentDescription = "Name" },
+                    )
+                }
+                """,
+            ),
+        )
+    }
+
+    fun testContentDescriptionWithPlaceholder() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:22: Warning: ${nameOnlyMessage("OutlinedTextField", placeholder = true)}
+                OutlinedTextField(
+                ~~~~~~~~~~~~~~~~~
+            0 errors, 1 warnings
+            """,
+            screen(
+                """
+                @Composable
+                fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        modifier = Modifier.semantics { contentDescription = "Search" },
+                        placeholder = { Text("Search") },
+                    )
+                }
+                """,
+            ),
+        )
+    }
+
+    // Semantics that set something other than a name do not help: still an error.
+    fun testSemanticsWithoutANameIsAnError() {
+        expectWarnings(
+            """
+            src/test/pkg/Screen.kt:22: Error: ${message("TextField", placeholder = false)}
+                TextField(
+                ~~~~~~~~~
+            1 errors, 0 warnings
+            """,
+            screen(
+                """
+                @Composable
+                fun NameField(name: String, onNameChange: (String) -> Unit) {
+                    TextField(
+                        value = name,
+                        onValueChange = onNameChange,
+                        modifier = Modifier.semantics { role = Role.Button },
+                    )
                 }
                 """,
             ),

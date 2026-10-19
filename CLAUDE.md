@@ -265,7 +265,7 @@ Record any further overlaps you find in DECISIONS.
 - Flag: `Modifier.clickable { ... }` whose lambda flips a Boolean state (`x = !x`, `x.value = !x.value`, `onXChange(!x)`) on a custom element that has no `stateDescription`, `toggleable`, `selectable` or `toggleableState` semantics.
 - Ignore: Material `Switch`, `Checkbox`, `RadioButton`, `Modifier.toggleable` (they expose state already); clickables that do not flip a Boolean.
 
-**U-05 · `ComposeTextFieldWithoutLabel` · ERROR · STATIC · WCAG 1.3.1, 3.3.2**
+**U-05 · `ComposeTextFieldWithoutLabel` · ERROR, WARNING when named only through semantics (since 2026-10-19) · STATIC · WCAG 1.3.1, 3.3.2**
 - Flag: `TextField`/`OutlinedTextField` without a `label` argument (placeholder alone does not count, because it disappears when the user types).
 - Ignore: fields with `label = { ... }`.
 

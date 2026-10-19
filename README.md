@@ -85,7 +85,7 @@ check them before changing code.
 | U-02 | `ComposeMissingStateDescription` | Error | A custom toggle that does not announce its state |
 | U-03 | `ComposeMissingSemanticError` | Warning | A text field in error with no message saying what is wrong |
 | U-04 | `ComposeVagueButtonLabel` | Warning | Possible: a button labeled "OK", "Click here", "Submit" and similar |
-| U-05 | `ComposeTextFieldWithoutLabel` | Error | A text field with no label (a placeholder is not enough) |
+| U-05 | `ComposeTextFieldWithoutLabel` | Error / Warning | A text field with no label (error), or named only for screen readers with no visible label (warning) |
 | U-06 | `ComposeInconsistentLabels` | Warning | Possible: the same icon described differently in different places |
 | U-07 | `ComposeHardcodedA11yText` | Warning | Accessibility text written as a literal instead of a string resource |
 | R-01 | `ComposeClickableWithoutRole` | Warning | Possible: a custom clickable element with no role |

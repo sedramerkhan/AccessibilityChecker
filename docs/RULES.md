@@ -28,7 +28,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 | U-02 | `ComposeMissingStateDescription` | Error (Critical) | STATIC | 4.1.2 | Done |
 | U-03 | `ComposeMissingSemanticError` | Warning (Major) | STATIC | 3.3.1 | Done |
 | U-04 | `ComposeVagueButtonLabel` | Warning (Major) | STATIC_LLM | 2.4.6 | Done |
-| U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
+| U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical), Warning with only a screen reader name | STATIC | 1.3.1, 3.3.2 | Done |
 | U-06 | `ComposeInconsistentLabels` | Warning (Minor) | STATIC_LLM | 3.2.4 | Done |
 | U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
 | R-01 | `ComposeClickableWithoutRole` | Warning (Critical) | STATIC_LLM | 4.1.2 | Done |
@@ -1039,10 +1039,10 @@ A vague Text next to a labelled Icon is still reported, although the icon's `con
 ## U-05 · ComposeTextFieldWithoutLabel
 
 - **Taxonomy:** Understandable, Critical, STATIC.
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions.
+- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`. Since 2026-10-19, a field that has `contentDescription` in its semantics is reported as `Severity.WARNING` through `Incident.overrideSeverity`: it has a name for screen readers and only lacks the visible label.
+- **WCAG 2.2:** 1.3.1 Info and Relationships, 3.3.2 Labels or Instructions. A field with no name at all fails both (error); a field named only in semantics fails 3.3.2 (warning).
 - **Detector:** `detectors/understandable/U05TextFieldWithoutLabelDetector.kt`
-- **Message:** `[U-05] TextField has no label, so screen reader users are not told what to enter`. When a placeholder is set, the message adds `(the placeholder disappears when the user types)`.
+- **Message:** `[U-05] TextField has no label, so screen reader users are not told what to enter`, or, with a `contentDescription` in semantics, `[U-05] TextField has a contentDescription but no visible label, so users who do not use a screen reader are not told what to enter`. When a placeholder is set, both add `(the placeholder disappears when the user types)`.
 - **Reported at:** the name of the text field call.
 
 ### What it flags
@@ -1085,8 +1085,8 @@ OutlinedTextField(
 
 ### Tests and sample
 
-- `U05TextFieldWithoutLabelDetectorTest`: 4 positive tests (5 reports) and 4 negative tests.
-- Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (3 `// EXPECT` lines) and `U05GoodScreen.kt` (no reports).
+- `U05TextFieldWithoutLabelDetectorTest`: 7 positive tests (8 reports: 6 errors, 2 warnings) and 4 negative tests.
+- Sample: `sample-app/.../defects/u05/U05BadScreen.kt` (4 `// EXPECT` lines: 3 errors, 1 warning) and `U05GoodScreen.kt` (no reports).
 
 ---
 
@@ -1207,7 +1207,7 @@ A string built by concatenation or a template is not reported, and text held in 
 
 ### Effect on the sample app
 
-This rule fires far more widely than any other: **113 lines** across the sample corpus, measured from the Lint XML report on 2026-10-18, out of 206 expected findings in total (93 for the other 25 rules). It was 94 when the rule was built; the corpus has grown since, and the action labels added on 2026-10-13 account for 4 of the difference. Roughly half of those lines are on screens that are the *good* example for another rule. Every line carries a marker, and on 2026-10-19 Sedra decided to keep it that way rather than exclude U-07 from those screens or convert them to resources. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md` (Milestone 4 and 2026-10-19).
+This rule fires far more widely than any other: **114 lines** across the sample corpus, measured from the Lint XML report on 2026-10-19, out of 209 expected findings in total (95 for the other 25 rules). It was 94 when the rule was built; the corpus has grown since, and the action labels added on 2026-10-13 account for 4 of the difference. Roughly half of those lines are on screens that are the *good* example for another rule. Every line carries a marker, and on 2026-10-19 Sedra decided to keep it that way rather than exclude U-07 from those screens or convert them to resources. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md` (Milestone 4 and 2026-10-19).
 
 ### Tests and sample
 

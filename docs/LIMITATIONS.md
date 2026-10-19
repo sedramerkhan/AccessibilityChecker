@@ -289,6 +289,16 @@ AppTextField(value = query, onValueChange = onQueryChange) // not reported
 
 A `Text` shown above the field looks like a label but is not linked to it, so the field is still reported. The rule cannot tell whether the developer meant the Text as the label.
 
+### A name in semantics is not checked for content
+
+Since 2026-10-19 a field with `contentDescription` in its semantics is a warning instead of an
+error. The rule only checks that the property is set, not what it is set to, so an empty or
+`null`-valued description still lowers the report to a warning:
+
+```kotlin
+TextField(value, onChange, modifier = Modifier.semantics { contentDescription = "" }) // warning
+```
+
 ## P-03 ComposeLowContrastColors
 
 ### Background set two levels up, or through a parameter

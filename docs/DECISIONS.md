@@ -1305,4 +1305,12 @@ This also corrects one argument of the O-07 and O-03 decision of 2026-10-18, whi
 suppressing O-03 partly because it would turn "a Critical defect into a Minor warning". O-03 is
 now itself a warning, so that argument no longer applies. The decision still stands on its other
 grounds: the two rules report on different nodes and say different things.
+**U-05 verified.** A field with `contentDescription` in its semantics (read with
+`ModifierChain.semanticsAssignments`, so `clearAndSetSemantics` counts too) is reported as a
+warning through `Incident.overrideSeverity`, with a message about the missing visible label; any
+other field without a label stays an error. 11 U-05 tests (3 new: the warning with and without a
+placeholder, and semantics that set only a role, which stays an error). Sample app: one new bad
+field, a warning, which also carries a U-07 marker for its literal description, so the check
+moved to 209 expected, 209 reported (114 of them U-07). The JetNews search field has no
+semantics, so it stays an error.
 

@@ -13,8 +13,8 @@
 
 **Every rule in the taxonomy is now implemented.** 26 detectors, which is all 27 minus R-03,
 dropped as not applicable. Each is registered in `Taxonomy.kt`, documented in `RULES.md` and
-covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 207
-expected, 207 reported, 0 missing, 0 unexpected (rechecked 2026-10-19). U-07 alone accounts for 113 of those markers,
+covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 209
+expected, 209 reported, 0 missing, 0 unexpected (rechecked 2026-10-19). U-07 alone accounts for 114 of those markers,
 which is explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write, twice. The first run (2026-10-06, 18

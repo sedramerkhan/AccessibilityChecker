@@ -39,7 +39,7 @@ rule that fires somewhere it should not are both caught:
 py scripts/check_sample_expectations.py   # python3 on other machines
 ```
 
-Current state (2026-10-19): 26 issue IDs, 207 expected, 207 reported, 0 missing, 0 unexpected.
+Current state (2026-10-19): 26 issue IDs, 209 expected, 209 reported, 0 missing, 0 unexpected, of which 114 are U-07.
 
 ## Exporting the findings as JSON
 

@@ -1,141 +1,25 @@
 # Compose Accessibility Lint
 
-Custom Android Lint rules that find **semantic accessibility defects in Jetpack Compose source
-code**, while the developer is writing it.
+Android Lint rules that find **accessibility problems in Jetpack Compose code** while you write
+it: icons without a label, touch targets that are too small, clickable rows that TalkBack cannot
+describe, text fields without a label, and 22 more.
 
-This repository is the implementation for a master's thesis at the Syrian Virtual University:
-
-> **An AI-Assisted Semantic Accessibility Analysis Framework for Jetpack Compose Applications**
-> Student: Sedra Merkhan · Supervisor: Dr. Mazen Mustafa
-
-The framework has four layers. **This repository is Layer 1**, and it is deliberately complete on
-its own: it is fully deterministic, works offline, and contains no LLM, network or API code.
-
-| Layer | What it does | Where |
-|---|---|---|
-| 1 Static rule engine | Lint rules detect defects in Kotlin UAST, with file, line and severity | **this repository** |
-| 2 Semantic context | Extracts a code slice around each defect | Phase 3 |
-| 3 Grounded LLM reasoning | Explains the defect and recommends a fix | Phase 3 |
-| 4 Developer feedback | Shows enriched warnings in Android Studio | Phase 3 |
-
-## What it finds
-
-All 26 rules of the taxonomy are implemented (27 minus R-03, which was dropped as not
-applicable). They are organised by the POUR principles and each mapped to a WCAG 2.2 success
-criterion, except U-07, which is a localization defect with no criterion of its own. Some
-examples:
-
-- **P-01** an interactive `Icon` with no `contentDescription`, so TalkBack only says "button"
-- **O-01** a clickable element smaller than the 48dp minimum touch target
-- **O-05** a clickable with nothing readable inside, announced without a name
-- **U-03** a text field in its error state with no message saying what is wrong
-- **R-06** a custom gesture that gives accessibility services no action at all
-
-The full catalogue, with what each rule flags and ignores, is in **[docs/RULES.md](docs/RULES.md)**.
-
-Every message carries its taxonomy ID, which Phase 3 parses:
+The warnings appear in Android Studio as you type, and in the normal Lint reports on the command
+line and in CI. Each one says what is wrong, who it affects, which WCAG 2.2 success criterion it
+relates to, and what a correct version looks like.
 
 ```
-P01BadScreen.kt:35: Error: [P-01] Interactive Icon has no contentDescription, so screen
+HomeScreen.kt:35: Error: [P-01] Interactive Icon has no contentDescription, so screen
 readers announce it without a name [ComposeMissingContentDescription from compose-a11y-lint]
             Icon(painter = icon, contentDescription = null)
                                                       ~~~~
 ```
 
-## Quick start
+## Installation
 
-```bash
-./gradlew :lint-rules:test        # run every rule against fake Compose code
-./gradlew :sample-app:lintDebug   # run the rules on the sample app
-```
-
-The second command writes four reports to `sample-app/build/reports/`:
-
-| File | Use |
-|---|---|
-| `lint-results-debug.html` | the readable one, good for a demo |
-| `lint-results-debug.txt` | plain text, as shown above |
-| `lint-results-debug.xml` | parsed by `scripts/check_sample_expectations.py` |
-| `lint-results-debug.sarif` | for external tooling |
-
-### In Android Studio
-
-No commands needed. The rules are ordinary Lint checks, so warnings appear inline in the editor
-with the squiggle and the full explanation in the tooltip, exactly like built-in checks. Open any
-file under `sample-app/src/main/java/.../defects/` to see them.
-
-After changing a rule, Android Studio can keep showing old results. Run *File > Sync Project with
-Gradle Files*, or trust the Gradle run and the unit tests.
-
-### Checking the sample app against its expectations
-
-Each deliberately bad line in the sample app is marked `// EXPECT: <IssueId>`. The script
-compares those markers with the Lint report in both directions, so a rule that stops firing and a
-rule that fires somewhere it should not are both caught:
-
-```bash
-./gradlew :sample-app:lintDebug
-python3 scripts/check_sample_expectations.py   # on Windows: py scripts/check_sample_expectations.py
-```
-
-Current state: 26 issue IDs, 206 expected, 206 reported, 0 missing, 0 unexpected.
-
-### Exporting the findings as JSON
-
-Phase 3 and the evaluation read the findings as JSON rather than parsing the Lint XML. The format
-is fixed by CLAUDE.md section 8 and must stay stable:
-
-```bash
-py scripts/lint_xml_to_json.py --out findings.json          # the sample app
-```
-
-```json
-{
-  "taxonomyId": "P-01",
-  "issueId": "ComposeMissingContentDescription",
-  "severity": "Error",
-  "file": "sample-app/src/main/java/.../P01BadScreen.kt",
-  "line": 42,
-  "column": 9,
-  "message": "[P-01] Interactive Icon has no contentDescription, ...",
-  "detection": "STATIC"
-}
-```
-
-`taxonomyId` is read from the `[P-01]` prefix every message carries, and `detection` from
-`Taxonomy.kt`, so the export cannot drift from the taxonomy. Built-in Lint checks in the same
-report are skipped. Several reports can be converted at once, which is what a corpus run needs,
-and `--root` controls what the paths are relative to:
-
-```bash
-py scripts/lint_xml_to_json.py --root ../corpus --out corpus.json     ../corpus/app-a/app/build/reports/lint-results-debug.xml     ../corpus/app-b/app/build/reports/lint-results-debug.xml
-```
-
-Findings are sorted by file, line and column, so two runs of the same code give byte-identical
-output and a diff shows only real changes.
-
-### Measuring what the rules add to a build
-
-```bash
-scripts/measure_lint_time.sh 7      # 7 runs with the rules, 7 without
-```
-
-Each run is `:sample-app:lintDebug --rerun-tasks`. "Without" means the `lintChecks` dependency is
-not applied at all (`-Pa11ylint.off=true`), so the figure covers loading the rules as well as
-running them. Runs alternate between the two, and the summary leads with a **trimmed mean**, the
-fastest and slowest run of each side dropped.
-
-Run it on an otherwise idle machine. The script warns when the spread between runs is wider than
-the difference it is measuring, which is what happens on a machine that is also doing something
-else, and the number is then not worth quoting. See `docs/DECISIONS.md`, 2026-10-14.
-
-## Using the rules in another project
-
-The rules are published as an AAR through JitPack, so no source copying is needed. Releases and
-build logs: https://jitpack.io/#sedramerkhan/AccessibilityChecker
+Add the JitPack repository in `settings.gradle.kts`:
 
 ```kotlin
-// settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
         google()
@@ -143,100 +27,116 @@ dependencyResolutionManagement {
         maven("https://jitpack.io")
     }
 }
+```
 
-// app/build.gradle.kts
+Add the library to the module that contains your Compose UI, for example `app/build.gradle.kts`:
+
+```kotlin
 dependencies {
     implementation("com.github.sedramerkhan:a11ylint:0.1.0")
 }
 ```
 
-JitPack builds a release from a git tag (`0.1.0`), using `jitpack.yml`. The exact coordinates
-JitPack serves are shown on the page above after its first build.
+Releases and build status: https://jitpack.io/#sedramerkhan/AccessibilityChecker
 
-To try a change before tagging it, publish to the local Maven repository instead and add
-`mavenLocal()` to the repositories above:
+The library contains only Lint rules. It adds no code and no resources to your app.
+
+## Usage
+
+**In Android Studio** nothing else is needed. After a Gradle sync, the warnings appear in the
+editor like built-in Lint checks, with the full explanation in the tooltip.
+
+**On the command line or in CI**, run Lint as usual:
 
 ```bash
-./gradlew :lint-library:publishToMavenLocal
+./gradlew :app:lintDebug
 ```
 
-Run `./gradlew :app:lintDebug` there. Findings tagged `from compose-a11y-lint` are ours; that
-suffix is the quickest way to confirm the rules actually loaded.
+The reports are written to `app/build/reports/` (HTML, XML, and SARIF if you enable it). Our
+findings end with `from compose-a11y-lint`, which is also the quickest way to confirm the rules
+loaded.
 
-## Repository layout
+## The rules
 
+26 rules, grouped by the four WCAG principles: Perceivable, Operable, Understandable, Robust.
+Every message starts with the rule's ID in brackets, for example `[P-01]`.
+
+Rules marked **Possible** report a likely problem that depends on what you meant (for example,
+whether a large text really is a heading). Their message starts with "Possible", and you should
+check them before changing code.
+
+| ID | Issue ID | Severity | Reports |
+|---|---|---|---|
+| P-01 | `ComposeMissingContentDescription` | Error | An interactive Icon or Image with no label |
+| P-02 | `ComposeDecorativeImageLabeled` | Warning | Possible: an image label that repeats the text next to it |
+| P-03 | `ComposeLowContrastColors` | Warning | Text and background colors below the WCAG contrast ratio |
+| P-04 | `ComposeTextSizeInDp` | Warning | A font size converted from dp, which ignores the user's font scale |
+| P-05 | `ComposeTextOverImage` | Warning | Possible: text drawn over an image with no background or scrim |
+| P-06 | `ComposeMissingLiveRegion` | Warning | Possible: text that changes by itself with no live region |
+| P-07 | `ComposeMissingPaneTitle` | Warning | A custom overlay or popup with no pane title |
+| O-01 | `ComposeSmallTouchTarget` | Error | A clickable element smaller than 48dp |
+| O-02 | `ComposeMissingOnClickLabel` | Warning | A clickable container with no click label |
+| O-03 | `ComposeNestedClickable` | Error | A clickable element inside another clickable element |
+| O-04 | `ComposeClickableContainer` | Warning | Possible: a clickable Box, Row or Column that should be a Button |
+| O-05 | `ComposeEmptyClickable` | Warning | A clickable element with nothing readable inside |
+| O-06 | `ComposeDisabledButClickable` | Warning | A click handler that checks "enabled" itself instead of passing it |
+| O-07 | `ComposeMissingCustomActions` | Warning | Possible: a clickable card with inner buttons and no custom actions |
+| U-01 | `ComposeMissingHeading` | Error | Possible: heading-styled text not marked as a heading |
+| U-02 | `ComposeMissingStateDescription` | Error | A custom toggle that does not announce its state |
+| U-03 | `ComposeMissingSemanticError` | Warning | A text field in error with no message saying what is wrong |
+| U-04 | `ComposeVagueButtonLabel` | Warning | Possible: a button labeled "OK", "Click here", "Submit" and similar |
+| U-05 | `ComposeTextFieldWithoutLabel` | Error | A text field with no label (a placeholder is not enough) |
+| U-06 | `ComposeInconsistentLabels` | Warning | Possible: the same icon described differently in different places |
+| U-07 | `ComposeHardcodedA11yText` | Warning | Accessibility text written as a literal instead of a string resource |
+| R-01 | `ComposeClickableWithoutRole` | Error | Possible: a custom clickable element with no role |
+| R-02 | `ComposeClearAndSetSemanticsLoss` | Warning | `clearAndSetSemantics` that removes a name, role or state |
+| R-04 | `ComposeMissingCollectionInfo` | Warning | A list built with a loop that does not announce its size |
+| R-05 | `ComposeMissingProgressRange` | Warning | A hand-drawn progress bar or slider that announces no value |
+| R-06 | `ComposeComposableWithoutSemantics` | Warning | Possible: custom gestures that give TalkBack no action |
+
+The full catalogue, with what each rule reports, what it ignores and a bad and a good example, is
+in [docs/RULES.md](docs/RULES.md).
+
+## Configuration
+
+These are standard Lint settings, nothing specific to this library.
+
+Turn a rule off, or change its severity, for a whole module:
+
+```kotlin
+android {
+    lint {
+        disable += "ComposeHardcodedA11yText"
+        warning += "ComposeSmallTouchTarget"   // report as a warning instead of an error
+    }
+}
 ```
-compose-a11y-lint/
-├── lint-rules/      Kotlin JVM module: the detectors, the taxonomy and the shared utilities
-├── lint-library/    Android library that packages the rules as an AAR (com.github.sedramerkhan:a11ylint)
-├── sample-app/      Compose app with a deliberately bad and a good screen per rule
-├── scripts/         check_sample_expectations.py
-└── docs/            RULES, DECISIONS, LIMITATIONS, PROGRESS, DEV_APP_RESULTS
-```
 
-Inside `lint-rules`:
+Suppress one finding in code:
 
+```kotlin
+@Suppress("ComposeMissingOnClickLabel")
+@Composable
+fun ArticleRow(...) { ... }
 ```
-org/svu/sedra/a11ylint/
-├── ComposeA11yIssueRegistry.kt   registers every issue from the taxonomy
-├── taxonomy/                     Pour, DetectionType, Priority, TaxonomyEntry, Taxonomy
-├── util/                         ComposeCalls, ModifierChain, Clickables, Literals, Contrast, ...
-└── detectors/                    perceivable/ operable/ understandable/ robust/
-```
-
-`Taxonomy.kt` is the single source of truth for rule metadata: the registry reads it, and Phase 3
-will use it to map results back to taxonomy IDs.
 
 ## Requirements
 
-| | |
-|---|---|
-| JDK | 17 or newer |
-| Gradle | 9.6.0 (wrapper included) |
-| AGP | 9.4.1 |
-| Lint | 32.4.1 (AGP + 23) |
-| Kotlin | 2.2.10 |
-| Compose | BOM 2026.02.01 (Compose 1.10.4, Material3 1.4.0) |
+- An Android project that uses Jetpack Compose.
+- Android Gradle Plugin 8.0 or newer.
 
-The Lint artifact version must always be the AGP version plus 23. The rules are checked against
-the real Compose sources, not against assumptions: several rules exist in their current form
-because the compiled libraries behave differently from the source stubs (see
-[docs/DECISIONS.md](docs/DECISIONS.md)).
+## What the rules cannot see
 
-## Documentation
+The rules read your source code; they do not run the app. Some problems are therefore out of
+reach, for example a label held in a variable that might be null, a modifier passed in from
+another function, or content drawn by another composable that is called inside a clickable. The
+full list, with examples, is in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). Lint never changes
+your code; each warning only describes the fix.
 
-| File | What is in it |
-|---|---|
-| [docs/RULES.md](docs/RULES.md) | the rule catalogue: what each flags, ignores and cannot see |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | every design choice and heuristic, dated, with the evidence |
-| [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | what static analysis cannot catch, with examples |
-| [docs/PROGRESS.md](docs/PROGRESS.md) | status, what is left, open questions, thesis text to update |
-| [docs/DEV_APP_RESULTS.md](docs/DEV_APP_RESULTS.md) | findings on JetNews and Jetchat, and the two rules they corrected |
+## About
 
-**Start with [docs/PROGRESS.md](docs/PROGRESS.md)**: it opens with where the project stands, what
-is left in order, and the questions waiting on a decision.
+This library is the static analysis part of a master's thesis at the Syrian Virtual University,
+*An AI-Assisted Semantic Accessibility Analysis Framework for Jetpack Compose Applications*, by
+Sedra Merkhan, supervised by Dr. Mazen Mustafa.
 
-## Status
-
-| Milestone | Status |
-|---|---|
-| 0 Setup | Done |
-| 1 Infrastructure | Done |
-| 2 Critical rules (7) | Done, including the development app run on JetNews and Jetchat |
-| 3 Major rules (12) | Done: 11 implemented, R-03 dropped as not applicable |
-| 4 Minor rules (8) | Done |
-| 5 Packaging and reporting | Publishing works; scripts and the final docs pass are open |
-
-One rule, **R-03**, was dropped after checking the framework: Compose does not hide interactive
-children inside `semantics(mergeDescendants = true)`, because merging stops at any child that is
-itself a merging root and every clickable modifier is one. The defect cannot occur, so no
-detector was written. The evidence is in `docs/DECISIONS.md`.
-
-## Scope of this phase
-
-- No LLM code, no network calls, no API keys. The same input always produces the same warnings.
-- No automatic code fixes. The scope is detection and explanation; a rule may describe the fix in
-  its explanation text, but never rewrites code.
-- The evaluation apps are never used while building rules. Only `sample-app` and the two
-  development apps from `android/compose-samples` (Jetnews and Jetchat) are allowed, and those are
-  cloned outside this repository.
+To build the rules from source or work on them, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

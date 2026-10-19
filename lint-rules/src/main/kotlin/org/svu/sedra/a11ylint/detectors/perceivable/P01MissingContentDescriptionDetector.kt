@@ -77,7 +77,8 @@ class P01MissingContentDescriptionDetector : Detector(), SourceCodeScanner {
             explanation = """
                 Icons and images that respond to clicks need a text label. Without one, TalkBack \
                 only says "button" and the user cannot tell what it does. This relates to WCAG 2.2 \
-                success criterion 1.1.1 (Non-text Content). Give the Icon a `contentDescription` \
+                success criteria 1.1.1 (Non-text Content) and 4.1.2 (Name, Role, Value), since the \
+                control has no accessible name. Give the Icon a `contentDescription` \
                 that describes the action, for example "Delete draft", or add a visible Text to \
                 the button.
             """,

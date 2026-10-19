@@ -1313,4 +1313,9 @@ placeholder, and semantics that set only a role, which stays an error). Sample a
 field, a warning, which also carries a U-07 marker for its literal description, so the check
 moved to 209 expected, 209 reported (114 of them U-07). The JetNews search field has no
 semantics, so it stays an error.
+**P-01 verified.** Severity unchanged (error). The explanation and `Taxonomy.kt` now cite 4.1.2
+next to 1.1.1: an interactive icon with no description leaves the control without an accessible
+name, which is what Name, Role, Value requires, not only a text alternative for an image.
+
+**Review complete.** Errors are now P-01, U-02, U-05 (no name at all) and O-01 (below 24dp).
 

@@ -62,7 +62,7 @@ object Taxonomy {
             id = P01MissingContentDescriptionDetector.TAXONOMY_ID,
             issue = P01MissingContentDescriptionDetector.ISSUE,
             pour = Pour.PERCEIVABLE,
-            wcag = listOf("1.1.1"),
+            wcag = listOf("1.1.1", "4.1.2"),
             detection = DetectionType.STATIC,
             priority = Priority.CRITICAL,
         ),

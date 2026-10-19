@@ -10,7 +10,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 
 | ID | Issue ID | Severity | Detection | WCAG | Status |
 |---|---|---|---|---|---|
-| P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1 | Done |
+| P-01 | `ComposeMissingContentDescription` | Error (Critical) | STATIC | 1.1.1, 4.1.2 | Done |
 | P-02 | `ComposeDecorativeImageLabeled` | Warning (Major) | STATIC_LLM | 1.1.1 | Done |
 | P-03 | `ComposeLowContrastColors` | Warning (Major) | STATIC | 1.4.3 | Done |
 | P-04 | `ComposeTextSizeInDp` | Warning (Major) | STATIC | 1.4.4 | Done |
@@ -44,7 +44,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 
 - **Taxonomy:** Perceivable, Critical, STATIC.
 - **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
-- **WCAG 2.2:** 1.1.1 Non-text Content.
+- **WCAG 2.2:** 1.1.1 Non-text Content, and 4.1.2 Name, Role, Value, since the control has no accessible name (4.1.2 added on 2026-10-19).
 - **Detector:** `detectors/perceivable/P01MissingContentDescriptionDetector.kt`
 - **Message:** `[P-01] Interactive Icon has no contentDescription, so screen readers announce it without a name` (`Image` instead of `Icon` for images).
 - **Reported at:** the `contentDescription` argument.

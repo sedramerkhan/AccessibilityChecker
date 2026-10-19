@@ -242,7 +242,7 @@ Record any further overlaps you find in DECISIONS.
 
 ### 7.2 Critical (Milestone 2)
 
-**P-01 · `ComposeMissingContentDescription` · ERROR · STATIC · WCAG 1.1.1**
+**P-01 · `ComposeMissingContentDescription` · ERROR · STATIC · WCAG 1.1.1, 4.1.2 (4.1.2 added 2026-10-19)**
 - Flag: `Icon(...)` or `Image(...)` whose `contentDescription` is `null` or `""` when the Icon or Image is the only possible label of a clickable element: it has `clickable`/`toggleable` in its own modifier chain, or it is the content of an `IconButton` (or a clickable parent) that has no Text and no `contentDescription` in semantics.
 - Ignore: Icon with `null` inside a `Button` that also has a `Text` (decorative, the button already has a name); non-interactive images with `null` (decorative is allowed); `contentDescription = stringResource(...)` or any non-empty expression.
 - Edge cases: `""` counts as missing; a variable that may be null is **not** flagged (record in LIMITATIONS).

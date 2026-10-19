@@ -50,10 +50,10 @@ import androidx.compose.ui.semantics.semantics
     fun testClickableBoxWithOnlyAnIcon() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: ${message("clickable Box")}
+            src/test/pkg/Screen.kt:27: Warning: ${message("clickable Box")}
                 Box(Modifier.clickable { onShare() }) {
                              ~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -71,10 +71,10 @@ import androidx.compose.ui.semantics.semantics
     fun testClickableRowWithRichContent() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: ${message("clickable Row")}
+            src/test/pkg/Screen.kt:27: Warning: ${message("clickable Row")}
                 Row(modifier = Modifier.clickable { onOpen() }) {
                                         ~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """
@@ -93,13 +93,13 @@ import androidx.compose.ui.semantics.semantics
     fun testOtherCustomElements() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: ${message("clickable Card")}
+            src/test/pkg/Screen.kt:27: Warning: ${message("clickable Card")}
                 Card(modifier = Modifier.clickable { onOpen() }) {
                                          ~~~~~~~~~
-            src/test/pkg/Screen.kt:30: Error: ${message("clickable Image")}
+            src/test/pkg/Screen.kt:30: Warning: ${message("clickable Image")}
                 Image(painterResource(1), "Avatar", Modifier.combinedClickable(onLongClick = {}) { onOpen() })
                                                              ~~~~~~~~~~~~~~~~~
-            2 errors, 0 warnings
+            0 errors, 2 warnings
             """,
             screen(
                 """
@@ -118,10 +118,10 @@ import androidx.compose.ui.semantics.semantics
     fun testNullRoleAndModifierInLocalValue() {
         expectWarnings(
             """
-            src/test/pkg/Screen.kt:27: Error: ${message("clickable element")}
+            src/test/pkg/Screen.kt:27: Warning: ${message("clickable element")}
                 val tappable = Modifier.clickable(role = null) { onOpen() }
                                         ~~~~~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warnings
             """,
             screen(
                 """

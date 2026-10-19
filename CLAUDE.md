@@ -163,6 +163,11 @@ data class TaxonomyEntry(
   | Critical | `Severity.ERROR` | 9 |
   | Major | `Severity.WARNING` | 6 |
   | Minor | `Severity.WARNING` | 3 |
+
+  **Exception (agreed with Sedra on 2026-10-19):** an error fails the build by default, so only a
+  definite WCAG failure is an error. A Critical rule that is a candidate (STATIC_LLM) or that
+  reports a guideline rather than a WCAG failure is reported as `Severity.WARNING` with Lint
+  priority 9. See DECISIONS, 2026-10-19.
 - **Scope:** `Implementation(Detector::class.java, Scope.JAVA_FILE_SCOPE)` (this covers Kotlin), except U-06 (see section 7).
 - **Message format** (the message shown at the line):
   `"[P-01] Interactive Icon has no contentDescription, so screen readers announce it without a name"`

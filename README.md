@@ -88,7 +88,7 @@ check them before changing code.
 | U-05 | `ComposeTextFieldWithoutLabel` | Error | A text field with no label (a placeholder is not enough) |
 | U-06 | `ComposeInconsistentLabels` | Warning | Possible: the same icon described differently in different places |
 | U-07 | `ComposeHardcodedA11yText` | Warning | Accessibility text written as a literal instead of a string resource |
-| R-01 | `ComposeClickableWithoutRole` | Error | Possible: a custom clickable element with no role |
+| R-01 | `ComposeClickableWithoutRole` | Warning | Possible: a custom clickable element with no role |
 | R-02 | `ComposeClearAndSetSemanticsLoss` | Warning | `clearAndSetSemantics` that removes a name, role or state |
 | R-04 | `ComposeMissingCollectionInfo` | Warning | A list built with a loop that does not announce its size |
 | R-05 | `ComposeMissingProgressRange` | Warning | A hand-drawn progress bar or slider that announces no value |

@@ -3,6 +3,7 @@ package org.svu.sedra.a11ylint.detectors.robust
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
@@ -73,6 +74,9 @@ class R01ClickableWithoutRoleDetector : Detector(), SourceCodeScanner {
             """,
             priority = Priority.CRITICAL,
             detector = R01ClickableWithoutRoleDetector::class.java,
+            // A candidate: whether the element needs a role depends on intent, so it must not
+            // fail the build. Lint priority stays Critical (DECISIONS, 2026-10-19).
+            severity = Severity.WARNING,
         )
     }
 }

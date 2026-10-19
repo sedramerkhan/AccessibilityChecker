@@ -1263,3 +1263,33 @@ target is an error, the 24, 32, 32 and 40dp targets are warnings, and the check 
 expected, 207 reported. The JSON export carries the per-finding severity. On the development
 apps, O-01's only finding (Jetchat `Conversation.kt:598`, 42dp high) becomes a warning.
 
+### Only definite WCAG failures are errors
+
+**Decision (Sedra, 2026-10-19):** a Lint error fails the build of the project that uses the rules
+(`abortOnError` is on by default, and both development app builds ended in `BUILD FAILED` because
+of our errors). So an error must mean a definite WCAG failure. A Critical rule that is a guess
+(STATIC_LLM, message "Possible ...") or that reports a guideline rather than a WCAG failure is
+reported as a **warning**, with Lint priority 9 kept so it still ranks with the Critical rules.
+The taxonomy priority does not change.
+
+This overrides the mapping in CLAUDE.md 5.2 (Critical = error) for those rules; CLAUDE.md now
+records the exception. `A11yIssues.create` takes an optional `severity`, and `TaxonomyTest` lists
+the Critical rules that are warnings, so the exception cannot spread silently.
+
+The six other Critical rules were reviewed against this on 2026-10-19, after the same review of
+O-01 (entry above):
+
+| Rule | Change | Reason |
+|---|---|---|
+| R-01 | warning | A candidate, and the noisiest rule on the development apps (11 of 36) |
+| U-01 | warning, and WCAG 1.3.1 only | A candidate; 2.4.6 is about headings being descriptive, not marked |
+| O-03 | warning, and a corrected explanation | Not a WCAG failure: Compose keeps a nested clickable separately reachable (see the R-03 entry), so the explanation's "merge or skip" claim was wrong |
+| U-05 | error with no name at all, warning with only a screen reader name | The second case still has a name; only the visible label (3.3.2) is missing |
+| P-01 | explanation also cites 4.1.2 | A button with no name fails Name, Role, Value as well as 1.1.1 |
+| U-02 | none | A definite 4.1.2 failure, detected precisely |
+
+Errors after this review: P-01, U-02, U-05 without any name, and O-01 below 24dp, all definite
+WCAG failures. Each change is its own commit.
+
+**R-01 verified.** 8 R-01 tests pass with the warning severity, and `TaxonomyTest` checks it.
+

@@ -190,6 +190,13 @@ These are not questions, they are edits the taxonomy chapter needs.
    the guideline-only case is reported as a warning. Agreed with Sedra on 2026-10-19. See
    `DECISIONS.md`.
 
+10. **Severity policy for the Critical rules.** Only definite WCAG failures are errors. R-01,
+    U-01 and O-03 stay Critical in the taxonomy but are reported as warnings (Lint priority 9);
+    U-05 is a warning when the field has a screen reader name but no visible label. U-01 cites
+    1.3.1 only, and P-01 also cites 4.1.2. The thesis should state the policy: error = definite
+    WCAG failure, warning = candidate or guideline. Agreed with Sedra on 2026-10-19. See
+    `DECISIONS.md`.
+
 ### The Python check is verified (2026-10-12)
 
 `scripts/check_sample_expectations.py` was believed unrunnable here because neither `python` nor

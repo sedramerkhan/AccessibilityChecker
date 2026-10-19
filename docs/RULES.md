@@ -31,7 +31,7 @@ describes cannot occur in Compose, so the taxonomy stays 27 entries long.
 | U-05 | `ComposeTextFieldWithoutLabel` | Error (Critical) | STATIC | 1.3.1, 3.3.2 | Done |
 | U-06 | `ComposeInconsistentLabels` | Warning (Minor) | STATIC_LLM | 3.2.4 | Done |
 | U-07 | `ComposeHardcodedA11yText` | Warning (Minor) | STATIC | localization, no criterion | Done |
-| R-01 | `ComposeClickableWithoutRole` | Error (Critical) | STATIC_LLM | 4.1.2 | Done |
+| R-01 | `ComposeClickableWithoutRole` | Warning (Critical) | STATIC_LLM | 4.1.2 | Done |
 | R-02 | `ComposeClearAndSetSemanticsLoss` | Warning (Major) | STATIC | 4.1.2 | Done |
 | R-03 | `ComposeMergeHidesInteractive` | — | — | 4.1.2 | **Not applicable** |
 | R-04 | `ComposeMissingCollectionInfo` | Warning (Minor) | STATIC | 1.3.1 | Done |
@@ -1219,7 +1219,7 @@ This rule fires far more widely than any other: **113 lines** across the sample 
 ## R-01 · ComposeClickableWithoutRole
 
 - **Taxonomy:** Robust, Critical, STATIC_LLM (a candidate: the right role depends on what the element is for).
-- **Lint:** `Severity.ERROR`, priority 9, category `A11Y`.
+- **Lint:** `Severity.WARNING`, priority 9, category `A11Y`. Critical in the taxonomy, but a candidate, so it does not fail the build (since 2026-10-19, see DECISIONS).
 - **WCAG 2.2:** 4.1.2 Name, Role, Value.
 - **Detector:** `detectors/robust/R01ClickableWithoutRoleDetector.kt`
 - **Message:** `[R-01] Possible missing role: clickable Row has no role, so screen readers do not say what kind of control it is` (names the element that receives the modifier, or says "clickable element" when the modifier is stored in a variable).

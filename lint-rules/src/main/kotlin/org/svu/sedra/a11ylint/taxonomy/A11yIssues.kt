@@ -17,6 +17,11 @@ object A11yIssues {
      *
      * Pass [id] as a named argument (`id = "Compose..."`): `scripts/check_sample_expectations.py`
      * reads the issue IDs from the sources by that pattern.
+     *
+     * [severity] overrides the default for a Critical rule that is not a definite WCAG failure:
+     * a candidate that needs a judgment of intent, or a guideline rather than a WCAG criterion.
+     * An error fails the build by default, so only definite failures are errors. The Lint
+     * priority still follows [priority], so such a rule keeps ranking with the Critical ones.
      */
     fun create(
         id: String,
@@ -25,13 +30,14 @@ object A11yIssues {
         priority: Priority,
         detector: Class<out Detector>,
         scope: EnumSet<Scope> = Scope.JAVA_FILE_SCOPE,
+        severity: Severity = severity(priority),
     ): Issue = Issue.create(
         id = id,
         briefDescription = briefDescription,
         explanation = explanation,
         category = Category.A11Y,
         priority = lintPriority(priority),
-        severity = severity(priority),
+        severity = severity,
         implementation = Implementation(detector, scope),
     )
 

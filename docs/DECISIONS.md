@@ -1179,3 +1179,23 @@ development apps, so `DEV_APP_RESULTS.md` does not change.
 **Thesis text.** R-05's taxonomy wording should say "a `Float` parameter whose name contains
 progress, percent or fraction, or is exactly value".
 
+### The library is published through JitPack as `com.github.sedramerkhan:a11ylint`
+
+**Decision (Sedra, 2026-10-19):** publish the lint library publicly under Sedra's GitHub name,
+through JitPack. The Maven group changes from `org.svu.sedra` to `com.github.sedramerkhan`; the
+artifact (`a11ylint`), the version (`0.1.0`), the Android namespace
+(`org.svu.sedra.a11ylint.library`) and every Kotlin package stay the same.
+
+**How it works.** JitPack builds the library from the GitHub repository when a git tag is pushed.
+`jitpack.yml` selects JDK 17 and builds only `:lint-library:publishToMavenLocal`, so the sample
+app and the tests are not part of a release build. `gradlew` was marked executable in git, since
+JitPack builds on Linux. Page and build logs: https://jitpack.io/#sedramerkhan/AccessibilityChecker
+
+**Alternatives considered.**
+- Maven Central (`io.github.sedramerkhan:a11ylint`): no extra repository for users, but it needs
+  a Sonatype account, a verified namespace and GPG signing. Possible later.
+- Keep `mavenLocal()` only: no public link, so other people could not try the rules.
+
+**Not changed.** `DEV_APP_RESULTS.md` keeps `org.svu.sedra:a11ylint:0.1.0`, because that is what
+the development app runs actually used.
+

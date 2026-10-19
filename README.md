@@ -131,28 +131,33 @@ else, and the number is then not worth quoting. See `docs/DECISIONS.md`, 2026-10
 
 ## Using the rules in another project
 
-The rules are published as an AAR, so no source copying is needed:
-
-```bash
-./gradlew :lint-library:publishToMavenLocal
-```
-
-Then in the other project:
+The rules are published as an AAR through JitPack, so no source copying is needed. Releases and
+build logs: https://jitpack.io/#sedramerkhan/AccessibilityChecker
 
 ```kotlin
 // settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
-        mavenLocal()
         google()
         mavenCentral()
+        maven("https://jitpack.io")
     }
 }
 
 // app/build.gradle.kts
 dependencies {
-    implementation("org.svu.sedra:a11ylint:0.1.0")
+    implementation("com.github.sedramerkhan:a11ylint:0.1.0")
 }
+```
+
+JitPack builds a release from a git tag (`0.1.0`), using `jitpack.yml`. The exact coordinates
+JitPack serves are shown on the page above after its first build.
+
+To try a change before tagging it, publish to the local Maven repository instead and add
+`mavenLocal()` to the repositories above:
+
+```bash
+./gradlew :lint-library:publishToMavenLocal
 ```
 
 Run `./gradlew :app:lintDebug` there. Findings tagged `from compose-a11y-lint` are ours; that
@@ -163,7 +168,7 @@ suffix is the quickest way to confirm the rules actually loaded.
 ```
 compose-a11y-lint/
 ├── lint-rules/      Kotlin JVM module: the detectors, the taxonomy and the shared utilities
-├── lint-library/    Android library that packages the rules as an AAR (org.svu.sedra:a11ylint)
+├── lint-library/    Android library that packages the rules as an AAR (com.github.sedramerkhan:a11ylint)
 ├── sample-app/      Compose app with a deliberately bad and a good screen per rule
 ├── scripts/         check_sample_expectations.py
 └── docs/            RULES, DECISIONS, LIMITATIONS, PROGRESS, DEV_APP_RESULTS

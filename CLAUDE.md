@@ -94,7 +94,7 @@ compose-a11y-lint/
 **Package names (fixed by Sedra):**
 - Lint rules: `org.svu.sedra.a11ylint` (subpackages `taxonomy`, `util`, `detectors.perceivable`, `detectors.operable`, `detectors.understandable`, `detectors.robust`)
 - Sample app: `org.svu.sedra.a11ylint.sample`
-- Lint library (AAR): namespace `org.svu.sedra.a11ylint.library`; Maven coordinates `org.svu.sedra:a11ylint:<version>`
+- Lint library (AAR): namespace `org.svu.sedra.a11ylint.library`; Maven coordinates `com.github.sedramerkhan:a11ylint:<version>`, published through JitPack (https://jitpack.io/#sedramerkhan/AccessibilityChecker). Changed from `org.svu.sedra` on 2026-10-19, see DECISIONS
 
 Use these names everywhere. The `Lint-Registry-v2` manifest entry must match the registry's full class name exactly, otherwise Lint silently loads no rules.
 

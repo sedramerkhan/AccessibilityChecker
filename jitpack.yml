@@ -1,0 +1,5 @@
+# JitPack build: https://jitpack.io/#sedramerkhan/AccessibilityChecker
+jdk:
+  - openjdk17
+install:
+  - ./gradlew :lint-library:publishToMavenLocal

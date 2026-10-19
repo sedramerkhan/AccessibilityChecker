@@ -26,7 +26,7 @@ dependencies {
     lintPublish(project(":lint-rules")) { isTransitive = false }
 }
 
-group = "org.svu.sedra"
+group = "com.github.sedramerkhan"
 version = "0.1.0"
 
 publishing {

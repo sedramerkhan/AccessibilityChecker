@@ -1202,11 +1202,11 @@ Icon(icon, contentDescription = stringResource(R.string.delete_draft))
 
 ### Known limitations
 
-A string built by concatenation or a template is not reported, and text held in a constant is not followed (see `docs/LIMITATIONS.md`).
+A string built by concatenation or a template is not reported, and text held in a constant is not followed. A proper name used as a description (`"Ali Conors"`) is reported although it usually should not be translated; all three findings on the development apps are of this kind (see `docs/LIMITATIONS.md`).
 
 ### Effect on the sample app
 
-This rule fires far more widely than any other: **110 lines** across the sample corpus, measured from the Lint XML report on 2026-10-13. It was 94 when the rule was built; the corpus has grown since, and the action labels added on 2026-10-13 account for 4 of the difference. Roughly half of those lines are on screens that are the *good* example for their own rule. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md`.
+This rule fires far more widely than any other: **113 lines** across the sample corpus, measured from the Lint XML report on 2026-10-18, out of 206 expected findings in total (93 for the other 25 rules). It was 94 when the rule was built; the corpus has grown since, and the action labels added on 2026-10-13 account for 4 of the difference. Roughly half of those lines are on screens that are the *good* example for another rule. Every line carries a marker, and on 2026-10-19 Sedra decided to keep it that way rather than exclude U-07 from those screens or convert them to resources. That is a real finding rather than a defect in the rule, and it is discussed in `docs/DECISIONS.md` (Milestone 4 and 2026-10-19).
 
 ### Tests and sample
 
@@ -1399,7 +1399,7 @@ Column(Modifier.semantics { collectionInfo = CollectionInfo(orders.size, 1) }) {
 
 ### Known limitations
 
-`verticalScroll` is not required, so a two-item loop is reported like a hundred-item one; items emitted by a helper composable that loops internally are not seen; and `map`/`repeat` are not treated as loops (see `docs/LIMITATIONS.md`).
+`verticalScroll` is not required, so a two-item loop is reported like a hundred-item one (confirmed with Sedra on 2026-10-19: on JetNews, requiring it would have dropped 2 of the 4 genuine findings); items emitted by a helper composable that loops internally are not seen; and `map`/`repeat` are not treated as loops (see `docs/LIMITATIONS.md`).
 
 ### Tests and sample
 

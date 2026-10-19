@@ -1,6 +1,6 @@
 # Progress
 
-## Where the project stands (2026-10-08)
+## Where the project stands (2026-10-18)
 
 | Milestone | Status |
 |---|---|
@@ -13,8 +13,8 @@
 
 **Every rule in the taxonomy is now implemented.** 26 detectors, which is all 27 minus R-03,
 dropped as not applicable. Each is registered in `Taxonomy.kt`, documented in `RULES.md` and
-covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 193
-expected, 193 reported, 0 missing, 0 unexpected. U-07 alone accounts for 94 of those markers,
+covered by a bad and a good sample screen. Across the whole sample app: 26 issue IDs, 206
+expected, 206 reported, 0 missing, 0 unexpected (rechecked 2026-10-18). U-07 alone accounts for 113 of those markers,
 which is explained in the Milestone 4 notes.
 
 The rules have now also been run on code we did not write, twice. The first run (2026-10-06, 18
@@ -41,20 +41,28 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
 Collected here so they do not have to be hunted for. Each is also recorded next to the rule it
 belongs to.
 
-1. **O-07 and O-03 together** give three warnings for one card (two nested-clickable errors plus
-   the missing-actions warning). Acceptable, or should O-03 be suppressed on the children of a
-   container O-07 already reports? See the Milestone 4 notes.
-2. **U-07 and the sample corpus**: the 94 markers are now part of 28 screens, including good
-   ones. Keep it that way (the honest reading), or quieten U-07 over the other screens somehow?
-   See the Milestone 4 notes and DECISIONS before deciding.
-3. **R-04 and list length**: a `Column` looping over a two-item list is reported exactly like one
-   looping over two hundred. The size is almost never a literal, so it cannot be used as a
-   threshold. Accept the noise, or require `verticalScroll`/`horizontalScroll` as well, which
-   would miss short lists that happen to fit on screen? CLAUDE.md 7.4 says "often with
-   verticalScroll", not "only with", so the rule does not require it today.
-4. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
+1. **R-05 and the word `value`**: the parameter name is the only evidence that a `Float` carries
    progress, and CLAUDE.md 7.4's list includes `value`, which is broad. Keep it, or drop it and
    accept missing sliders? This is the rule's most likely false positive.
+
+**Answered:** R-04 and list length (question 1 until 2026-10-19). Kept as it is: any loop in a
+`Column` or `Row` is reported, with or without a scroll modifier. The evidence decided it: R-04's
+4 findings on JetNews are all genuine lists of posts or topics, and 2 of them do not scroll, so
+requiring `verticalScroll`/`horizontalScroll` would have dropped half of the rule's true findings
+and removed no false positive. No code change (2026-10-19, see DECISIONS).
+
+**Answered:** U-07 and the sample corpus (question 1 until 2026-10-19). Kept as it is: every
+line U-07 reports in the sample app carries a marker, 113 of the 206 expected, and a good screen
+is good with respect to its own rule only. Neither `lint.xml` exclusions nor converting the
+corpus to resources was chosen, because the sample app is the evidence that the rules work and
+P-01, P-02 and U-04 need literals. The thesis should give the sample totals both with and
+without U-07 (206 and 93). No code change (2026-10-19, see DECISIONS).
+
+**Answered:** O-07 and O-03 on the same card (question 1 until 2026-10-18). Kept as it is: a
+card with two nested buttons gives two O-03 errors and one O-07 warning. They report on different
+nodes, and O-07 states the fix O-03's explanation recommends, so neither is redundant.
+Suppressing O-03 would have turned a Critical defect into a Minor warning and changed a rule whose
+precision was already measured. No code change (2026-10-18, see DECISIONS).
 
 **Answered:** O-07's scope (question 1 until 2026-10-13), the last of the three scope questions.
 A clickable `Box` or `Column` is now a container, so O-07 uses the same layout list O-02 and P-03

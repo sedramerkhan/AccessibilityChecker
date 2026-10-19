@@ -1053,3 +1053,89 @@ machine, with Android Studio and anything syncing closed, quoting the trimmed me
 number of repetitions. The per-run table should go in the appendix so the variance is visible
 rather than hidden behind an average. Reporting a spread rather than a single mean is better
 methodology in any case; here it is forced, which is worth a sentence of its own.
+
+## 2026-10-18
+
+### O-07 and O-03 keep reporting the same card
+
+**Decision (Sedra, 2026-10-18):** keep both rules as they are. A clickable card with two nested
+buttons gives two O-03 errors (one per button) and one O-07 warning (on the card). This closes the
+question parked on 2026-10-03 and raised again in Milestone 4.
+
+**Reason.** The rules report on different nodes, so CLAUDE.md 7.1 (one defect, one warning per
+node) is met, and they say different things: O-03 says the nesting is wrong, O-07 says which fix
+is missing (`customActions`), which is the fix O-03's own explanation recommends. In the thesis,
+O-07 can be described as the remediation companion of O-03.
+
+**Alternatives considered.**
+- Suppress O-03 under a container O-07 reports: one warning instead of three, but a Critical
+  defect would then only be visible as a Minor warning, and O-03's precision, already measured on
+  the development apps, would have to be measured again. Rejected.
+- Suppress O-07 when O-03 fires on the children: keeps the severity right but loses the explicit
+  fix. Rejected.
+
+**Cost observed so far.** Small: O-03 fired once across JetNews and Jetchat together, on a genuine
+defect (see DEV_APP_RESULTS.md).
+
+## 2026-10-19
+
+### U-07 keeps its markers across the whole sample app
+
+**Decision (Sedra, 2026-10-19):** keep option 3 of the Milestone 4 entry ("Mark every reported
+line"). U-07 reports 113 lines in the sample app, about half of them on screens that are the good
+example for another rule, and every one carries a `// EXPECT: ComposeHardcodedA11yText` marker.
+The expectation check stays exact: 26 issue IDs, 206 expected, 206 reported.
+
+**Reason.** The two alternatives were considered again and rejected for the same reasons as in
+Milestone 4:
+- Turning U-07 off in `lint.xml` for the other screens would configure a rule off over most of
+  the evidence that the rules work.
+- Converting those screens to `stringResource` would silently disable parts of P-01 (`null`
+  against `""`), P-02 (literal description against a literal sibling `Text`) and U-04 (literal
+  button label), and would make the corpus less like real code.
+
+**Consequences for the thesis.**
+- A good screen is good with respect to its own rule only. The screens already describe
+  themselves that way.
+- Sample app totals should be stated twice: with U-07 (206 expected) and without it (93), so the
+  other 25 rules are not hidden behind one rule's count.
+- The count itself is a result worth a sentence: a corpus written on purpose for an accessibility
+  study still had hardcoded accessibility text on 113 lines. The defect survives review because
+  it is text that is never drawn on screen.
+
+**Related observation, no rule change.** U-07's three findings on the development apps are all
+names of people used as avatar descriptions (`contentDescription = "Ali Conors"`). A proper name
+is usually not translated, so they are arguably false positives for the localization defect,
+although each is literally a hardcoded accessibility string. Nothing at the call site separates a
+name from a label, so this is left to the error analysis and to Phase 3, where an LLM with the
+surrounding code can judge it. Recorded in LIMITATIONS.
+
+### R-04 does not require a scroll modifier
+
+**Decision (Sedra, 2026-10-19):** keep R-04 as built. A `Column` or `Row` that emits items in a
+loop is reported whether or not it has `verticalScroll`/`horizontalScroll`. This confirms the
+Milestone 4 choice that was left open as a question.
+
+**Evidence.** R-04 gave 4 findings on the development apps, all in JetNews, and all are genuine
+lists:
+
+| Location | Content | Scrolls |
+|---|---|---|
+| `HomeScreens.kt:496` | "Simple" section, post cards | No |
+| `HomeScreens.kt:523` | "Popular" section, post cards | Yes, `horizontalScroll` |
+| `HomeScreens.kt:550` | "History" section, post cards | No |
+| `InterestsScreen.kt:346` | Topics grouped by section | Yes, `verticalScroll` |
+
+**Reason.** Requiring a scroll modifier would have kept 2 of the 4 and dropped 2 true findings,
+while removing no false positive. WCAG 1.3.1 is about exposing structure, which a short list has
+as much as a long one; a TalkBack user still benefits from hearing how many items a section has.
+The theoretical noise case, a loop over two or three trivial items, did not appear in either
+development app.
+
+**Alternative considered.** Require `verticalScroll` or `horizontalScroll`: rejected on the
+evidence above. CLAUDE.md 7.4 says "often with verticalScroll", not "only with".
+
+**Still to watch.** The evaluation corpus is the first place where short non-list loops (for
+example two buttons built in a loop) could show up. If they do, they are false positives of the
+kind already recorded in LIMITATIONS.
+

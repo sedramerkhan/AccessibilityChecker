@@ -555,10 +555,22 @@ Icon(icon, contentDescription = "Delete " + item.name) // not reported
 Icon(icon, contentDescription = "Delete ${'$'}{item.name}") // not reported
 ```
 
-### `onLongClickLabel` is not read
+### A proper name cannot be told from a label
 
-`combinedClickable(onLongClickLabel = "Open menu")` is the same defect, but CLAUDE.md 7.4 names
-`onClickLabel`.
+A person's or a place's name used as a description is a hardcoded string, so it is reported, but
+it usually should not be translated:
+
+```kotlin
+Image(avatar, contentDescription = "Ali Conors") // reported, arguably a false positive
+```
+
+All three U-07 findings on the development apps are of this kind (see `DEV_APP_RESULTS.md`).
+Nothing at the call site separates a name from a label, so this needs a judgment of intent
+(Phase 3). In real apps such names usually come from data rather than literals, which limits the
+problem to sample and demo code.
+
+(`onLongClickLabel` was listed here as not read until 2026-10-13; it is now read, together with
+the `onClick` and `onLongClick` action labels. See DECISIONS, 2026-10-13.)
 
 ### A resource string can still be the wrong language
 
@@ -588,6 +600,10 @@ very little there.
 ```kotlin
 Column { listOf("Yes", "No").forEach { Text(it) } } // reported
 ```
+
+Requiring a scroll modifier was considered as a filter and rejected on 2026-10-19: on JetNews it
+would have dropped 2 of R-04's 4 findings, all of which are genuine lists of posts or topics. No
+loop of this trivial kind appeared on either development app. See DECISIONS, 2026-10-19.
 
 ### Only `forEach`, `forEachIndexed` and `for`
 

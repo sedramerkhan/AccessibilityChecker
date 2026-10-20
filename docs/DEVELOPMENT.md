@@ -162,6 +162,7 @@ the real Compose sources, not against assumptions (see `DECISIONS.md`).
 | [LIMITATIONS.md](LIMITATIONS.md) | what static analysis cannot catch, with examples |
 | [PROGRESS.md](PROGRESS.md) | status, what is left, open questions, thesis text to update |
 | [DEV_APP_RESULTS.md](DEV_APP_RESULTS.md) | findings on JetNews and Jetchat |
+| [THESIS_UPDATES.md](THESIS_UPDATES.md) | hand-over for updating the thesis: changed wording, severity policy, numbers |
 
 ## Scope of this phase
 

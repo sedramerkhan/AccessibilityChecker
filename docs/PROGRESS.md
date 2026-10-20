@@ -153,7 +153,8 @@ block only when the content had a name or an interaction to lose (2026-10-06, se
 
 ### Thesis text that needs updating
 
-These are not questions, they are edits the taxonomy chapter needs.
+These are not questions, they are edits the taxonomy chapter needs. A self-contained summary for
+whoever updates the thesis document is in [THESIS_UPDATES.md](THESIS_UPDATES.md).
 
 1. **R-02's wording narrows.** The taxonomy says an empty `clearAndSetSemantics { }` is flagged
    without qualification. The rule now reports an empty block only when it hides a name or an

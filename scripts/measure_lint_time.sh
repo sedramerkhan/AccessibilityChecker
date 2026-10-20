@@ -11,9 +11,15 @@
 # recompile all the detectors from Kotlin in every "with" run, a cost a project that uses the
 # published library never pays. Until 2026-10-19 that compile was included (see DECISIONS).
 #
-# The run order alternates (with, without, with, without, ...) rather than doing all the "with"
-# runs first. A machine that warms up or throttles during the measurement then affects both sides
-# equally instead of biasing one.
+# The run order alternates rather than doing all the "with" runs first, and within each pair the
+# side that goes first alternates too (with/without, then without/with). A machine that warms up
+# or throttles during the measurement then affects both sides equally instead of biasing one.
+#
+# Each pair starts from a fresh Gradle daemon (`--stop`) followed by an untimed warm-up of both
+# sides. Without this the daemon carried state from run to run: on 2026-10-19 the first four pairs
+# were stable and then both sides slowed down for good from the fifth, which points at the
+# daemon's 2 GB heap filling up (or the laptop throttling), not at the rules. A fresh daemon per
+# pair makes every pair independent of the ones before it.
 #
 # Every repetition is printed, not only the mean. Wall clock on a developer machine is not
 # reliable in a single sample: a suspend or a background task lands entirely in whichever run is
@@ -81,14 +87,21 @@ if ! "$GRADLE" :lint-rules:jar -q > /dev/null 2>&1; then
     echo "Building :lint-rules:jar failed. Run it by hand to see why." >&2
     exit 1
 fi
-echo "A warm-up run first, so the Gradle daemon and the Kotlin compiler are already started."
-run_lint > /dev/null || exit 1
+echo "Each pair starts from a fresh Gradle daemon and an untimed warm-up of both sides."
 
 with=()
 without=()
 for i in $(seq 1 "$REPS"); do
-    a=$(run_lint) || exit 1
-    b=$(run_lint -Pa11ylint.off=true) || exit 1
+    "$GRADLE" --stop -q > /dev/null 2>&1
+    run_lint > /dev/null || exit 1
+    run_lint -Pa11ylint.off=true > /dev/null || exit 1
+    if [ $((i % 2)) -eq 1 ]; then
+        a=$(run_lint) || exit 1
+        b=$(run_lint -Pa11ylint.off=true) || exit 1
+    else
+        b=$(run_lint -Pa11ylint.off=true) || exit 1
+        a=$(run_lint) || exit 1
+    fi
     with+=("$a")
     without+=("$b")
     printf "  run %d of %d: with %6d ms   without %6d ms   added %+6d ms\n" \

@@ -90,7 +90,10 @@ compiling the rules is not counted, just as a project using the published librar
 compiles them. Runs alternate between the two, and the summary leads with a **trimmed mean**, the
 fastest and slowest run of each side dropped.
 
-Run it on an otherwise idle machine. The script warns when the spread between runs is wider than
+Each pair starts from a fresh Gradle daemon and an untimed warm-up of both sides, so pairs do not
+influence each other; 7 pairs take roughly 25 to 35 minutes.
+
+Run it on an otherwise idle machine, plugged in. The script warns when the spread between runs is wider than
 the difference it is measuring, and the number is then not worth quoting. See `DECISIONS.md`,
 2026-10-14.
 

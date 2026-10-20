@@ -35,8 +35,10 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
 2. **One measurement is still owed:** `bash scripts/measure_lint_time.sh 7` on an otherwise
    idle machine, for the build overhead figure. The 2026-10-19 run was the first to pass the
    reliability check (19.60 s added, trimmed, 7 repetitions), but it turned out to include
-   recompiling the rules in every run. The script now reuses a prebuilt jar, so it has to be run
-   once more (see DECISIONS, 2026-10-14 and 2026-10-19).
+   recompiling the rules in every run. The script now reuses a prebuilt jar, and since 2026-10-20
+   it restarts Gradle before every pair, because the rerun slowed down halfway through. It has to
+   be run once more, plugged in and in Best performance mode (see DECISIONS, 2026-10-14,
+   2026-10-19 and 2026-10-20).
 
 ### Open questions for Sedra
 

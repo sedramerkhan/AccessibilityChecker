@@ -1319,3 +1319,30 @@ name, which is what Name, Role, Value requires, not only a text alternative for 
 
 **Review complete.** Errors are now P-01, U-02, U-05 (no name at all) and O-01 (below 24dp).
 
+## 2026-10-20
+
+### Each timing pair now starts from a fresh Gradle daemon
+
+**What happened.** The rerun with the prebuilt jar (2026-10-19, 7 repetitions) failed the
+script's reliability check again, in a telling way. Pairs 1 to 4 were stable (about 19 s with the
+rules, 12.7 s without, about 7 s added). From pair 5 both sides slowed down and stayed slow (31 to
+39 s with, about 18 s without). The rules did not change between pairs, so the cause is the
+environment: most likely the Gradle daemon's 2 GB heap (`org.gradle.jvmargs=-Xmx2048m`) filling up
+as Lint runs accumulate in the same process, or the laptop throttling under sustained load.
+
+| | trimmed | median | mean | min | max |
+|---|---|---|---|---|---|
+| with rules | 24.98 s | 21.04 s | 26.17 s | 18.88 s | 39.41 s |
+| without | 15.11 s | 14.67 s | 15.09 s | 11.74 s | 18.31 s |
+
+The four clean pairs suggest about 7 s added, but they are chosen after the fact and are not a
+measurement.
+
+**Fix.** Every pair now starts with `./gradlew --stop` and an untimed warm-up of both sides, and
+the side that runs first alternates between pairs. Each pair is then independent of the ones
+before it, whatever the cause was. The cost is time: a 2-pair test run with VS Code open took
+about 13 minutes, so 7 pairs on an idle machine should take roughly 25 to 35 minutes.
+
+**Still owed.** One run of `bash scripts/measure_lint_time.sh 7` on an idle machine, plugged in,
+with Windows power mode set to Best performance.
+

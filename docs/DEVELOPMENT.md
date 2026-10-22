@@ -91,7 +91,15 @@ compiles them. Runs alternate between the two, and the summary leads with a **tr
 fastest and slowest run of each side dropped.
 
 Each pair starts from a fresh Gradle daemon and an untimed warm-up of both sides, so pairs do not
-influence each other; 7 pairs take roughly 25 to 35 minutes.
+influence each other; 7 pairs take roughly 25 to 35 minutes. The added time is analysed per pair
+(median, and a 95% confidence interval for the mean), because background load moves both runs of
+a pair together. To re-analyse an earlier run without running Lint:
+
+```bash
+bash scripts/measure_lint_time.sh --analyse "26715 28037 ..." "17943 20015 ..."
+```
+
+Last result (2026-10-22): a median of 8.77 s added, 95% CI 7.43 to 12.01 s, 7 pairs.
 
 Run it on an otherwise idle machine, plugged in. The script warns when the spread between runs is wider than
 the difference it is measuring, and the number is then not worth quoting. See `DECISIONS.md`,

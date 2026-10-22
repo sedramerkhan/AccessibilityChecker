@@ -30,7 +30,16 @@
 # Only POSIX tools and awk are used, no bc: bc is not present in Git Bash on Windows, which is
 # where this project is developed.
 #
+# The added time is analysed per pair: each pair's "with" minus its "without". Background load
+# that slows the machine for a while slows both runs of a pair, so it cancels in the difference
+# while it inflates the raw times. The summary therefore leads with the median of the per-pair
+# differences and a 95% confidence interval for their mean, and the warning fires when that
+# interval is wide or includes zero. Until 2026-10-22 the warning compared the spread of the raw
+# "with" times with the difference, which fired on runs whose pairs agreed closely (see DECISIONS).
+#
 # Usage: scripts/measure_lint_time.sh [repetitions]   (default 5)
+#        scripts/measure_lint_time.sh --analyse "<with ms ...>" "<without ms ...>"
+#            re-runs only the analysis on times from an earlier run, without running Lint
 
 set -u
 
@@ -40,7 +49,7 @@ REPS="${1:-5}"
 GRADLE="./gradlew"
 TASK=":sample-app:lintDebug"
 
-if ! [ "$REPS" -ge 2 ] 2>/dev/null; then
+if [ "$REPS" != "--analyse" ] && ! [ "$REPS" -ge 2 ] 2>/dev/null; then
     echo "Repetitions must be a number, 2 or more (got: $REPS)" >&2
     exit 2
 fi
@@ -81,6 +90,72 @@ summarise() {
         }'
 }
 
+# Prints the summary for two space-separated lists of milliseconds, "with" and "without", given in
+# pair order (the n-th entry of each list is one pair).
+report() {
+    local with_list="$1" without_list="$2"
+    local w_mean w_median w_trim w_min w_max o_mean o_median o_trim o_min o_max
+    read -r w_mean w_median w_trim w_min w_max <<< "$(printf '%s\n' $with_list | summarise)"
+    read -r o_mean o_median o_trim o_min o_max <<< "$(printf '%s\n' $without_list | summarise)"
+
+    echo
+    awk -v wm="$w_mean" -v wd="$w_median" -v wt="$w_trim" -v wlo="$w_min" -v whi="$w_max" \
+        -v om="$o_mean" -v od="$o_median" -v ot="$o_trim" -v olo="$o_min" -v ohi="$o_max" '
+    BEGIN {
+        printf "Raw times (background load moves these; see the per-pair figures below)\n"
+        printf "%-12s %9s %9s %9s %9s %9s\n", "", "trimmed", "median", "mean", "min", "max"
+        printf "%-12s %8.2fs %8.2fs %8.2fs %8.2fs %8.2fs\n", "with rules", wt/1000, wd/1000, wm/1000, wlo/1000, whi/1000
+        printf "%-12s %8.2fs %8.2fs %8.2fs %8.2fs %8.2fs\n", "without",    ot/1000, od/1000, om/1000, olo/1000, ohi/1000
+    }'
+
+    # Per-pair differences: median, trimmed mean, mean, standard deviation, and a 95% confidence
+    # interval for the mean using Student's t (two-sided, n - 1 degrees of freedom).
+    awk -v w="$with_list" -v o="$without_list" -v od="$o_median" '
+    BEGIN {
+        n = split(w, a, " "); m = split(o, b, " ")
+        if (n != m || n < 2) { print "Need at least two complete pairs." > "/dev/stderr"; exit 2 }
+        for (i = 1; i <= n; i++) { d[i] = a[i] - b[i]; sum += d[i]; if (d[i] > 0) positive++ }
+        mean = sum / n
+        for (i = 1; i <= n; i++) ss += (d[i] - mean) ^ 2
+        sd = sqrt(ss / (n - 1))
+        # sort the differences (n is small)
+        for (i = 1; i <= n; i++) s[i] = d[i]
+        for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (s[j] < s[i]) { x = s[i]; s[i] = s[j]; s[j] = x }
+        median = (n % 2) ? s[(n + 1) / 2] : (s[n / 2] + s[n / 2 + 1]) / 2
+        trimmed = mean
+        if (n >= 5) { inner = 0; for (i = 2; i < n; i++) inner += s[i]; trimmed = inner / (n - 2) }
+        split("12.706 4.303 3.182 2.776 2.571 2.447 2.365 2.306 2.262 2.228 2.201 2.179 2.160 2.145 2.131 2.120 2.110 2.101 2.093", tt, " ")
+        df = n - 1
+        tv = (df <= 19) ? tt[df] : 1.96
+        half = tv * sd / sqrt(n)
+        lo = mean - half; hi = mean + half
+
+        printf "\nAdded by the rules, per pair (%d pairs, %d of them positive):\n", n, positive
+        printf "  median %.2f s   trimmed mean %.2f s   mean %.2f s   sd %.2f s\n", median/1000, trimmed/1000, mean/1000, sd/1000
+        printf "  95%% confidence interval for the mean: %.2f s to %.2f s\n", lo/1000, hi/1000
+        if (od > 0) printf "  the median is %.1f%% of a median run without the rules (%.2f s)\n", 100 * median / od, od/1000
+        printf "Quote the per-pair median with the confidence interval and the number of pairs.\n"
+
+        if (lo <= 0) {
+            printf "\nWarning: the confidence interval includes zero, so these runs do not show that the\n"
+            print "rules add measurable time. Re-run on a quieter machine or with more pairs."
+        } else if (half > mean / 2) {
+            printf "\nWarning: the confidence interval is wider than the effect (+/- %.2f s around %.2f s).\n", half/1000, mean/1000
+            print "The pairs disagree too much to quote one figure. Re-run on a quieter machine or with"
+            print "more pairs."
+        }
+    }'
+}
+
+if [ "${1:-}" = "--analyse" ]; then
+    if [ $# -ne 3 ]; then
+        echo "Usage: $0 --analyse \"<with ms ...>\" \"<without ms ...>\"" >&2
+        exit 2
+    fi
+    report "$2" "$3"
+    exit $?
+fi
+
 echo "Measuring $TASK, $REPS repetitions each way."
 echo "Building the rules jar once; the timed runs reuse it instead of recompiling the rules."
 if ! "$GRADLE" :lint-rules:jar -q > /dev/null 2>&1; then
@@ -108,31 +183,4 @@ for i in $(seq 1 "$REPS"); do
         "$i" "$REPS" "$a" "$b" "$((a - b))"
 done
 
-read -r w_mean w_median w_trim w_min w_max <<< "$(printf '%s\n' "${with[@]}" | summarise)"
-read -r o_mean o_median o_trim o_min o_max <<< "$(printf '%s\n' "${without[@]}" | summarise)"
-
-echo
-awk -v wm="$w_mean" -v wd="$w_median" -v wt="$w_trim" -v wlo="$w_min" -v whi="$w_max" \
-    -v om="$o_mean" -v od="$o_median" -v ot="$o_trim" -v olo="$o_min" -v ohi="$o_max" '
-BEGIN {
-    printf "%-12s %9s %9s %9s %9s %9s\n", "", "trimmed", "median", "mean", "min", "max"
-    printf "%-12s %8.2fs %8.2fs %8.2fs %8.2fs %8.2fs\n", "with rules", wt/1000, wd/1000, wm/1000, wlo/1000, whi/1000
-    printf "%-12s %8.2fs %8.2fs %8.2fs %8.2fs %8.2fs\n", "without",    ot/1000, od/1000, om/1000, olo/1000, ohi/1000
-    printf "\nAdded by the rules: %.2f s trimmed, %.2f s median, %.2f s mean", (wt-ot)/1000, (wd-od)/1000, (wm-om)/1000
-    if (ot > 0) printf " (%.1f%% of a trimmed run without them)", 100*(wt-ot)/ot
-    printf ".\nQuote the trimmed figure, with the number of repetitions.\n"
-}'
-
-# A spread wider than the effect being measured means the mean is not worth quoting on its own.
-awk -v wlo="$w_min" -v whi="$w_max" -v wm="$w_mean" -v om="$o_mean" '
-BEGIN {
-    spread = whi - wlo
-    added = wm - om
-    if (added < 0) added = -added
-    if (spread > added) {
-        printf "\nWarning: the runs with the rules vary by %.2f s between fastest and slowest,\n", spread/1000
-        printf "which is wider than the %.2f s difference being measured. Quote the median, say how\n", added/1000
-        print "many repetitions were used, and re-run on an otherwise idle machine before putting"
-        print "the number in the thesis."
-    }
-}'
+report "${with[*]}" "${without[*]}"

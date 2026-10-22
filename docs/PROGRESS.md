@@ -32,8 +32,9 @@ noisy, produced 8 findings across two complete apps, and O-03 one, on a genuine 
    development apps); `scripts/measure_lint_time.sh`; and the final pass over `RULES.md`, which
    reordered the catalog into taxonomy order, added the 13 bad/good examples that were missing,
    and cross-checked every rule's metadata against `Taxonomy.kt` and the detectors.
-2. **One measurement is still owed:** `bash scripts/measure_lint_time.sh 7` on an otherwise
-   idle machine, for the build overhead figure. The 2026-10-19 run was the first to pass the
+2. **The build overhead is measured (2026-10-22):** the rules add a median of 8.8 s per Lint
+   run on the sample app (95% CI 7.4 to 12.0 s, 7 pairs), about 42% of a run without them. See
+   DECISIONS, 2026-10-22. The history of this item, kept for the record: The 2026-10-19 run was the first to pass the
    reliability check (19.60 s added, trimmed, 7 repetitions), but it turned out to include
    recompiling the rules in every run. The script now reuses a prebuilt jar, and since 2026-10-20
    it restarts Gradle before every pair, because the rerun slowed down halfway through. It has to

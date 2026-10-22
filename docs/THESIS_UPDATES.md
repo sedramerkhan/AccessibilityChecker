@@ -5,8 +5,8 @@ implementation now differs from what the thesis (and the original CLAUDE.md spec
 what the new text should say, and why. It also lists the numbers that are ready to quote and the
 ones that are not.
 
-Status on 2026-10-20: Phase 2 (Layer 1, the static Lint rules) is complete except for one
-measurement (section 6). Full evidence for every point is in `DECISIONS.md`, by date.
+Status on 2026-10-22: Phase 2 (Layer 1, the static Lint rules) is complete, including the build
+overhead measurement (section 4). Full evidence for every point is in `DECISIONS.md`, by date.
 
 ---
 
@@ -88,6 +88,14 @@ U-05 once, U-02 once). The other 36 are warnings.
 | Development apps (JetNews, Jetchat) | 40 findings: JetNews 17, Jetchat 23 (run of 2026-10-14) |
 | Rules with no findings on either app | 14 of 26 |
 | Rule defects found on the development apps | 2 (in O-05 and R-02), both fixed after the first run |
+| Build overhead (Plan section 6.5) | median 8.8 s added per `lintDebug` run on the sample app, 95% CI for the mean 7.4 to 12.0 s, 7 paired runs; about 42% of a median 21.1 s run without the rules |
+
+**On the build overhead.** Measured on 2026-10-22 with a fresh Gradle daemon before each pair and
+the two runs of a pair back to back, so background load cancels within a pair. The figure covers
+the whole Gradle task, including loading the rules. The sample app is small but dense in defects,
+so the relative figure is specific to it. It was measured on one laptop with other programs open
+but idle; state its processor and memory. Two earlier attempts were rejected and are documented in
+`DECISIONS.md` (2026-10-19 and 2026-10-20).
 
 **On U-07 and the sample app.** Give the sample totals both with and without U-07 (209 and 95).
 U-07 reports hardcoded accessibility text, and the sample app uses literals almost everywhere
@@ -123,11 +131,6 @@ evaluation corpus (15 to 30 apps), which has not been run yet.
 
 ## 6. Not ready yet: do not write these numbers
 
-- **Build overhead (Plan section 6.5).** Not measured reliably yet. Two earlier runs were rejected:
-  the first included recompiling the rules in every run, the second slowed down halfway through
-  (most likely the Gradle daemon's memory). The script was fixed both times. Rough indication only,
-  **not to be quoted**: about 7 seconds added to a 13 second Lint run on the small sample app. The
-  final figure will come from one more run.
 - **Evaluation results** (precision on the corpus). Not run yet.
 
 ---

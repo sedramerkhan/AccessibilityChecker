@@ -1346,3 +1346,49 @@ about 13 minutes, so 7 pairs on an idle machine should take roughly 25 to 35 min
 **Still owed.** One run of `bash scripts/measure_lint_time.sh 7` on an idle machine, plugged in,
 with Windows power mode set to Best performance.
 
+## 2026-10-22
+
+### The build overhead figure, and why it is analysed per pair
+
+**Result.** `bash scripts/measure_lint_time.sh 7`, with a fresh Gradle daemon and an untimed
+warm-up before every pair, on Sedra's laptop with other programs open but idle:
+
+| Pair | with rules | without | added |
+|---|---|---|---|
+| 1 | 26.72 s | 17.94 s | 8.77 s |
+| 2 | 28.04 s | 20.02 s | 8.02 s |
+| 3 | 27.17 s | 17.87 s | 9.30 s |
+| 4 | 36.60 s | 28.98 s | 7.62 s |
+| 5 | 37.61 s | 23.25 s | 14.36 s |
+| 6 | 29.20 s | 21.05 s | 8.15 s |
+| 7 | 32.94 s | 21.13 s | 11.80 s |
+
+**The rules added a median of 8.77 s per pair** (mean 9.72 s, standard deviation 2.47 s, 95%
+confidence interval for the mean 7.43 to 12.01 s, 7 of 7 pairs positive). That is about 42% of a
+median Lint run without the rules (21.05 s) on the sample app.
+
+**Why the old warning was replaced.** The script's original warning compared the spread of the
+raw "with" times (10.9 s here) with the difference, and it fired on this run. But the raw times
+moved together: in pair 4 both sides were about 9 s slower than in pair 3, because the machine was
+busy for a while, and the difference within the pair barely changed (7.6 s against 9.3 s). The
+script has run "with" and "without" back to back since 2026-10-14 precisely so that such load
+cancels within a pair, so the per-pair differences are the quantity the design measures, and
+their spread is what decides whether the figure is reliable. The new warning fires when the 95%
+confidence interval of the per-pair differences includes zero or is wider than the effect.
+
+**Stated openly:** this change of analysis was made after seeing the data. Two checks that it is
+not tailored to this run: it uses the pairing the script was built around from the start, and
+applied to the earlier runs it still rejects the 2026-10-19 rerun that slowed down halfway (95%
+interval 11.08 s +/- 5.55 s, warning). The first 2026-10-19 run passes the new statistical check
+but stays invalid for the separate reason recorded that day (it included compiling the rules).
+All three runs can be re-analysed with `scripts/measure_lint_time.sh --analyse`.
+
+**How to state it in the thesis.** "Over 7 paired runs of `lintDebug` on the sample app, the
+custom rules added a median of 8.8 s (95% CI for the mean 7.4 to 12.0 s), about 42% of a median
+21.1 s run without them." With these caveats:
+- It is the whole Gradle task, so it includes loading the rules jar and Lint's own work for the
+  extra checks, not only the detectors.
+- The sample app is small but unusually dense in defects (209 findings), so the relative figure
+  is specific to it; a larger app was not measured.
+- One machine, with other programs open but idle. Record its processor and memory in the thesis.
+

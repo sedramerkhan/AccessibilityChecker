@@ -1390,5 +1390,5 @@ custom rules added a median of 8.8 s (95% CI for the mean 7.4 to 12.0 s), about 
   extra checks, not only the detectors.
 - The sample app is small but unusually dense in defects (209 findings), so the relative figure
   is specific to it; a larger app was not measured.
-- One machine, with other programs open but idle. Record its processor and memory in the thesis.
+- One machine, with other programs open but idle: HP EliteBook 840 G8 laptop, Intel Core i7-1185G7 (4 cores, 8 threads, 3.0 GHz), 16 GB RAM (3200 MT/s), Windows 11 Pro 25H2 (build 26200), JDK 17, Gradle 9.6.0 with a 2 GB daemon heap.
 

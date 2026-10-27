@@ -93,8 +93,8 @@ U-05 once, U-02 once). The other 36 are warnings.
 **On the build overhead.** Measured on 2026-10-22 with a fresh Gradle daemon before each pair and
 the two runs of a pair back to back, so background load cancels within a pair. The figure covers
 the whole Gradle task, including loading the rules. The sample app is small but dense in defects,
-so the relative figure is specific to it. It was measured on one laptop with other programs open
-but idle; state its processor and memory. Two earlier attempts were rejected and are documented in
+so the relative figure is specific to it. It was measured on one machine with other programs open
+but idle: HP EliteBook 840 G8 laptop, Intel Core i7-1185G7 (4 cores, 8 threads, 3.0 GHz), 16 GB RAM (3200 MT/s), Windows 11 Pro 25H2 (build 26200), JDK 17, Gradle 9.6.0 with a 2 GB daemon heap. Two earlier attempts were rejected and are documented in
 `DECISIONS.md` (2026-10-19 and 2026-10-20).
 
 **On U-07 and the sample app.** Give the sample totals both with and without U-07 (209 and 95).
